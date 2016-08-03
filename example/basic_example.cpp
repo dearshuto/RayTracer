@@ -9,13 +9,16 @@
 #include <iostream>
 #include <jpeglib.h>
 #include "image/image.hpp"
+#include "scene/world.hpp"
 
 int main(int argc, char** argv)
 {
     constexpr unsigned int kWidth = 256;
     constexpr unsigned int kHeight = 256;
+    shkm::World world;
     shkm::Image image;
     
+    world.rayTest();
     image.initialize(kWidth, kHeight);
     
     shkm::Image::Color color;
