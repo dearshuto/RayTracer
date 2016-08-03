@@ -31,20 +31,7 @@ public:
         
     }
     
-    ~World()
-    {
-        for (int i=m_dynamicsWorld->getNumCollisionObjects()-1; i>=0 ;i--)
-        {
-            btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
-            btRigidBody* body = btRigidBody::upcast(obj);
-            if (body && body->getMotionState())
-            {
-                delete body->getMotionState();
-            }
-            m_dynamicsWorld->removeCollisionObject( obj );
-            delete obj;
-        }
-    }
+    ~World() = default;
     
     /**
      * シーンの変更を適用する。変更がなければ呼ぶ必要はない。
@@ -63,6 +50,8 @@ private:
     std::unique_ptr<btDynamicsWorld> m_dynamicsWorld;
     
     std::vector<std::unique_ptr<btCollisionShape>> m_collisionShapes;
+    std::vector<std::unique_ptr<btCollisionObject>> m_collisionObjects;
+    std::vector<std::unique_ptr<btMotionState>> m_motionStates;
 };
 
 #endif /* world_hpp */

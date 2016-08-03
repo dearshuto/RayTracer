@@ -29,15 +29,17 @@ void shkm::World::addCube()
     groundTransform.setIdentity();
     groundTransform.setOrigin(btVector3(0,-0,0));
     
-    btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,groundShape.get(),localInertia);
-    btRigidBody* body = new btRigidBody(rbInfo);
+    std::unique_ptr<btDefaultMotionState> myMotionState(new btDefaultMotionState(groundTransform));
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState.get(),groundShape.get(),localInertia);
+    std::unique_ptr<btRigidBody> body(new btRigidBody(rbInfo));
     body->setRollingFriction(1);
     body->setFriction(1);
     //add the body to the dynamics world
-    m_dynamicsWorld->addRigidBody(body);
+    m_dynamicsWorld->addRigidBody(body.get());
 
     m_collisionShapes.push_back( std::move(groundShape) );
+    m_motionStates.push_back( std::move(myMotionState) );
+    m_collisionObjects.push_back( std::move(body) );
 }
 
 void shkm::World::rayTest()const
