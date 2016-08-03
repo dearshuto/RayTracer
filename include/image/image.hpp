@@ -18,6 +18,7 @@ namespace shkm {
 
 class shkm::Image
 {
+public:
     struct Color
     {
         uint8_t R;
@@ -39,14 +40,19 @@ public:
     
     bool saveToFile(const std::string& string)const;
     
-    
     shkm::Image::Color getColorAt(unsigned int x, unsigned int y)const;
+    
+    void setColorAt(unsigned int x, unsigned int y, shkm::Image::Color& color);
+    
+private:
+    unsigned int convertPosition2D(const unsigned int x, const unsigned int y)const;
+    
 private:
     unsigned int m_width;
     
     unsigned int m_height;
     
-    std::vector<uint8_t> m_colorBuffer;
+    std::vector<Color> m_colorBuffer;
 };
 
 #endif /* image_hpp */

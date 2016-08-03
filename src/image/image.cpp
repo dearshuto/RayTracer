@@ -14,7 +14,7 @@ void shkm::Image::initialize(const unsigned int width, const unsigned int height
 {
     m_width = width;
     m_height = height;
-    m_colorBuffer.resize(width * height*3);
+    m_colorBuffer.resize(width * height);
 }
 
 bool shkm::Image::saveToFile(const std::string &string)const
@@ -48,7 +48,7 @@ bool shkm::Image::saveToFile(const std::string &string)const
     for (int i = 0; i < m_height; i++) {
         img[i] = (JSAMPROW) malloc(sizeof(JSAMPLE) * 3 * m_width);
         for (int j = 0; j < m_width; j++) {
-            const auto kColor = getColorAt(i, j);
+            const auto kColor = getColorAt(j, i);
             
             img[i][j*3 + 0] = kColor.R;
             img[i][j*3 + 1] = kColor.G;
@@ -74,12 +74,26 @@ bool shkm::Image::saveToFile(const std::string &string)const
     return true;
 }
 
+unsigned int shkm::Image::convertPosition2D(const unsigned int x, const unsigned int y)const
+{
+    return y * m_width + x;
+}
+
 shkm::Image::Color shkm::Image::getColorAt(unsigned int x, unsigned int y)const
 {
+    const unsigned int kIndex = convertPosition2D(x, y);
     shkm::Image::Color color;
-    color.R = m_colorBuffer[y*m_width + x*3 + 0];
-    color.G = m_colorBuffer[y*m_width + x*3 + 1];
-    color.B = m_colorBuffer[y*m_width + x*3 + 2];
+    color.R = m_colorBuffer[kIndex].R;
+    color.G = m_colorBuffer[kIndex].G;
+    color.B = m_colorBuffer[kIndex].B;
     
     return color;
+}
+
+void shkm::Image::setColorAt(unsigned int x, unsigned int y, shkm::Image::Color &color)
+{
+    const unsigned int kIndex = convertPosition2D(x, y);
+    m_colorBuffer[kIndex].R = color.R;
+    m_colorBuffer[kIndex].G = color.G;
+    m_colorBuffer[kIndex].B = color.B;
 }
