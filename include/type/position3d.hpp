@@ -31,6 +31,11 @@ public:
     {
         
     }
+    
+    /**
+     * 要素の中に無限大が含まれているか調べる
+     */
+    bool isInfinit()const;
 };
 
 #endif /* position3d_hpp */
