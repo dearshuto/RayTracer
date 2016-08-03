@@ -18,7 +18,10 @@ int main(int argc, char** argv)
     shkm::World world;
     shkm::Image image;
     
+    world.addCube();
+    world.update();
     world.rayTest();
+    
     image.initialize(kWidth, kHeight);
     
     shkm::Image::Color color;

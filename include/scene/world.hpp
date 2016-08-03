@@ -46,6 +46,13 @@ public:
         }
     }
     
+    /**
+     * シーンの変更を適用する。変更がなければ呼ぶ必要はない。
+     */
+    void update();
+    
+    void addCube();
+    
     void rayTest()const;
     
 private:
