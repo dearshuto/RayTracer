@@ -31,7 +31,20 @@ public:
         
     }
     
-    ~World() = default;
+    ~World()
+    {
+        for (int i=m_dynamicsWorld->getNumCollisionObjects()-1; i>=0 ;i--)
+        {
+            btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
+            btRigidBody* body = btRigidBody::upcast(obj);
+            if (body && body->getMotionState())
+            {
+                delete body->getMotionState();
+            }
+            m_dynamicsWorld->removeCollisionObject( obj );
+            delete obj;
+        }
+    }
     
     void rayTest()const;
     
