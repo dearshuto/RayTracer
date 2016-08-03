@@ -13,6 +13,7 @@
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <BulletCollision/Gimpact/btGImpactShape.h>
+#include "type/position3d.hpp"
 
 namespace shkm {
     class World;
@@ -40,7 +41,7 @@ public:
     
     void addCube();
     
-    void rayTest()const;
+    shkm::Position3d rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const;
     
 private:
     std::unique_ptr<btCollisionConfiguration> m_collisionConfiguration;

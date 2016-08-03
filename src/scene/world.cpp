@@ -7,11 +7,13 @@
 //
 
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <vector>
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <BulletCollision/Gimpact/btGImpactShape.h>
+
 #include "scene/world.hpp"
 
 void shkm::World::update()
@@ -22,12 +24,12 @@ void shkm::World::update()
 
 void shkm::World::addCube()
 {
-    std::unique_ptr<btCollisionShape> groundShape(new btBoxShape(btVector3(btScalar(20.),btScalar(20.),btScalar(20.))));
+    std::unique_ptr<btCollisionShape> groundShape(new btSphereShape(25));
     btScalar mass(0.);
     btVector3 localInertia(0,0,0);
     btTransform groundTransform;
     groundTransform.setIdentity();
-    groundTransform.setOrigin(btVector3(0,-0,0));
+    groundTransform.setOrigin(btVector3(0,0,0));
     
     std::unique_ptr<btDefaultMotionState> myMotionState(new btDefaultMotionState(groundTransform));
     btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState.get(),groundShape.get(),localInertia);
@@ -42,18 +44,21 @@ void shkm::World::addCube()
     m_collisionObjects.push_back( std::move(body) );
 }
 
-void shkm::World::rayTest()const
+shkm::Position3d shkm::World::rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const
 {
-    btVector3 from(-30,1.2,0);
-    btVector3 to(0,0,0);
+    const btVector3 kFrom(from.x(), from.y(), from.z());
+    const btVector3 kTo(to.x(), to.y(), to.z());
     
-    btCollisionWorld::ClosestRayResultCallback	closestResults(from,to);
+    btCollisionWorld::ClosestRayResultCallback	closestResults(kFrom,kTo);
     closestResults.m_flags |= btTriangleRaycastCallback::kF_FilterBackfaces;
-    m_dynamicsWorld->rayTest(from,to,closestResults);
+    m_dynamicsWorld->rayTest(kFrom,kTo,closestResults);
     
     if (closestResults.hasHit())
     {
-        btVector3 p = from.lerp(to,closestResults.m_closestHitFraction);
-        std::cout << p.x() << ", " << p.y() << " " << p.z() << std::endl;
-    }    
+        const btVector3 p = kFrom.lerp(kTo,closestResults.m_closestHitFraction);
+        return shkm::Position3d(p.x(), p.y(), p.z());
+    }
+    
+    const auto kInfinity = std::numeric_limits<double>::infinity();
+    return shkm::Position3d(kInfinity, kInfinity, kInfinity);
 }

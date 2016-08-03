@@ -13,14 +13,13 @@
 
 int main(int argc, char** argv)
 {
-    constexpr unsigned int kWidth = 256;
-    constexpr unsigned int kHeight = 256;
+    constexpr unsigned int kWidth = 640;
+    constexpr unsigned int kHeight = 480;
     shkm::World world;
     shkm::Image image;
     
     world.addCube();
     world.update();
-    world.rayTest();
     
     image.initialize(kWidth, kHeight);
     
@@ -28,10 +27,23 @@ int main(int argc, char** argv)
     for (int i = 0; i < kWidth; i++){
         for (int j = 0; j < kHeight; j++)
         {
-            color.R = i;
-            color.G = j;
-            color.B = 127;
+            const shkm::Position3d kFrom(0,0,-30);
+            const shkm::Position3d kTo(i-320,j-240,0);
+            auto kCollision = world.rayTest(kFrom, kTo);
 
+            if (std::isfinite(kCollision.x()))
+            {
+                color.R = 255;
+                color.G = 255;
+                color.B = 255;
+            }
+            else
+            {
+                color.R = 0;
+                color.G = 0;
+                color.B = 0;
+            }
+            
             image.setColorAt(i, j, color);
         }
     }
