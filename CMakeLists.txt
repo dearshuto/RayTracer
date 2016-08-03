@@ -10,6 +10,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/bullet/src)
+include_directories(${CMAKE_SOURCE_DIR}/external/eigen)
 include_directories(${CMAKE_SOURCE_DIR}/external/jpeg)
 
 FILE(GLOB_RECURSE image_files
@@ -17,14 +18,23 @@ FILE(GLOB_RECURSE image_files
 	${CMAKE_SOURCE_DIR}/src/image/*.cpp
 )
 
+FILE(GLOB_RECURSE scene_files
+	${CMAKE_SOURCE_DIR}/include/scene/*.hpp
+	${CMAKE_SOURCE_DIR}/src/scene/*.cpp
+)
+
 SOURCE_GROUP(image FILES ${image_files})
+SOURCE_GROUP(image FILES ${scene_files})
 
 add_library(ray_tracer STATIC
 	${image_files}
+	${scene_files}
 )
 
 add_subdirectory(external/bullet)
 add_subdirectory(external/jpeg)
+
+
 
 # ここからC++11を有効にする
 add_definitions("-Wall -std=c++11")
