@@ -20,11 +20,25 @@ void shkm::World::rayTest()const
     m_dynamicsWorld->computeOverlappingPairs();
     
     
+    std::unique_ptr<btCollisionShape> groundShape(new btBoxShape(btVector3(btScalar(20.),btScalar(20.),btScalar(20.))));
+    btScalar mass(0.);
+    btVector3 localInertia(0,0,0);
+    btTransform groundTransform;
+    groundTransform.setIdentity();
+    groundTransform.setOrigin(btVector3(0,-0,0));
+    
     btVector3 from(-30,1.2,0);
-    btVector3 to(30,1.2,0);
+    btVector3 to(0,0,0);
     
     btCollisionWorld::ClosestRayResultCallback	closestResults(from,to);
     closestResults.m_flags |= btTriangleRaycastCallback::kF_FilterBackfaces;
+    btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,groundShape.get(),localInertia);
+    btRigidBody* body = new btRigidBody(rbInfo);
+    body->setRollingFriction(1);
+    body->setFriction(1);
+    //add the body to the dynamics world
+    m_dynamicsWorld->addRigidBody(body);
     
     m_dynamicsWorld->rayTest(from,to,closestResults);
     
@@ -33,4 +47,6 @@ void shkm::World::rayTest()const
         btVector3 p = from.lerp(to,closestResults.m_closestHitFraction);
         std::cout << p.x() << ", " << p.y() << " " << p.z() << std::endl;
     }
+    
+    
 }
