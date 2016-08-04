@@ -35,7 +35,6 @@ add_subdirectory(external/bullet)
 add_subdirectory(external/jpeg)
 
 
-
 # ここからC++11を有効にする
 add_definitions("-Wall -std=c++11")
 add_subdirectory(example)
