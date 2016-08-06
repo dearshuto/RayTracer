@@ -29,7 +29,7 @@ void shkm::World::addCube()
     btVector3 localInertia(0,0,0);
     btTransform groundTransform;
     groundTransform.setIdentity();
-    groundTransform.setOrigin(btVector3(0,0,0));
+    groundTransform.setOrigin(btVector3(60,0,10));
     
     std::unique_ptr<btDefaultMotionState> myMotionState(new btDefaultMotionState(groundTransform));
     btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState.get(),groundShape.get(),localInertia);
@@ -38,7 +38,7 @@ void shkm::World::addCube()
     body->setFriction(1);
     //add the body to the dynamics world
     m_dynamicsWorld->addRigidBody(body.get());
-
+    
     m_collisionShapes.push_back( std::move(groundShape) );
     m_motionStates.push_back( std::move(myMotionState) );
     m_collisionObjects.push_back( std::move(body) );
@@ -56,7 +56,7 @@ shkm::CollisionInfo shkm::World::rayTest(const shkm::Position3d& from, const shk
     
     if (closestResults.hasHit())
     {
-        const btVector3& p = kFrom.lerp(kTo,closestResults.m_closestHitFraction);
+        const btVector3& p = closestResults.m_hitPointWorld;
         const btVector3& kNormal = closestResults.m_hitNormalWorld;
         
         collisionInfo.Position = shkm::Position3d(p.x(), p.y(), p.z());
