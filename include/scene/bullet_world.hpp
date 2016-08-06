@@ -25,6 +25,8 @@ public:
     
     void update()override;
     
+    virtual void addSphere(const shkm::Position3d& position, const double radius) override;
+    
     void addCube()override;
     
     shkm::CollisionInfo rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const override;

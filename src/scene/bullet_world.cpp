@@ -47,6 +47,26 @@ public:
         m_dynamicsWorld->computeOverlappingPairs();
     }
     
+    void addSphere(const shkm::Position3d& position, const double radius)
+    {
+        std::unique_ptr<btCollisionShape> groundShape(new btSphereShape(radius));
+        btScalar mass(0.);
+        btVector3 localInertia(0,0,0);
+        btTransform groundTransform;
+        groundTransform.setIdentity();
+        groundTransform.setOrigin(btVector3(position.x(),position.y(),position.z()));
+        
+        std::unique_ptr<btDefaultMotionState> myMotionState(new btDefaultMotionState(groundTransform));
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState.get(),groundShape.get(),localInertia);
+        std::unique_ptr<btRigidBody> body(new btRigidBody(rbInfo));
+
+        //add the body to the dynamics world
+        m_dynamicsWorld->addRigidBody(body.get());
+        m_collisionShapes.push_back( std::move(groundShape) );
+        m_motionStates.push_back( std::move(myMotionState) );
+        m_collisionObjects.push_back( std::move(body) );
+    }
+    
     void addCube()
     {
         std::unique_ptr<btCollisionShape> groundShape(new btSphereShape(25));
@@ -108,6 +128,11 @@ shkm::BulletWorld::BulletWorld()
 void shkm::BulletWorld::update()
 {
     m_impl->update();
+}
+
+void shkm::BulletWorld::addSphere(const shkm::Position3d &position, const double radius)
+{
+    m_impl->addSphere(position, radius);
 }
 
 void shkm::BulletWorld::addCube()

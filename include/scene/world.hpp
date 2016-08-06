@@ -37,6 +37,12 @@ public:
      */
     virtual void update() = 0;
     
+    /**
+     * @param position ワールド座標[m]
+     * @param radius 半径[m]
+     */
+    virtual void addSphere(const shkm::Position3d& position, const double radius) = 0;
+    
     virtual void addCube() = 0;
     
     virtual shkm::CollisionInfo rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const = 0;
