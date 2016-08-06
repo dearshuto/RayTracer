@@ -20,6 +20,7 @@ int main(int argc, char** argv)
     fj::JpegImage image;
 
     world.addCube();
+    world.addSphere(shkm::Position3d(-40, 0, 5), 35);
     world.update();
     
     image.initialize(kWidth, kHeight);
@@ -37,8 +38,6 @@ int main(int argc, char** argv)
             if (std::isfinite(kPosition.x()))
             {
                 image.setAt(i, j, fj::NormalizedColor( std::abs(kNormal.x()), std::abs(kNormal.y()), std::abs(kNormal.z())) );
-//                image.setAt(i, j, fj::NormalizedColor( std::abs(kPosition.x()), std::abs(kPosition.y()), std::abs(kPosition.z())) );
-//                image.setAt(i, j, fj::NormalizedColor::WHITE );
             }
             else
             {
