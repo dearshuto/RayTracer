@@ -44,10 +44,11 @@ void shkm::World::addCube()
     m_collisionObjects.push_back( std::move(body) );
 }
 
-shkm::Position3d shkm::World::rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const
+shkm::CollisionInfo shkm::World::rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const
 {
     const btVector3 kFrom(from.x(), from.y(), from.z());
     const btVector3 kTo(to.x(), to.y(), to.z());
+    shkm::CollisionInfo collisionInfo;
     
     btCollisionWorld::ClosestRayResultCallback	closestResults(kFrom,kTo);
     closestResults.m_flags |= btTriangleRaycastCallback::kF_FilterBackfaces;
@@ -55,10 +56,17 @@ shkm::Position3d shkm::World::rayTest(const shkm::Position3d& from, const shkm::
     
     if (closestResults.hasHit())
     {
-        const btVector3 p = kFrom.lerp(kTo,closestResults.m_closestHitFraction);
-        return shkm::Position3d(p.x(), p.y(), p.z());
+        const btVector3& p = kFrom.lerp(kTo,closestResults.m_closestHitFraction);
+        const btVector3& kNormal = closestResults.m_hitNormalWorld;
+        
+        collisionInfo.Position = shkm::Position3d(p.x(), p.y(), p.z());
+        collisionInfo.Normal = shkm::Position3d(kNormal.x(), kNormal.y(), kNormal.z());
+        
+        return collisionInfo;
     }
     
     const auto kInfinity = std::numeric_limits<double>::infinity();
-    return shkm::Position3d(kInfinity, kInfinity, kInfinity);
+    collisionInfo.Position.x() = kInfinity;
+    
+    return collisionInfo;
 }

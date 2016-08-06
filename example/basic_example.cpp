@@ -29,10 +29,12 @@ int main(int argc, char** argv)
             const shkm::Position3d kFrom(0,0,-30);
             const shkm::Position3d kTo(i-320,j-240,0);
             auto kCollision = world.rayTest(kFrom, kTo);
-
-            if (std::isfinite(kCollision.x()))
+            const shkm::Position3d& kPosition = kCollision.Position;
+            const shkm::Position3d& kNormal = kCollision.Normal;
+            
+            if (std::isfinite(kPosition.x()))
             {
-                image.setAt(i, j, fj::NormalizedColor::WHITE);
+                image.setAt(i, j, fj::NormalizedColor( std::abs(kNormal.x()), std::abs(kNormal.y()), std::abs(kNormal.z())) );
             }
             else
             {

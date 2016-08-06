@@ -19,6 +19,15 @@ namespace shkm {
     class World;
 }
 
+
+namespace shkm {
+struct CollisionInfo
+{
+    shkm::Position3d Normal;
+    shkm::Position3d Position;
+};
+}
+
 class shkm::World
 {
 public:
@@ -41,7 +50,7 @@ public:
     
     void addCube();
     
-    shkm::Position3d rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const;
+    shkm::CollisionInfo rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const;
     
 private:
     std::unique_ptr<btCollisionConfiguration> m_collisionConfiguration;
