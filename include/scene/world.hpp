@@ -11,15 +11,12 @@
 
 #include <memory>
 #include <vector>
-#include <btBulletDynamicsCommon.h>
-#include <BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
-#include <BulletCollision/Gimpact/btGImpactShape.h>
+
 #include "type/position3d.hpp"
 
 namespace shkm {
     class World;
 }
-
 
 namespace shkm {
 struct CollisionInfo

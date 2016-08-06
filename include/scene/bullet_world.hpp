@@ -18,17 +18,9 @@ namespace shkm {
 
 class shkm::BulletWorld : public shkm::World
 {
+    class BulletWorldImpl;
 public:
-    BulletWorld()
-    : m_collisionConfiguration(new btDefaultCollisionConfiguration())
-    , m_dispatcher(new btCollisionDispatcher(m_collisionConfiguration.get()))
-    , m_broardphase(new btDbvtBroadphase())
-    , m_solver(new btSequentialImpulseConstraintSolver())
-    , m_dynamicsWorld(new btDiscreteDynamicsWorld(m_dispatcher.get(), m_broardphase.get(), m_solver.get(), m_collisionConfiguration.get()))
-    {
-        
-    }
-    
+    BulletWorld();
     ~BulletWorld() = default;
     
     void update()override;
@@ -38,16 +30,7 @@ public:
     shkm::CollisionInfo rayTest(const shkm::Position3d& from, const shkm::Position3d& to)const override;
     
 private:
-
-    std::unique_ptr<btCollisionConfiguration> m_collisionConfiguration;
-    std::unique_ptr<btCollisionDispatcher> m_dispatcher;
-    std::unique_ptr<btBroadphaseInterface> m_broardphase;
-    std::unique_ptr<btConstraintSolver> m_solver;
-    std::unique_ptr<btDynamicsWorld> m_dynamicsWorld;
-    
-    std::vector<std::unique_ptr<btCollisionShape>> m_collisionShapes;
-    std::vector<std::unique_ptr<btCollisionObject>> m_collisionObjects;
-    std::vector<std::unique_ptr<btMotionState>> m_motionStates;
+    std::shared_ptr<BulletWorldImpl> m_impl;
 };
 
 #endif /* bullet_world_hpp */
