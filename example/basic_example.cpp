@@ -7,8 +7,7 @@
 //
 
 #include <iostream>
-#include <jpeglib.h>
-#include "image/image.hpp"
+#include <image/JpegImage.hpp>
 #include "scene/world.hpp"
 
 int main(int argc, char** argv)
@@ -16,14 +15,14 @@ int main(int argc, char** argv)
     constexpr unsigned int kWidth = 640;
     constexpr unsigned int kHeight = 480;
     shkm::World world;
-    shkm::Image image;
+    fj::JpegImage image;
     
     world.addCube();
     world.update();
     
     image.initialize(kWidth, kHeight);
     
-    shkm::Image::Color color;
+    fj::NormalizedColor color;
     for (int i = 0; i < kWidth; i++){
         for (int j = 0; j < kHeight; j++)
         {
@@ -33,18 +32,13 @@ int main(int argc, char** argv)
 
             if (std::isfinite(kCollision.x()))
             {
-                color.R = 255;
-                color.G = 255;
-                color.B = 255;
+                image.setAt(i, j, fj::NormalizedColor::WHITE);
             }
             else
             {
-                color.R = 0;
-                color.G = 0;
-                color.B = 0;
+                image.setAt(i, j, fj::NormalizedColor::BLACK);
             }
-            
-            image.setColorAt(i, j, color);
+
         }
     }
     
