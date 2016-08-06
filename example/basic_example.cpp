@@ -8,15 +8,17 @@
 
 #include <iostream>
 #include <image/JpegImage.hpp>
+#include <image/BitmapImage.hpp>
 #include "scene/world.hpp"
+#include "scene/bullet_world.hpp"
 
 int main(int argc, char** argv)
 {
     constexpr unsigned int kWidth = 640;
     constexpr unsigned int kHeight = 480;
-    shkm::World world;
+    shkm::BulletWorld world;
     fj::JpegImage image;
-    
+
     world.addCube();
     world.update();
     
@@ -26,7 +28,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < kWidth; i++){
         for (int j = 0; j < kHeight; j++)
         {
-            const shkm::Position3d kFrom(0,0,-30);
+            const shkm::Position3d kFrom(0,0,-150);
             const shkm::Position3d kTo(i-320,j-240,0);
             auto kCollision = world.rayTest(kFrom, kTo);
             const shkm::Position3d& kPosition = kCollision.Position;
@@ -35,6 +37,8 @@ int main(int argc, char** argv)
             if (std::isfinite(kPosition.x()))
             {
                 image.setAt(i, j, fj::NormalizedColor( std::abs(kNormal.x()), std::abs(kNormal.y()), std::abs(kNormal.z())) );
+//                image.setAt(i, j, fj::NormalizedColor( std::abs(kPosition.x()), std::abs(kPosition.y()), std::abs(kPosition.z())) );
+//                image.setAt(i, j, fj::NormalizedColor::WHITE );
             }
             else
             {
@@ -44,7 +48,7 @@ int main(int argc, char** argv)
         }
     }
     
-    image.saveToFile( std::string("test.jpg") );
+    image.saveToFile( std::string("test.jpeg") );
     
     return EXIT_SUCCESS;
 }
