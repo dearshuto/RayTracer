@@ -1,5 +1,5 @@
 //
-//  position3d.hpp
+//  math.hpp
 //  RayTracer
 //
 //  Created by Shuto on 2016/08/03.
@@ -12,10 +12,11 @@
 #include <Eigen/Core>
 
 namespace shkm {
+    typedef Eigen::Vector3d Vector3;
     class Position3d;
 }
 
-class shkm::Position3d : public Eigen::Vector3d
+class shkm::Position3d : public Vector3
 {
 public:
     explicit Position3d()
@@ -31,6 +32,11 @@ public:
     {
         
     }
+    
+    /**
+     * 要素の中に無限大が含まれているか調べる
+     */
+    bool isInfinit()const;
 };
 
 #endif /* position3d_hpp */
