@@ -12,7 +12,7 @@
 #include <memory>
 #include <vector>
 
-#include "type/position3d.hpp"
+#include "type/math.hpp"
 
 namespace shkm {
     class World;
@@ -21,7 +21,7 @@ namespace shkm {
 namespace shkm {
 struct CollisionInfo
 {
-    shkm::Position3d Normal;
+    shkm::Vector3 Normal;
     shkm::Position3d Position;
 };
 }
