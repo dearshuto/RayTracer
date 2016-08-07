@@ -1,5 +1,5 @@
 //
-//  position3d.cpp
+//  math.cpp
 //  RayTracer
 //
 //  Created by Shuto on 2016/08/03.
