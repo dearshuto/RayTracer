@@ -9,3 +9,13 @@ target_link_libraries( basic_example
 	BulletCollision
 	LinearMath
 )
+
+add_executable(normal_renderer normal_renderer.cpp)
+target_link_libraries( normal_renderer
+	ray_tracer
+	jpeg
+	image
+	BulletDynamics
+	BulletCollision
+	LinearMath
+)
