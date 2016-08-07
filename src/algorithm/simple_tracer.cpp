@@ -8,7 +8,7 @@
 
 #include "algorithm/simple_tracer.hpp"
 
-fj::NormalizedColor fj::SimpleTracer::render(const unsigned int x, const unsigned int y, const shkm::World &world)const
+fj::NormalizedColor shkm::SimpleTracer::render(const shkm::Position3d& from, const shkm::Position3d& to, const shkm::World &world)const
 {
     return fj::NormalizedColor::BLACK;
 }

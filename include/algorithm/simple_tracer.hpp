@@ -11,17 +11,17 @@
 
 #include "algorithm/i_algorithm.h"
 
-namespace fj {
+namespace shkm {
     class SimpleTracer;
 }
 
-class fj::SimpleTracer : public shkm::IAlgorithm
+class shkm::SimpleTracer : public shkm::IAlgorithm
 {
 public:
     SimpleTracer() = default;
     ~SimpleTracer() = default;
     
-    fj::NormalizedColor render(const unsigned int x, const unsigned int y, const shkm::World& world)const override;
+    fj::NormalizedColor render(const shkm::Position3d& from, const shkm::Position3d& to, const shkm::World& world)const override;
 };
 
 #endif /* simple_tracer_hpp */

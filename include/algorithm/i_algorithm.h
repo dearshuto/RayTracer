@@ -13,6 +13,7 @@
 
 namespace shkm {
     class World;
+    class Position3d;
     class IAlgorithm;
 }
 
@@ -22,7 +23,7 @@ public:
     IAlgorithm() = default;
     virtual~IAlgorithm() = default;
     
-    virtual fj::NormalizedColor render(const unsigned int x, const unsigned int y, const shkm::World& world)const = 0;
+    virtual fj::NormalizedColor render(const shkm::Position3d& from, const shkm::Position3d& to, const shkm::World& world)const = 0;
 };
 
 #endif /* i_algorithm_h */
