@@ -13,9 +13,10 @@ include_directories(${CMAKE_SOURCE_DIR}/external/bullet/src)
 include_directories(${CMAKE_SOURCE_DIR}/external/eigen)
 include_directories(${CMAKE_SOURCE_DIR}/external/image/include)
 
-FILE(GLOB_RECURSE image_files
-	${CMAKE_SOURCE_DIR}/include/image/*.hpp
-	${CMAKE_SOURCE_DIR}/src/image/*.cpp
+FILE(GLOB_RECURSE algorithm_files
+	${CMAKE_SOURCE_DIR}/include/algorithm/*.hpp
+	${CMAKE_SOURCE_DIR}/include/algorithm/*.h
+	${CMAKE_SOURCE_DIR}/src/algorithm/*.cpp
 )
 
 FILE(GLOB_RECURSE scene_files
@@ -23,11 +24,11 @@ FILE(GLOB_RECURSE scene_files
 	${CMAKE_SOURCE_DIR}/src/scene/*.cpp
 )
 
-SOURCE_GROUP(image FILES ${image_files})
-SOURCE_GROUP(image FILES ${scene_files})
+SOURCE_GROUP(algorithm FILES ${algorithm_files})
+SOURCE_GROUP(scene FILES ${scene_files})
 
 add_library(ray_tracer STATIC
-	${image_files}
+	${algorithm_files}
 	${scene_files}
 )
 

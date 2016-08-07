@@ -1,5 +1,5 @@
 //
-//  basic_example.cpp
+//  normal_renderer.cpp
 //  RayTracer
 //
 //  Created by Shuto Shikama on 2016/08/02.
@@ -9,7 +9,7 @@
 #include <iostream>
 #include <image/JpegImage.hpp>
 #include <image/BitmapImage.hpp>
-#include "algorithm/simple_tracer.hpp"
+#include "algorithm/normal_renderer.hpp"
 #include "scene/world.hpp"
 #include "scene/bullet_world.hpp"
 
@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     fj::JpegImage image;
     image.initialize(kWidth, kHeight);
     
-    shkm::SimpleTracer algorithm;
+    shkm::NormalRenderer algorithm;
     
     fj::NormalizedColor color;
     for (int i = 0; i < kWidth; i++){
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
         }
     }
     
-    image.saveToFile( std::string("test.jpeg") );
+    image.saveToFile( std::string("normal_renderer.jpeg") );
     
     return EXIT_SUCCESS;
 }

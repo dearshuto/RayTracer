@@ -32,6 +32,8 @@ public:
     World() = default;
     ~World() = default;
     
+    static void setTestScene(shkm::World* world);
+    
     /**
      * シーンの変更を適用する。変更がなければ呼ぶ必要はない。
      */
