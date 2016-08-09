@@ -7,7 +7,7 @@
 //
 
 #include <limits>
-#include "type/position3d.hpp"
+#include "type/math.hpp"
 
 bool shkm::Position3d::isInfinit()const
 {

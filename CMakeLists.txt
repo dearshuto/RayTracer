@@ -24,12 +24,19 @@ FILE(GLOB_RECURSE scene_files
 	${CMAKE_SOURCE_DIR}/src/scene/*.cpp
 )
 
+FILE(GLOB_RECURSE type_files
+	${CMAKE_SOURCE_DIR}/include/type/*.hpp
+	${CMAKE_SOURCE_DIR}/src/type/*.cpp
+)
+
 SOURCE_GROUP(algorithm FILES ${algorithm_files})
 SOURCE_GROUP(scene FILES ${scene_files})
+SOURCE_GROUP(type FILES ${type_files})
 
 add_library(ray_tracer STATIC
 	${algorithm_files}
 	${scene_files}
+	${type_files}
 )
 
 add_subdirectory(external/bullet)
