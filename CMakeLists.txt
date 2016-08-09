@@ -10,21 +10,37 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/bullet/src)
-include_directories(${CMAKE_SOURCE_DIR}/external/jpeg)
+include_directories(${CMAKE_SOURCE_DIR}/external/eigen)
+include_directories(${CMAKE_SOURCE_DIR}/external/image/include)
 
-FILE(GLOB_RECURSE image_files
-	${CMAKE_SOURCE_DIR}/include/image/*.hpp
-	${CMAKE_SOURCE_DIR}/src/image/*.cpp
+FILE(GLOB_RECURSE algorithm_files
+	${CMAKE_SOURCE_DIR}/include/algorithm/*.hpp
+	${CMAKE_SOURCE_DIR}/include/algorithm/*.h
+	${CMAKE_SOURCE_DIR}/src/algorithm/*.cpp
 )
 
-SOURCE_GROUP(image FILES ${image_files})
+FILE(GLOB_RECURSE scene_files
+	${CMAKE_SOURCE_DIR}/include/scene/*.hpp
+	${CMAKE_SOURCE_DIR}/src/scene/*.cpp
+)
+
+FILE(GLOB_RECURSE type_files
+	${CMAKE_SOURCE_DIR}/include/type/*.hpp
+	${CMAKE_SOURCE_DIR}/src/type/*.cpp
+)
+
+SOURCE_GROUP(algorithm FILES ${algorithm_files})
+SOURCE_GROUP(scene FILES ${scene_files})
+SOURCE_GROUP(type FILES ${type_files})
 
 add_library(ray_tracer STATIC
-	${image_files}
+	${algorithm_files}
+	${scene_files}
+	${type_files}
 )
 
 add_subdirectory(external/bullet)
-add_subdirectory(external/jpeg)
+add_subdirectory(external/image)
 
 # ここからC++11を有効にする
 add_definitions("-Wall -std=c++11")
