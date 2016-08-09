@@ -12,7 +12,12 @@
 
 fj::NormalizedColor shkm::NormalRenderer::render(const shkm::Position3d &from, const shkm::Position3d &to, const shkm::World &worl)const
 {
-    const auto& kNormal = worl.rayTest(from, to).Normal;
+    const auto kCollision = worl.rayTest(from, to);
     
+    if (kCollision.Position.isInfinit()) {
+        return fj::NormalizedColor::BLACK;
+    }
+    
+    const auto& kNormal = kCollision.Normal;
     return fj::NormalizedColor( std::abs(kNormal.x()), std::abs(kNormal.y()), std::abs(kNormal.z()) );
 }
