@@ -2,4 +2,5 @@ build/*
 doc/*
 bin/*
 lib/*
+*.pyc
 .DS_Store
