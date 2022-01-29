@@ -2,5 +2,7 @@ build/*
 doc/*
 bin/*
 lib/*
+target/*
 *.pyc
 .DS_Store
+*.lock
