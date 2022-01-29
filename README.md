@@ -1,16 +1,15 @@
 # 自作レイトレーサ
 
-# How To Compile
+個人の学習用リポジトリです。
+レイトレーシングライブラリと、それを使って画像を生成するかんたんなコマンドラインツールのソースコードがおいてあります。  
+どちらも Rust で書かれてます。
 
-必要なもの
-* python（あればセッティングが楽）
-* git
-* cmake
+C++ 実装もおいてますが、メンテしてないので動きません。
 
-## pythonを使ったセッティング
-seyup.pyを叩けばOK
+# How To Build
 
-## gitとcmakeのコマンドを直接叩くセッティング
-> git submodule update --init --recursive で必要な依存ファイルを取得する
-> external/jpeg の中のconfigureをたたく  
-> cmakeを走らせる
+## 必要なもの
+cargo >= 1.58.0
+
+## ビルドコマンド
+> cargo  build --release
