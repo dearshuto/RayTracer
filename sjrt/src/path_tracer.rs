@@ -58,12 +58,7 @@ impl PathTracer {
                 let brdf = crate::brdf::Lambert::new();
                 let value = brdf.calculate(&material_info.normal, &direction, &new_direction);
                 let new_position = *mat_position + 0.1 * new_direction;
-                let result = self.cast_ray(
-                    scene,
-                    &new_position,
-                    &new_direction,
-                    depth + 1,
-                );
+                let result = self.cast_ray(scene, &new_position, &new_direction, depth + 1);
                 (result.0 * value, result.1 * value, result.2 * value)
             }
         } else {
@@ -73,53 +68,27 @@ impl PathTracer {
 }
 
 impl IRenderer for PathTracer {
-    fn render<TScene: IScene, TBuffer: crate::IBuffer>(
+    fn render<TScene: IScene>(
         &self,
         scene: &TScene,
-        buffer: &mut TBuffer,
-    ) {
-        let lower_left = Vector3f::new(-5.0, -5.0, 0.0);
-        let stride_width = 10.0 / (buffer.get_height() as f32);
-        let stride_height = 10.0 / (buffer.get_height() as f32);
-
-        for y in 0..buffer.get_height() {
-            for x in 0..buffer.get_height() {
-                let sampling_count = self._sampling_count;
-                let mut red = 0.0;
-                let mut blue = 0.0;
-                let mut green = 0.0;
-
-                let camera_position = Vector3f::new(0.0, 2.0, 5.0);
-                let local_target = lower_left
-                    + Vector3f::new(
-                        (x as f32) * stride_width,
-                        y as f32 * stride_height,
-                        0.0,
-                    );
-                let direction = local_target - camera_position;
-                for _i in 0..sampling_count {
-                    let color = self.cast_ray(
-                        scene,
-                        &camera_position,
-                        &direction,
-                        0, // depth
-                    );
-                    red += color.0;
-                    green += color.1;
-                    blue += color.2;
-                }
-                let red_result = red / (sampling_count as f32);
-                let green_result = green / (sampling_count as f32);
-                let blue_result = blue / (sampling_count as f32);
-                buffer.set_color(
-                    x,
-                    buffer.get_width() - y - 1,
-                    (255.0 * red_result) as u8,
-                    (255.0 * green_result) as u8,
-                    (255.0 * blue_result) as u8,
-                );
-            }
+        position: &Vector3f,
+        direction: &Vector3f,
+    ) -> (f32, f32, f32) {
+        let sampling_count = self._sampling_count;
+        let mut red = 0.0;
+        let mut blue = 0.0;
+        let mut green = 0.0;
+        for _i in 0..sampling_count {
+            let color = self.cast_ray(
+                scene, &position, &direction, 0, // depth
+            );
+            red += color.0;
+            green += color.1;
+            blue += color.2;
         }
+        let red_result = red / (sampling_count as f32);
+        let green_result = green / (sampling_count as f32);
+        let blue_result = blue / (sampling_count as f32);
+        (red_result, green_result, blue_result)
     }
 }
-
