@@ -13,7 +13,7 @@ impl IBidirectionalReflectanceDistributionFunction for Lambert {
         _in_direction: &Vector3f,
         out_direction: &Vector3f,
     ) -> f32 {
-        let dot_value = normal.to_nalgebra().dot(&out_direction.to_nalgebra());
+        let dot_value = normal.dot(&out_direction);
         let result = dot_value / std::f32::consts::PI;
         result
     }
