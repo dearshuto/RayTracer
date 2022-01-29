@@ -1,4 +1,3 @@
-use sjrt::IRenderer;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -22,7 +21,7 @@ fn main() {
     let mut buffer = sjrt::image::ImageBuffer::new(args.width, args.height);
     let path_tracer = sjrt::PathTracer::new(args.sampling_count);
     let scene = sjrt::RapierScene::new();
-    path_tracer.render(&scene, &mut buffer);
+    sjrt::System::new().execute(&scene, &mut buffer, &path_tracer);
 
     buffer.save("test.png");
 }
