@@ -26,5 +26,8 @@ pub use ray::Ray;
 mod vector;
 pub use vector::Vector3f;
 
+mod parallelize_system;
+pub use parallelize_system::ParallelizeSystem;
+
 mod rapier_scene;
 pub use rapier_scene::RapierScene;
