@@ -11,30 +11,41 @@ pub struct RapierScene {
 
 impl RapierScene {
     pub fn new() -> Self {
-        // 球
-        let rigid_body = RigidBodyBuilder::new_static()
-            .translation(vector![0.0, 1.0, 0.0])
-            .build();
-        let collider = ColliderBuilder::ball(0.5).build();
-
         // 床
         let floor_rigid_body = RigidBodyBuilder::new_static().build();
-        let floor_collier = ColliderBuilder::cuboid(2.5, 0.1, 2.5).build();
+        let floor_collier = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
 
         // 光源
         let light_body = RigidBodyBuilder::new_static()
-            .translation(vector![0.0, 2.0, 0.0])
+            .translation(vector![0.0, 5.0, 0.0])
             .build();
-        let light_clollider = ColliderBuilder::cuboid(0.5, 0.1, 0.5).build();
+        let light_clollider = ColliderBuilder::cuboid(1.0, 0.1, 1.0).build();
 
         let mut rigid_body_set = RigidBodySet::new();
         let mut collider_set = ColliderSet::new();
-        let handle = rigid_body_set.insert(rigid_body);
-        collider_set.insert_with_parent(collider, handle, &mut rigid_body_set);
         let handle = rigid_body_set.insert(floor_rigid_body);
         collider_set.insert_with_parent(floor_collier, handle, &mut rigid_body_set);
         let handle = rigid_body_set.insert(light_body);
         collider_set.insert_with_parent(light_clollider, handle, &mut rigid_body_set);
+
+        // 右の球
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.5, 1.0, 0.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::ball(0.5).build(), handle, &mut rigid_body_set);
+        // 左の球
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![-2.25, 3.0, -1.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::ball(1.0).build(), handle, &mut rigid_body_set);
+
+        // 左の壁
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![-5.0, 0.0, 0.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(), handle, &mut rigid_body_set);
+
+        // 右の壁
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![5.0, 0.0, 0.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(), handle, &mut rigid_body_set);
+
+        // 奥の壁
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.0, 0.0, -5.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::cuboid(100.0, 100.0, 0.5).build(), handle, &mut rigid_body_set);
 
         let island_manager = IslandManager::new();
         let mut query_pipeline = QueryPipeline::new();
@@ -46,9 +57,13 @@ impl RapierScene {
             _island_manager: island_manager,
             _query_pipeline: query_pipeline,
             _properties: vec![
-                Property::new(0.0, 0.0, 0.0),  // 球
                 Property::new(0.0, 0.0, 0.0),  // 床
-                Property::new(0.0, 0.0, 50.0), // 光源
+                Property::new(0.0, 0.0, 100.0), // 光源
+                Property::new(0.0, 0.0, 0.0),  // 右の球
+                Property::new(0.0, 0.0, 0.0),  // 左の球
+                Property::new(0.0, 0.0, 0.0),  // 左の壁
+                Property::new(0.0, 0.0, 0.0),  // 右の壁
+                Property::new(0.0, 0.0, 0.0),  // 奥の壁
             ],
         }
     }
