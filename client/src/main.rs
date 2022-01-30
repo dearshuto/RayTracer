@@ -13,6 +13,9 @@ struct Args {
 
     #[clap(short = 'y', long = "height", default_value_t = 128)]
     height: i32,
+
+    #[clap(short = 'j', long = "thread-count", default_value_t = 1)]
+    thread_count: i32,
 }
 
 fn main() {
@@ -21,7 +24,21 @@ fn main() {
     let mut buffer = sjrt::image::ImageBuffer::new(args.width, args.height);
     let path_tracer = sjrt::PathTracer::new(args.sampling_count);
     let scene = sjrt::RapierScene::new();
-    sjrt::System::new().execute(&scene, &mut buffer, &path_tracer);
+
+    if args.thread_count == 1 {
+        let start = std::time::Instant::now();
+        sjrt::System::new().execute(&scene, &mut buffer, &path_tracer);
+        let end = start.elapsed();
+
+        println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
+    }
+    else {
+        let start = std::time::Instant::now();
+        sjrt::ParallelizeSystem::new().execute(std::sync::Arc::new(scene), &mut buffer, std::sync::Arc::new(path_tracer));
+        let end = start.elapsed();
+
+        println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
+    }
 
     buffer.save("test.png");
 }

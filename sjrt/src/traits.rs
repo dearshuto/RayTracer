@@ -1,6 +1,6 @@
 use crate::{MaterialInfo, Vector3f};
 
-pub trait IRenderer {
+pub trait IRenderer : Sync {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
@@ -9,7 +9,7 @@ pub trait IRenderer {
     ) -> (f32, f32, f32);
 }
 
-pub trait IScene {
+pub trait IScene : Sync{
     fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo>;
 }
 
