@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.15.0", features = ["full"]}
+futures= "0.3.19"
 image = "0.23.14"
 rapier3d = { version = "0.11.1", features = [ "simd-stable" ] }
 nalgebra = "0.30.1"
