@@ -18,7 +18,10 @@ struct Args {
     thread_count: i32,
 
     #[clap(short = 'd', long = "depth-max", default_value_t = 50)]
-    depth_max: u16
+    depth_max: u16,
+
+    #[clap(short = 'o', long = "output")]
+    output_file_path: std::path::PathBuf,
 }
 
 fn main() {
@@ -43,5 +46,5 @@ fn main() {
         println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
     }
 
-    buffer.save("test.png");
+    buffer.save(args.output_file_path);
 }
