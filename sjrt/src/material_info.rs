@@ -1,5 +1,11 @@
 use crate::{Vector3f, Property};
 
+#[derive(Debug, Copy, Clone)]
+pub enum Brdf {
+    Lambert,
+    PerfectSpecularReflection,
+}
+
 pub struct MaterialInfo
 {
     pub normal: Vector3f,
@@ -14,7 +20,7 @@ impl MaterialInfo
         Self{
             normal,
             position,
-            property
+            property,
         }
     }
 }

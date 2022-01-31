@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::{IBidirectionalReflectanceDistributionFunction, IRenderer, IScene, Vector3f};
+use crate::{IBidirectionalReflectanceDistributionFunction, IRenderer, IScene, Vector3f, brdf::{Lambert, PerfectSpecularReflection}};
 
 pub struct PathTracer {
     _sampling_count: u16,
@@ -57,8 +57,13 @@ impl PathTracer {
                     random_direction
                 };
 
-                let brdf = crate::brdf::Lambert::new();
-                let value = brdf.calculate(&material_info.normal, &direction, &new_direction);
+                let value =  match material_info.property.brdf {
+                    crate::Brdf::Lambert => {
+                        Lambert::new().calculate(&material_info.normal, &direction, &new_direction)
+                    },
+                    crate::Brdf::PerfectSpecularReflection => PerfectSpecularReflection::new().calculate(&material_info.normal, &direction, &new_direction),
+                }; 
+
                 let new_position = *mat_position + 0.1 * new_direction;
                 let result = self.cast_ray(scene, &new_position, &new_direction, depth + 1);
                 (result.0 * value, result.1 * value, result.2 * value)

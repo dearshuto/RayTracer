@@ -1,4 +1,4 @@
-use crate::{IScene, MaterialInfo, Property, Vector3f};
+use crate::{IScene, MaterialInfo, Property, Vector3f, Brdf};
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
@@ -57,13 +57,13 @@ impl RapierScene {
             _island_manager: island_manager,
             _query_pipeline: query_pipeline,
             _properties: vec![
-                Property::new(0.0, 0.0, 0.0),  // 床
-                Property::new(0.0, 0.0, 100.0), // 光源
-                Property::new(0.0, 0.0, 0.0),  // 右の球
-                Property::new(0.0, 0.0, 0.0),  // 左の球
-                Property::new(0.0, 0.0, 0.0),  // 左の壁
-                Property::new(0.0, 0.0, 0.0),  // 右の壁
-                Property::new(0.0, 0.0, 0.0),  // 奥の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 床
+                Property::new(0.0, 0.0, 100.0, Brdf::Lambert), // 光源
+                Property::new(0.0, 0.0, 0.0, Brdf::PerfectSpecularReflection),  // 右の球
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 左の球
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 左の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 右の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 奥の壁
             ],
         }
     }
