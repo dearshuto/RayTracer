@@ -65,8 +65,9 @@ impl PathTracer {
                 }; 
 
                 let new_position = *mat_position + 0.1 * new_direction;
+                let albedo = material_info.property.albedo;
                 let result = self.cast_ray(scene, &new_position, &new_direction, depth + 1);
-                (result.0 * value, result.1 * value, result.2 * value)
+                (result.0 * value * albedo.x, result.1 * value * albedo.y, result.2 * value * albedo.z)
             }
         } else {
             (0.0, 0.0, 0.0)
