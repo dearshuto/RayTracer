@@ -29,10 +29,10 @@ impl RapierScene {
         collider_set.insert_with_parent(light_clollider, handle, &mut rigid_body_set);
 
         // 右の球
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.5, 1.0, 0.0]).build());
-        collider_set.insert_with_parent(ColliderBuilder::ball(0.5).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![1.5, 1.0, -1.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::ball(0.75).build(), handle, &mut rigid_body_set);
         // 左の球
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![-2.25, 3.0, -1.0]).build());
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![-2.25, 3.0, -1.5]).build());
         collider_set.insert_with_parent(ColliderBuilder::ball(1.0).build(), handle, &mut rigid_body_set);
 
         // 左の壁
@@ -47,6 +47,10 @@ impl RapierScene {
         let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.0, 0.0, -5.0]).build());
         collider_set.insert_with_parent(ColliderBuilder::cuboid(100.0, 100.0, 0.5).build(), handle, &mut rigid_body_set);
 
+        // 天井
+        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.0, 6.5, 0.0]).build());
+        collider_set.insert_with_parent(ColliderBuilder::cuboid(100.0, 0.5, 100.5).build(), handle, &mut rigid_body_set);
+
         let island_manager = IslandManager::new();
         let mut query_pipeline = QueryPipeline::new();
         query_pipeline.update(&island_manager, &rigid_body_set, &collider_set);
@@ -57,13 +61,14 @@ impl RapierScene {
             _island_manager: island_manager,
             _query_pipeline: query_pipeline,
             _properties: vec![
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 床
-                Property::new(0.0, 0.0, 100.0, Brdf::Lambert), // 光源
-                Property::new(0.0, 0.0, 0.0, Brdf::PerfectSpecularReflection),  // 右の球
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 左の球
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 左の壁
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 右の壁
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert),  // 奥の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)),  // 床
+                Property::new(0.0, 0.0, 100.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)), // 光源
+                Property::new(0.0, 0.0, 0.0, Brdf::PerfectSpecularReflection, Vector3f::new(1.0, 1.0, 1.0)),  // 右の球
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)),  // 左の球
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(0.6, 0.0, 0.0)),  // 左の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(0.0, 0.5, 0.0)),  // 右の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)),  // 奥の壁
+                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(0.0, 0.0, 0.7)),  // 天井
             ],
         }
     }
