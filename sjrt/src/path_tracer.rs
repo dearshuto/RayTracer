@@ -4,12 +4,14 @@ use crate::{IBidirectionalReflectanceDistributionFunction, IRenderer, IScene, Ve
 
 pub struct PathTracer {
     _sampling_count: u16,
+    _depth_max: u16,
 }
 
 impl PathTracer {
-    pub fn new(sampling_count: u16) -> Self {
+    pub fn new(sampling_count: u16, depth_max: u16) -> Self {
         Self {
             _sampling_count: sampling_count,
+            _depth_max: depth_max,
         }
     }
 
@@ -20,7 +22,7 @@ impl PathTracer {
         direction: &Vector3f,
         depth: u32,
     ) -> (f32, f32, f32) {
-        if 50 < depth {
+        if 50 < self._depth_max {
             return (0.0, 0.0, 0.0);
         }
 

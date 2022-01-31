@@ -16,13 +16,16 @@ struct Args {
 
     #[clap(short = 'j', long = "thread-count", default_value_t = 1)]
     thread_count: i32,
+
+    #[clap(short = 'd', long = "depth-max", default_value_t = 50)]
+    depth_max: u16
 }
 
 fn main() {
     let args = Args::parse();
 
     let mut buffer = sjrt::image::ImageBuffer::new(args.width, args.height);
-    let path_tracer = sjrt::PathTracer::new(args.sampling_count);
+    let path_tracer = sjrt::PathTracer::new(args.sampling_count, args.depth_max);
     let scene = sjrt::RapierScene::new();
 
     if args.thread_count == 1 {
