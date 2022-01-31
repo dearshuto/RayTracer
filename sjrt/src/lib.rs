@@ -11,6 +11,7 @@ pub mod brdf;
 
 mod material_info;
 pub use material_info::MaterialInfo;
+pub use material_info::Brdf;
 
 mod path_tracer;
 pub use path_tracer::PathTracer;
