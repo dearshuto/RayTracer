@@ -14,8 +14,11 @@ struct Args {
     #[clap(short = 'y', long = "height", default_value_t = 128)]
     height: i32,
 
-    #[clap(short = 'j', long = "thread-count", default_value_t = 1)]
-    thread_count: i32,
+    #[clap(long = "thread-count-x", default_value_t = 1)]
+    thread_count_x: u8,
+
+    #[clap(long = "thread-count-y", default_value_t = 1)]
+    thread_count_y: u8,
 
     #[clap(short = 'd', long = "depth-max", default_value_t = 50)]
     depth_max: u16,
@@ -31,7 +34,7 @@ fn main() {
     let path_tracer = sjrt::PathTracer::new(args.sampling_count, args.depth_max);
     let scene = sjrt::RapierScene::new();
 
-    if args.thread_count == 1 {
+    if args.thread_count_x == 1 && args.thread_count_y == 1 {
         let start = std::time::Instant::now();
         sjrt::System::new().execute(&scene, &mut buffer, &path_tracer);
         let end = start.elapsed();
@@ -40,7 +43,7 @@ fn main() {
     }
     else {
         let start = std::time::Instant::now();
-        sjrt::ParallelizeSystem::new().execute(std::sync::Arc::new(scene), &mut buffer, std::sync::Arc::new(path_tracer));
+        sjrt::ParallelizeSystem::new_with_thread(args.thread_count_x, args.thread_count_y).execute(std::sync::Arc::new(scene), &mut buffer, std::sync::Arc::new(path_tracer));
         let end = start.elapsed();
 
         println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);

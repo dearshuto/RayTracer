@@ -1,11 +1,21 @@
 use crate::{IBuffer, IRenderer, IScene, Vector3f};
 use std::ops::Range;
 
-pub struct ParallelizeSystem {}
+pub struct ParallelizeSystem {
+    thread_count_x: u8,
+    thread_count_y: u8,
+}
 
 impl ParallelizeSystem {
     pub fn new() -> Self {
-        Self {}
+        Self::new_with_thread(1, 1)
+    }
+
+    pub fn new_with_thread(x: u8, y: u8) -> Self {
+        Self{
+            thread_count_x: x,
+            thread_count_y: y
+        }
     }
 
     pub fn execute<TScene: IScene + std::marker::Send + 'static, TBuffer: IBuffer, TRenderer: IRenderer + std::marker::Send + 'static>(
@@ -17,63 +27,31 @@ impl ParallelizeSystem {
         let width = buffer.get_width();
         let height = buffer.get_height();
 
+        let width_count = self.thread_count_x as i32;
+        let height_count = self.thread_count_y as i32;
         let shared_scene = scene.clone();
         let shared_renderer = renderer.clone();
         let runtime = tokio::runtime::Runtime::new().unwrap();
         runtime.block_on(async {
-            // TODO: 動的配列で管理したい
-            let renderer0 = shared_renderer.clone();
-            let renderer1 = shared_renderer.clone();
-            let renderer2 = shared_renderer.clone();
-            let renderer3 = shared_renderer.clone();
-            let renderer4 = shared_renderer.clone();
-            let renderer5 = shared_renderer.clone();
-            let renderer6 = shared_renderer.clone();
-            let renderer7 = shared_renderer.clone();
+            let mut handles = Vec::new();
+            let partial_width = width / width_count;
+            let partial_height = height / height_count;
+            for w in 0..width_count {
+                for h in 0..height_count {
+                    let thread_renderer = shared_renderer.clone();
+                    let thread_scene = shared_scene.clone();
 
-            let scene0 = shared_scene.clone();
-            let scene1 = shared_scene.clone();
-            let scene2 = shared_scene.clone();
-            let scene3 = shared_scene.clone();
-            let scene4 = shared_scene.clone();
-            let scene5 = shared_scene.clone();
-            let scene6 = shared_scene.clone();
-            let scene7 = shared_scene.clone();
+                    let handle = tokio::task::spawn(async  move{
+                        Self::execute_impl(width, height, thread_scene, thread_renderer, w * partial_width..(w + 1) * partial_width, h *partial_height..(h+1) * partial_height)
+                    });
+                    handles.push(handle);
+                }
+            }
 
-            let handle0 = tokio::task::spawn(async  move{
-                Self::execute_impl(width, height, scene0, renderer0, 0..width/4, 0..height/2)
-            });
-            let handle1 = tokio::spawn(async move{
-                Self::execute_impl(width, height, scene1, renderer1, width/4..width/2, 0..height/2)
-            });
-            let handle2 = tokio::task::spawn(async  move{
-                Self::execute_impl(width, height, scene2, renderer2, width/2..3*width/4, 0..height/2)
-            });
-            let handle3 = tokio::spawn(async move{
-                Self::execute_impl(width, height, scene3, renderer3, 3*width/4..width, 0..height/2)
-            });
-            let handle4 = tokio::spawn(async move{
-                Self::execute_impl(width, height, scene4, renderer4, 0..width/4, height/2..height)
-            });
-            let handle5 = tokio::spawn(async move{
-                Self::execute_impl(width, height, scene5, renderer5, width/4..width/2, height/2..height)
-            });
-            let handle6 = tokio::task::spawn(async  move{
-                Self::execute_impl(width, height, scene6, renderer6, width/2..3*width/4, height/2..height)
-            });
-            let handle7 = tokio::spawn(async move{
-                Self::execute_impl(width, height, scene7, renderer7, 3*width/4..width, height/2..height)
-            });
-            let (result0, result1, result2, result3, result4, result5, result6, result7) = tokio::join!(handle0, handle1, handle2, handle3, handle4, handle5, handle6, handle7);
-
-            result0.unwrap().write(buffer);
-            result1.unwrap().write(buffer);
-            result2.unwrap().write(buffer);
-            result3.unwrap().write(buffer);
-            result4.unwrap().write(buffer);
-            result5.unwrap().write(buffer);
-            result6.unwrap().write(buffer);
-            result7.unwrap().write(buffer);
+            let results = futures::future::join_all(handles).await;
+            for result in results {
+                result.unwrap().write(buffer);
+            }
         });
     }
 
