@@ -1,4 +1,4 @@
-use crate::{IScene, MaterialInfo, Property, Vector3f, Brdf};
+use crate::{IScene, MaterialInfo, Property, Vector3f};
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
@@ -61,14 +61,14 @@ impl RapierScene {
             _island_manager: island_manager,
             _query_pipeline: query_pipeline,
             _properties: vec![
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)),  // 床
-                Property::new(0.0, 0.0, 100.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)), // 光源
-                Property::new(0.0, 0.0, 0.0, Brdf::PerfectSpecularReflection, Vector3f::new(1.0, 1.0, 1.0)),  // 右の球
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)),  // 左の球
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(0.6, 0.0, 0.0)),  // 左の壁
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(0.0, 0.5, 0.0)),  // 右の壁
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(1.0, 1.0, 1.0)),  // 奥の壁
-                Property::new(0.0, 0.0, 0.0, Brdf::Lambert, Vector3f::new(0.0, 0.0, 0.7)),  // 天井
+                std::default::Default::default(),  // 床
+                Property{ emission: 100.0, albedo: Vector3f::new(1.0, 1.0, 1.0), ..std::default::Default::default()}, // 光源
+                Property{ metaric: 0.95, ..std::default::Default::default()},  // 右の球
+                Property{ metaric: 0.2, ..std::default::Default::default()},  // 左の球
+                Property{ albedo: Vector3f::new(0.6, 0.0, 0.0), ..std::default::Default::default()},  // 左の壁
+                Property{ albedo: Vector3f::new(0.0, 0.5, 0.0), ..std::default::Default::default()},  // 右の壁
+                std::default::Default::default(),  // 奥の壁
+                Property{ albedo: Vector3f::new(0.0, 0.0, 0.7), ..std::default::Default::default()},  // 天井
             ],
         }
     }
