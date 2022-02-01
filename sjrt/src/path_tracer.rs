@@ -57,12 +57,14 @@ impl PathTracer {
                     random_direction
                 };
 
-                let value =  match material_info.property.brdf {
-                    crate::Brdf::Lambert => {
-                        Lambert::new().calculate(&material_info.normal, &direction, &new_direction)
-                    },
-                    crate::Brdf::PerfectSpecularReflection => PerfectSpecularReflection::new().calculate(&material_info.normal, &direction, &new_direction),
-                }; 
+                // 鏡面反射か、拡散反射かを確立で切り替える
+                let reflect_rate = rng.gen_range(0.0..1.0);
+                let value = if material_info.property.metaric < reflect_rate {
+                    Lambert::new().calculate(&material_info.normal, &direction, &new_direction)
+                }
+                else {
+                    PerfectSpecularReflection::new().calculate(&material_info.normal, &direction, &new_direction)
+                };
 
                 let new_position = *mat_position + 0.1 * new_direction;
                 let albedo = material_info.property.albedo;
