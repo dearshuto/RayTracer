@@ -9,6 +9,9 @@ pub use bidirectional_reflectance_distribution_function::IBidirectionalReflectan
 
 pub mod brdf;
 
+mod default_sampling_estimation;
+pub use default_sampling_estimation::DefaultSamplingEstimation;
+
 mod material_info;
 pub use material_info::MaterialInfo;
 pub use material_info::Brdf;
@@ -17,6 +20,9 @@ mod path_tracer;
 pub use path_tracer::PathTracer;
 
 pub mod image;
+
+mod nee;
+pub use nee::NextEventEstimation;
 
 mod property;
 pub use property::Property;
