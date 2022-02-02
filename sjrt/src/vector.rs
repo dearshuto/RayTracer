@@ -33,6 +33,10 @@ impl Vector3f
 
     }
 
+    pub fn norm(&self) -> f32 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
     fn to_nalgebra(&self) -> nalgebra::Vector3<f32> {
         nalgebra::Vector3::new(self.x, self.y, self.z)
     }

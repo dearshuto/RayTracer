@@ -1,4 +1,4 @@
-use crate::{IScene, MaterialInfo, Property, Vector3f};
+use crate::{IScene, MaterialInfo, Property, Vector3f, traits::EnumerateLightResult};
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
@@ -7,6 +7,7 @@ pub struct RapierScene {
     _island_manager: IslandManager,
     _query_pipeline: QueryPipeline,
     _properties: Vec<Property>,
+    _emission_object_indices: Vec<i32>,
 }
 
 impl RapierScene {
@@ -62,14 +63,15 @@ impl RapierScene {
             _query_pipeline: query_pipeline,
             _properties: vec![
                 std::default::Default::default(),  // 床
-                Property{ emission: 100.0, albedo: Vector3f::new(1.0, 1.0, 1.0), ..std::default::Default::default()}, // 光源
+                Property{ emission: 1000.0, albedo: Vector3f::new(1.0, 1.0, 1.0), ..std::default::Default::default()}, // 光源
                 Property{ metaric: 0.95, ..std::default::Default::default()},  // 右の球
-                Property{ metaric: 0.2, ..std::default::Default::default()},  // 左の球
+                Property{ metaric: 0.01, ..std::default::Default::default()},  // 左の球
                 Property{ albedo: Vector3f::new(0.6, 0.0, 0.0), ..std::default::Default::default()},  // 左の壁
                 Property{ albedo: Vector3f::new(0.0, 0.5, 0.0), ..std::default::Default::default()},  // 右の壁
                 std::default::Default::default(),  // 奥の壁
                 Property{ albedo: Vector3f::new(0.0, 0.0, 0.7), ..std::default::Default::default()},  // 天井
             ],
+            _emission_object_indices: vec![1],
         }
     }
 }
@@ -111,5 +113,17 @@ impl IScene for RapierScene {
         } else {
             None
         }
+    }
+
+    fn enumerate_related_lights(&self, _position: &Vector3f) -> EnumerateLightResult {
+        let mut results = Vec::new();
+        for index in &self._emission_object_indices {
+            if let Some((_, handle)) = self._collider_set.get_unknown_gen(*index as u32) {
+                let collider = self._collider_set.get(handle).unwrap();
+                let light_position = Vector3f::new(collider.translation()[0], collider.translation()[1], collider.translation()[2]);
+                results.push(light_position);
+            }
+        }
+        EnumerateLightResult{ centers: results }
     }
 }

@@ -1,17 +1,18 @@
 use rand::Rng;
-
-use crate::{IBidirectionalReflectanceDistributionFunction, IRenderer, IScene, Vector3f, brdf::{Lambert, PerfectSpecularReflection}};
+use crate::{IBidirectionalReflectanceDistributionFunction, IRenderer, IScene, Vector3f, brdf::{Lambert, PerfectSpecularReflection}, NextEventEstimation, DefaultSamplingEstimation};
 
 pub struct PathTracer {
     _sampling_count: u16,
     _depth_max: u16,
+    _is_nee_enabled: bool,
 }
 
 impl PathTracer {
-    pub fn new(sampling_count: u16, depth_max: u16) -> Self {
+    pub fn new(sampling_count: u16, depth_max: u16, is_nee_enabled: bool) -> Self {
         Self {
             _sampling_count: sampling_count,
             _depth_max: depth_max,
+            _is_nee_enabled: is_nee_enabled
         }
     }
 
@@ -21,9 +22,10 @@ impl PathTracer {
         position: &Vector3f,
         direction: &Vector3f,
         depth: u32,
-    ) -> (f32, f32, f32) {
-        if 50 < self._depth_max {
-            return (0.0, 0.0, 0.0);
+    ) -> (Vector3f, Option<Vector3f>) // (色、位置)
+    {
+        if self._depth_max < depth as u16 {
+            return ( Vector3f::new(0.0, 0.0, 0.0), None)
         }
 
         let to = Vector3f::new(
@@ -35,44 +37,48 @@ impl PathTracer {
             let _mat_normal = &material_info.normal;
             let mat_position = &material_info.position;
             if 0.0 < material_info.property.emission {
-                (
-                    material_info.property.emission,
-                    material_info.property.emission,
-                    material_info.property.emission,
-                )
+                let emission = Vector3f::new(material_info.property.emission, material_info.property.emission, material_info.property.emission);
+                (emission, Some(*mat_position))
             } else {
-                let mut rng = rand::thread_rng();
-                let x: f32 = rng.gen_range(-1.0..1.0);
-                let y: f32 = rng.gen_range(-1.0..1.0);
-                let z: f32 = rng.gen_range(-1.0..1.0);
-
-                let random_direction = Vector3f::new(x, y, z).normalize();
-                let dot = random_direction.dot(&material_info.normal);
-
-                let new_direction = if dot < 0.0 {
-                    let result =
-                        random_direction + 2.0 * dot.abs() * material_info.normal;
-                    result
+                let direction_candidates = if self._is_nee_enabled {
+                    NextEventEstimation::new().estimate(&material_info.position, &material_info.normal, scene)
                 } else {
-                    random_direction
+                    DefaultSamplingEstimation::new().estimate(&material_info.position, &material_info.normal, scene)
                 };
 
                 // 鏡面反射か、拡散反射かを確立で切り替える
-                let reflect_rate = rng.gen_range(0.0..1.0);
-                let value = if material_info.property.metaric < reflect_rate {
-                    Lambert::new().calculate(&material_info.normal, &direction, &new_direction)
-                }
-                else {
-                    PerfectSpecularReflection::new().calculate(&material_info.normal, &direction, &new_direction)
-                };
+                let mut rng = rand::thread_rng();
+                let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
+                for direction_candidate in &direction_candidates {
+                    let reflect_rate = rng.gen_range(0.0..1.0);
+                    let value = if material_info.property.metaric < reflect_rate {
+                        Lambert::new().calculate(&material_info.normal, &direction, &direction_candidate)
+                    }
+                    else {
+                        PerfectSpecularReflection::new().calculate(&material_info.normal, &direction, &direction_candidate)
+                    };
 
-                let new_position = *mat_position + 0.1 * new_direction;
-                let albedo = material_info.property.albedo;
-                let result = self.cast_ray(scene, &new_position, &new_direction, depth + 1);
-                (result.0 * value * albedo.x, result.1 * value * albedo.y, result.2 * value * albedo.z)
+                    let new_position = *mat_position + 0.1 * *direction_candidate;
+                    let albedo = material_info.property.albedo;
+                    let (result, hit_position_opt) = self.cast_ray(scene, &new_position, &direction_candidate, depth + 1);
+
+                    let distance = if let Some(hit_position) = hit_position_opt {
+                        let diff = hit_position - *mat_position;
+                        diff.norm()
+                    } else {
+                        1.0
+                    };
+
+                    let ratio = direction_candidates.len() as f32;
+                    red += (result.x * value * albedo.x / ratio) / (distance * distance);
+                    green += (result.y * value * albedo.y / ratio) / (distance * distance);
+                    blue += (result.z * value * albedo.z / ratio) / (distance * distance);
+                }
+
+                (Vector3f::new(red, green, blue), Some(material_info.position))
             }
         } else {
-            (0.0, 0.0, 0.0)
+            (Vector3f::new(0.0, 0.0, 0.0), None)
         }
     }
 }
@@ -89,12 +95,12 @@ impl IRenderer for PathTracer {
         let mut blue = 0.0;
         let mut green = 0.0;
         for _i in 0..sampling_count {
-            let color = self.cast_ray(
+            let (color, _) = self.cast_ray(
                 scene, &position, &direction, 0, // depth
             );
-            red += color.0;
-            green += color.1;
-            blue += color.2;
+            red += color.x;
+            green += color.y;
+            blue += color.z;
         }
         let red_result = red / (sampling_count as f32);
         let green_result = green / (sampling_count as f32);

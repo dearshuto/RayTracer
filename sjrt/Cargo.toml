@@ -12,3 +12,4 @@ image = "0.23.14"
 rapier3d = { version = "0.11.1", features = [ "simd-stable" ] }
 nalgebra = "0.30.1"
 rand = "0.8.4"
+rand_distr = "0.4.3"

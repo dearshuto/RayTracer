@@ -23,7 +23,10 @@ struct Args {
     #[clap(short = 'd', long = "depth-max", default_value_t = 50)]
     depth_max: u16,
 
-    #[clap(short = 'o', long = "output")]
+    #[clap(long = "enable-nee")]
+    is_nee_enabled: bool,
+
+    #[clap(short = 'o', long = "output", default_value = "test.png")]
     output_file_path: std::path::PathBuf,
 }
 
@@ -31,7 +34,7 @@ fn main() {
     let args = Args::parse();
 
     let mut buffer = sjrt::image::ImageBuffer::new(args.width, args.height);
-    let path_tracer = sjrt::PathTracer::new(args.sampling_count, args.depth_max);
+    let path_tracer = sjrt::PathTracer::new(args.sampling_count, args.depth_max, args.is_nee_enabled);
     let scene = sjrt::RapierScene::new();
 
     if args.thread_count_x == 1 && args.thread_count_y == 1 {
