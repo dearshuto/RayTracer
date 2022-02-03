@@ -21,6 +21,21 @@ impl ImageBuffer
     pub fn save<TPath: std::convert::AsRef<std::path::Path>>(&self, path: TPath) {
         self._image_buffer.save(path).unwrap();
     }
+
+    pub fn get_red(&self, x: i32, y: i32) -> u8 {
+        let pixel = self._image_buffer.get_pixel(x as u32, y as u32);
+        pixel[0]
+    }
+
+    pub fn get_green(&self, x: i32, y: i32) -> u8 {
+        let pixel = self._image_buffer.get_pixel(x as u32, y as u32);
+        pixel[1]
+    }
+
+    pub fn get_blue(&self, x: i32, y: i32) -> u8 {
+        let pixel = self._image_buffer.get_pixel(x as u32, y as u32);
+        pixel[2]
+    }
 }
 
 impl IBuffer for ImageBuffer
