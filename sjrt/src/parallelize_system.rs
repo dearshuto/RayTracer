@@ -12,13 +12,17 @@ impl ParallelizeSystem {
     }
 
     pub fn new_with_thread(x: u8, y: u8) -> Self {
-        Self{
+        Self {
             thread_count_x: x,
-            thread_count_y: y
+            thread_count_y: y,
         }
     }
 
-    pub fn execute<TScene: IScene + std::marker::Send + 'static, TBuffer: IBuffer, TRenderer: IRenderer + std::marker::Send + 'static>(
+    pub async fn execute<
+        TScene: IScene + std::marker::Send + 'static,
+        TBuffer: IBuffer,
+        TRenderer: IRenderer + std::marker::Send + 'static,
+    >(
         &self,
         scene: std::sync::Arc<TScene>,
         buffer: &mut TBuffer,
@@ -29,30 +33,32 @@ impl ParallelizeSystem {
 
         let width_count = self.thread_count_x as i32;
         let height_count = self.thread_count_y as i32;
-        let shared_scene = scene.clone();
-        let shared_renderer = renderer.clone();
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        runtime.block_on(async {
-            let mut handles = Vec::new();
-            let partial_width = width / width_count;
-            let partial_height = height / height_count;
-            for w in 0..width_count {
-                for h in 0..height_count {
-                    let thread_renderer = shared_renderer.clone();
-                    let thread_scene = shared_scene.clone();
+        let mut handles = Vec::new();
+        let partial_width = width / width_count;
+        let partial_height = height / height_count;
+        for w in 0..width_count {
+            for h in 0..height_count {
+                let thread_renderer = renderer.clone();
+                let thread_scene = scene.clone();
 
-                    let handle = tokio::task::spawn(async  move{
-                        Self::execute_impl(width, height, thread_scene, thread_renderer, w * partial_width..(w + 1) * partial_width, h *partial_height..(h+1) * partial_height)
-                    });
-                    handles.push(handle);
-                }
+                let handle = tokio::task::spawn(async move {
+                    Self::execute_impl(
+                        width,
+                        height,
+                        thread_scene,
+                        thread_renderer,
+                        w * partial_width..(w + 1) * partial_width,
+                        h * partial_height..(h + 1) * partial_height,
+                    )
+                });
+                handles.push(handle);
             }
+        }
 
-            let results = futures::future::join_all(handles).await;
-            for result in results {
-                result.unwrap().write(buffer);
-            }
-        });
+        let results = futures::future::join_all(handles).await;
+        for result in results {
+            result.unwrap().write(buffer);
+        }
     }
 
     fn execute_impl<TScene: IScene, TRenderer: IRenderer>(
@@ -90,8 +96,7 @@ impl ParallelizeSystem {
     }
 }
 
-struct ImageView
-{
+struct ImageView {
     buffer: Vec<image::Rgb<u8>>,
     width_range: Range<i32>,
     height_range: Range<i32>,
@@ -103,7 +108,7 @@ impl ImageView {
         Self {
             buffer: vec![image::Rgb([0, 0, 0]); size],
             width_range,
-            height_range
+            height_range,
         }
     }
 
@@ -119,7 +124,7 @@ impl ImageView {
         for index in 0..self.buffer.len() {
             let (x, y) = self.to_position(index);
             let data = self.buffer[index];
-            buffer.set_color(x, buffer.get_height() -  y - 1, data[0], data[1], data[2]);
+            buffer.set_color(x, buffer.get_height() - y - 1, data[0], data[1], data[2]);
         }
     }
 
@@ -132,8 +137,11 @@ impl ImageView {
 
     fn to_position(&self, local_index: usize) -> (i32, i32) {
         let local_width = self.width_range.end - self.width_range.start;
-        let local_y  = (local_index / (local_width as usize)) as i32;
+        let local_y = (local_index / (local_width as usize)) as i32;
         let local_x = (local_index % (local_width as usize)) as i32;
-        (local_x + self.width_range.start, local_y + self.height_range.start)
+        (
+            local_x + self.width_range.start,
+            local_y + self.height_range.start,
+        )
     }
 }
