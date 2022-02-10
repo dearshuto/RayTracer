@@ -1,26 +1,22 @@
 use tonic::Response;
 
 use super::detail::{self, renderer_server::Renderer};
-use crate::{IBuffer, IRenderer, IScene};
+use crate::{IBuffer, IScene};
 use std::sync::Arc;
 
-pub struct RenderingServer<TRenderer, TScene>
+pub struct RenderingServer<TScene>
 where
-    TRenderer: IRenderer + std::marker::Send + 'static,
     TScene: IScene + std::marker::Send + 'static,
 {
-    _renderer: Arc<TRenderer>,
     scene: Arc<TScene>,
 }
 
-impl<TRenderer, TScene> RenderingServer<TRenderer, TScene>
+impl<TScene> RenderingServer<TScene>
 where
-    TRenderer: IRenderer + std::marker::Send + 'static,
     TScene: IScene + std::marker::Send + 'static,
 {
-    pub fn new(renderer: Arc<TRenderer>, scene: Arc<TScene>) -> Self {
+    pub fn new(scene: Arc<TScene>) -> Self {
         Self {
-            _renderer: renderer.clone(),
             scene: scene.clone(),
         }
     }
@@ -34,9 +30,8 @@ where
 }
 
 #[tonic::async_trait]
-impl<TRenderer, TScene> Renderer for RenderingServer<TRenderer, TScene>
+impl<TScene> Renderer for RenderingServer<TScene>
 where
-    TRenderer: IRenderer + std::marker::Send + 'static,
     TScene: IScene + std::marker::Send + 'static,
 {
     async fn render(
@@ -46,7 +41,10 @@ where
         let info = request.into_inner();
         let width = info.width;
         let height = info.height;
+        let thread_count_x = info.thread_count_x as u8;
+        let thread_count_y = info.thread_count_y as u8;
         let sampling_count = info.sampling_count as u16;
+
         let depth_count_max = 16;
         let is_nee_enabled = false;
         println!("Size: {}x{}", width, height);
@@ -56,7 +54,9 @@ where
 
         let renderer = crate::PathTracer::new(sampling_count, depth_count_max, is_nee_enabled);
         let mut buffer = Buffer::new(width, height);
-        crate::System::new().execute(self.scene.as_ref(), &mut buffer, &renderer);
+        crate::ParallelizeSystem::new_with_thread(thread_count_x, thread_count_y)
+            .execute(self.scene.clone(), &mut buffer, Arc::new(renderer))
+            .await;
 
         let request = detail::ImageView {
             width_start: 0,

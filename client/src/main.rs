@@ -51,6 +51,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             width: args.width,
             height: args.height,
             sampling_count: args.sampling_count,
+            thread_count_x: args.thread_count_x as i32,
+            thread_count_y: args.thread_count_y as i32,
         };
         let addr = format!("{}:{}", args.ip_address, args.port)
             .parse()
@@ -87,11 +89,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
     } else {
         let start = std::time::Instant::now();
-        sjrt::ParallelizeSystem::new_with_thread(args.thread_count_x, args.thread_count_y).execute(
-            std::sync::Arc::new(scene),
-            &mut buffer,
-            std::sync::Arc::new(path_tracer),
-        );
+        sjrt::ParallelizeSystem::new_with_thread(args.thread_count_x, args.thread_count_y)
+            .execute(
+                std::sync::Arc::new(scene),
+                &mut buffer,
+                std::sync::Arc::new(path_tracer),
+            )
+            .await;
         let end = start.elapsed();
 
         println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
