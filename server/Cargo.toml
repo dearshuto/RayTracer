@@ -1,11 +1,12 @@
 [package]
-name = "ray_tracer"
+name = "sjrt_server"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sjrt = { path = "../sjrt"}
-clap = { version = "3.0.12", features = ["derive"] }
+sjrt = { path = "../sjrt" }
 tokio = { version = "1.15.0", features = ["full"]}
+clap = { version = "3.0.12", features = ["derive"] }
+tonic = "0.6.2"
