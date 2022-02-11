@@ -36,8 +36,8 @@ impl PathTracer {
         if let Some(material_info) = scene.cast_ray(position, &to) {
             let _mat_normal = &material_info.normal;
             let mat_position = &material_info.position;
-            if 0.0 < material_info.property.emission {
-                let emission = Vector3f::new(material_info.property.emission, material_info.property.emission, material_info.property.emission);
+            if 0.0 < material_info.property.emission.x ||  0.0 < material_info.property.emission.y || 0.0 < material_info.property.emission.z {
+                let emission = material_info.property.emission;
                 (emission, Some(*mat_position))
             } else {
                 let direction_candidates = if self._is_nee_enabled {

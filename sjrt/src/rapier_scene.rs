@@ -63,13 +63,13 @@ impl RapierScene {
             _query_pipeline: query_pipeline,
             _properties: vec![
                 std::default::Default::default(),  // 床
-                Property{ emission: 1000.0, albedo: Vector3f::new(1.0, 1.0, 1.0), ..std::default::Default::default()}, // 光源
+                Property{ emission: Vector3f::new(500.0, 500.0, 500.0), albedo: Vector3f::new(1.0, 1.0, 1.0), ..std::default::Default::default()}, // 光源
                 Property{ metaric: 0.95, ..std::default::Default::default()},  // 右の球
                 Property{ metaric: 0.01, ..std::default::Default::default()},  // 左の球
-                Property{ albedo: Vector3f::new(0.6, 0.0, 0.0), ..std::default::Default::default()},  // 左の壁
-                Property{ albedo: Vector3f::new(0.0, 0.5, 0.0), ..std::default::Default::default()},  // 右の壁
+                Property{ emission: Vector3f::new(10.0, 0.0, 0.0), albedo: Vector3f::new(0.6, 0.0, 0.0), ..std::default::Default::default()},  // 左の壁
+                Property{ emission: Vector3f::new(0.0, 10.0, 0.0), albedo: Vector3f::new(0.0, 0.5, 0.0), ..std::default::Default::default()},  // 右の壁
                 std::default::Default::default(),  // 奥の壁
-                Property{ albedo: Vector3f::new(0.0, 0.0, 0.7), ..std::default::Default::default()},  // 天井
+                Property{ emission: Vector3f::new(0.0, 0.0, 10.0), albedo: Vector3f::new(0.0, 0.0, 0.7), ..std::default::Default::default()},  // 天井
             ],
             _emission_object_indices: vec![1],
         }
