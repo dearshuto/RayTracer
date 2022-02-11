@@ -16,5 +16,13 @@ rand_distr = "0.4.3"
 tonic = "0.6.2"
 prost = "*"
 
+serde_derive = "1.0"
+serde = "1.0"
+serde-xml-rs = "*"
+
 [build-dependencies]
 tonic-build = "0.6.2"
+
+
+[dev-dependencies]
+clap = { version = "3.0.12", features = ["derive"] }
