@@ -1,4 +1,4 @@
-use crate::{IScene, MaterialInfo, Property, Vector3f, traits::EnumerateLightResult};
+use crate::{IScene, MaterialInfo, Property, Vector3f, traits::EnumerateLightResult, scene::Scene};
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
@@ -11,6 +11,46 @@ pub struct RapierScene {
 }
 
 impl RapierScene {
+    pub fn new_from_scene(scene: &Scene) -> Self {
+        let mut rigid_body_set = RigidBodySet::new();
+        let mut collider_set = ColliderSet::new();
+        let mut properties = Vec::new();
+        for index in 0..scene.primitives.len() {
+            let transform = &scene.transforms[index];
+            let rigid_body = RigidBodyBuilder::new_static()
+                .translation(vector![transform.translation.x, transform.translation.y, transform.translation.z])
+                .build();
+            let handle = rigid_body_set.insert(rigid_body);
+
+            let collider = match &scene.primitives[index] {
+                crate::scene::primitive::Primitive::Sphere(data) =>
+                    ColliderBuilder::ball(data.radius).build(),
+                crate::scene::primitive::Primitive::Box(_) => todo!(),
+            };
+            collider_set.insert_with_parent(collider, handle, &mut rigid_body_set);
+
+            let material = &scene.materials[index];
+            let property =  Property {
+                emission: material.emission.x,
+                albedo: Vector3f::new(material.albedo.x, material.albedo.y, material.albedo.z),
+                ..std::default::Default::default()
+            };
+            properties.push(property);
+        }
+
+        let island_manager = IslandManager::new();
+        let mut query_pipeline = QueryPipeline::new();
+        query_pipeline.update(&island_manager, &rigid_body_set, &collider_set);
+        Self {
+            _rigid_body_set: rigid_body_set,
+            _collider_set: collider_set,
+            _island_manager: island_manager,
+            _query_pipeline: query_pipeline,
+            _properties: properties,
+            _emission_object_indices: vec![0, 1],
+        }
+    }
+
     pub fn new() -> Self {
         // 床
         let floor_rigid_body = RigidBodyBuilder::new_static().build();

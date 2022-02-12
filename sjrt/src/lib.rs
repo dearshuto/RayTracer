@@ -48,3 +48,5 @@ pub use parallelize_system::ParallelizeSystem;
 
 mod rapier_scene;
 pub use rapier_scene::RapierScene;
+
+pub mod scene;
