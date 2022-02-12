@@ -17,6 +17,8 @@ pub trait IScene : Sync{
     fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo>;
 
     fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult;
+
+    fn find_background_color(&self, position: &Vector3f, direction: &Vector3f) -> Vector3f;
 }
 
 pub trait IBuffer {

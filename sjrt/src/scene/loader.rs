@@ -31,6 +31,7 @@ impl Loader {
             primitives,
             transforms,
             materials,
+            sky: scene.sky.to_scene_data(),
         }
     }
 }
@@ -39,7 +40,7 @@ mod detail {
     use serde_derive::Deserialize;
 
     use crate::{
-        scene::scene::{Material, Transform},
+        scene::scene::{Material, Sky, Transform},
         Vector3f,
     };
 
@@ -47,8 +48,35 @@ mod detail {
     pub struct Scene {
         pub name: String,
 
+        #[serde(default = "SkyData::default")]
+        pub sky: SkyData,
+
         #[serde(rename = "sphere")]
         pub spheres: Vec<SphereData>,
+    }
+
+    #[derive(Deserialize, Debug, Default)]
+    pub struct SkyData {
+        pub lower_color: [f32; 3],
+
+        pub upper_color: [f32; 3],
+    }
+
+    impl SkyData {
+        pub fn to_scene_data(&self) -> Sky {
+            Sky {
+                lower_color: Vector3f::new(
+                    self.lower_color[0],
+                    self.lower_color[1],
+                    self.lower_color[2],
+                ),
+                upper_color: Vector3f::new(
+                    self.upper_color[0],
+                    self.upper_color[1],
+                    self.upper_color[2],
+                ),
+            }
+        }
     }
 
     #[derive(Deserialize, Debug, Default)]
