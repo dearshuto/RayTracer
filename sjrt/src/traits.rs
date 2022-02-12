@@ -1,6 +1,6 @@
 use crate::{MaterialInfo, Vector3f};
 
-pub trait IRenderer : Sync {
+pub trait IRenderer: Sync {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
@@ -13,7 +13,7 @@ pub struct EnumerateLightResult {
     pub centers: Vec<Vector3f>,
 }
 
-pub trait IScene : Sync{
+pub trait IScene: Sync {
     fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo>;
 
     fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult;
