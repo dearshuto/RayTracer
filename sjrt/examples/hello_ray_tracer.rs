@@ -12,6 +12,15 @@ pub fn main()
     let scene_xml = r##"
 <?xml version="1.0" encoding="UTF-8"?>
 <scene name="main_body">
+  <sky>
+    <lower_color>0.0</lower_color>
+    <lower_color>0.0</lower_color>
+    <lower_color>0.0</lower_color>
+
+    <upper_color>0.7</upper_color>
+    <upper_color>0.75</upper_color>
+    <upper_color>0.95</upper_color>
+  </sky>
   <sphere radius = "1.5"/>
   <sphere radius = "0.75">
     <transform>

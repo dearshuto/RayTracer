@@ -1,7 +1,9 @@
-use crate::{IScene, MaterialInfo, Property, Vector3f, traits::EnumerateLightResult, scene::Scene};
+use crate::{scene::Scene, traits::EnumerateLightResult, IScene, MaterialInfo, Property, Vector3f};
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
+    sky_lower_color: Vector3f,
+    sky_upper_color: Vector3f,
     _rigid_body_set: RigidBodySet,
     _collider_set: ColliderSet,
     _island_manager: IslandManager,
@@ -18,19 +20,24 @@ impl RapierScene {
         for index in 0..scene.primitives.len() {
             let transform = &scene.transforms[index];
             let rigid_body = RigidBodyBuilder::new_static()
-                .translation(vector![transform.translation.x, transform.translation.y, transform.translation.z])
+                .translation(vector![
+                    transform.translation.x,
+                    transform.translation.y,
+                    transform.translation.z
+                ])
                 .build();
             let handle = rigid_body_set.insert(rigid_body);
 
             let collider = match &scene.primitives[index] {
-                crate::scene::primitive::Primitive::Sphere(data) =>
-                    ColliderBuilder::ball(data.radius).build(),
+                crate::scene::primitive::Primitive::Sphere(data) => {
+                    ColliderBuilder::ball(data.radius).build()
+                }
                 crate::scene::primitive::Primitive::Box(_) => todo!(),
             };
             collider_set.insert_with_parent(collider, handle, &mut rigid_body_set);
 
             let material = &scene.materials[index];
-            let property =  Property {
+            let property = Property {
                 emission: material.emission.x,
                 albedo: Vector3f::new(material.albedo.x, material.albedo.y, material.albedo.z),
                 ..std::default::Default::default()
@@ -42,6 +49,8 @@ impl RapierScene {
         let mut query_pipeline = QueryPipeline::new();
         query_pipeline.update(&island_manager, &rigid_body_set, &collider_set);
         Self {
+            sky_lower_color: scene.sky.lower_color,
+            sky_upper_color: scene.sky.upper_color,
             _rigid_body_set: rigid_body_set,
             _collider_set: collider_set,
             _island_manager: island_manager,
@@ -70,46 +79,115 @@ impl RapierScene {
         collider_set.insert_with_parent(light_clollider, handle, &mut rigid_body_set);
 
         // 右の球
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![1.5, 1.0, -1.0]).build());
-        collider_set.insert_with_parent(ColliderBuilder::ball(0.75).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(
+            RigidBodyBuilder::new_static()
+                .translation(vector![1.5, 1.0, -1.0])
+                .build(),
+        );
+        collider_set.insert_with_parent(
+            ColliderBuilder::ball(0.75).build(),
+            handle,
+            &mut rigid_body_set,
+        );
         // 左の球
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![-2.25, 3.0, -1.5]).build());
-        collider_set.insert_with_parent(ColliderBuilder::ball(1.0).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(
+            RigidBodyBuilder::new_static()
+                .translation(vector![-2.25, 3.0, -1.5])
+                .build(),
+        );
+        collider_set.insert_with_parent(
+            ColliderBuilder::ball(1.0).build(),
+            handle,
+            &mut rigid_body_set,
+        );
 
         // 左の壁
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![-5.0, 0.0, 0.0]).build());
-        collider_set.insert_with_parent(ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(
+            RigidBodyBuilder::new_static()
+                .translation(vector![-5.0, 0.0, 0.0])
+                .build(),
+        );
+        collider_set.insert_with_parent(
+            ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(),
+            handle,
+            &mut rigid_body_set,
+        );
 
         // 右の壁
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![5.0, 0.0, 0.0]).build());
-        collider_set.insert_with_parent(ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(
+            RigidBodyBuilder::new_static()
+                .translation(vector![5.0, 0.0, 0.0])
+                .build(),
+        );
+        collider_set.insert_with_parent(
+            ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(),
+            handle,
+            &mut rigid_body_set,
+        );
 
         // 奥の壁
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.0, 0.0, -5.0]).build());
-        collider_set.insert_with_parent(ColliderBuilder::cuboid(100.0, 100.0, 0.5).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(
+            RigidBodyBuilder::new_static()
+                .translation(vector![0.0, 0.0, -5.0])
+                .build(),
+        );
+        collider_set.insert_with_parent(
+            ColliderBuilder::cuboid(100.0, 100.0, 0.5).build(),
+            handle,
+            &mut rigid_body_set,
+        );
 
         // 天井
-        let handle = rigid_body_set.insert(RigidBodyBuilder::new_static().translation(vector![0.0, 6.5, 0.0]).build());
-        collider_set.insert_with_parent(ColliderBuilder::cuboid(100.0, 0.5, 100.5).build(), handle, &mut rigid_body_set);
+        let handle = rigid_body_set.insert(
+            RigidBodyBuilder::new_static()
+                .translation(vector![0.0, 6.5, 0.0])
+                .build(),
+        );
+        collider_set.insert_with_parent(
+            ColliderBuilder::cuboid(100.0, 0.5, 100.5).build(),
+            handle,
+            &mut rigid_body_set,
+        );
 
         let island_manager = IslandManager::new();
         let mut query_pipeline = QueryPipeline::new();
         query_pipeline.update(&island_manager, &rigid_body_set, &collider_set);
 
         Self {
+            sky_lower_color: Vector3f::zero(),
+            sky_upper_color: Vector3f::zero(),
             _rigid_body_set: rigid_body_set,
             _collider_set: collider_set,
             _island_manager: island_manager,
             _query_pipeline: query_pipeline,
             _properties: vec![
-                std::default::Default::default(),  // 床
-                Property{ emission: 1000.0, albedo: Vector3f::new(1.0, 1.0, 1.0), ..std::default::Default::default()}, // 光源
-                Property{ metaric: 0.95, ..std::default::Default::default()},  // 右の球
-                Property{ metaric: 0.01, ..std::default::Default::default()},  // 左の球
-                Property{ albedo: Vector3f::new(0.6, 0.0, 0.0), ..std::default::Default::default()},  // 左の壁
-                Property{ albedo: Vector3f::new(0.0, 0.5, 0.0), ..std::default::Default::default()},  // 右の壁
-                std::default::Default::default(),  // 奥の壁
-                Property{ albedo: Vector3f::new(0.0, 0.0, 0.7), ..std::default::Default::default()},  // 天井
+                std::default::Default::default(), // 床
+                Property {
+                    emission: 1000.0,
+                    albedo: Vector3f::new(1.0, 1.0, 1.0),
+                    ..std::default::Default::default()
+                }, // 光源
+                Property {
+                    metaric: 0.95,
+                    ..std::default::Default::default()
+                }, // 右の球
+                Property {
+                    metaric: 0.01,
+                    ..std::default::Default::default()
+                }, // 左の球
+                Property {
+                    albedo: Vector3f::new(0.6, 0.0, 0.0),
+                    ..std::default::Default::default()
+                }, // 左の壁
+                Property {
+                    albedo: Vector3f::new(0.0, 0.5, 0.0),
+                    ..std::default::Default::default()
+                }, // 右の壁
+                std::default::Default::default(), // 奥の壁
+                Property {
+                    albedo: Vector3f::new(0.0, 0.0, 0.7),
+                    ..std::default::Default::default()
+                }, // 天井
             ],
             _emission_object_indices: vec![1],
         }
@@ -160,10 +238,26 @@ impl IScene for RapierScene {
         for index in &self._emission_object_indices {
             if let Some((_, handle)) = self._collider_set.get_unknown_gen(*index as u32) {
                 let collider = self._collider_set.get(handle).unwrap();
-                let light_position = Vector3f::new(collider.translation()[0], collider.translation()[1], collider.translation()[2]);
+                let light_position = Vector3f::new(
+                    collider.translation()[0],
+                    collider.translation()[1],
+                    collider.translation()[2],
+                );
                 results.push(light_position);
             }
         }
-        EnumerateLightResult{ centers: results }
+        EnumerateLightResult { centers: results }
+    }
+
+    fn find_background_color(&self, _position: &Vector3f, direction: &Vector3f) -> Vector3f {
+        {
+            let rate = direction.dot(&Vector3f::new(0.0, 1.0, 0.0)).clamp(0.0, 1.0);
+            if 0.0 < rate {
+                let sky_color = rate * self.sky_upper_color + (1.0 - rate) * self.sky_lower_color;
+                sky_color
+            } else {
+                Vector3f::zero()
+            }
+        }
     }
 }

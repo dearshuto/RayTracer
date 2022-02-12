@@ -1,5 +1,9 @@
+use crate::{
+    brdf::{Lambert, PerfectSpecularReflection},
+    DefaultSamplingEstimation, IBidirectionalReflectanceDistributionFunction, IRenderer, IScene,
+    NextEventEstimation, Vector3f,
+};
 use rand::Rng;
-use crate::{IBidirectionalReflectanceDistributionFunction, IRenderer, IScene, Vector3f, brdf::{Lambert, PerfectSpecularReflection}, NextEventEstimation, DefaultSamplingEstimation};
 
 pub struct PathTracer {
     _sampling_count: u16,
@@ -12,7 +16,7 @@ impl PathTracer {
         Self {
             _sampling_count: sampling_count,
             _depth_max: depth_max,
-            _is_nee_enabled: is_nee_enabled
+            _is_nee_enabled: is_nee_enabled,
         }
     }
 
@@ -25,7 +29,8 @@ impl PathTracer {
     ) -> (Vector3f, Option<Vector3f>) // (色、位置)
     {
         if self._depth_max < depth as u16 {
-            return ( Vector3f::new(0.0, 0.0, 0.0), None)
+            let sky_color = scene.find_background_color(&position, &direction);
+            return (sky_color, None);
         }
 
         let to = Vector3f::new(
@@ -37,13 +42,25 @@ impl PathTracer {
             let _mat_normal = &material_info.normal;
             let mat_position = &material_info.position;
             if 0.0 < material_info.property.emission {
-                let emission = Vector3f::new(material_info.property.emission, material_info.property.emission, material_info.property.emission);
+                let emission = Vector3f::new(
+                    material_info.property.emission,
+                    material_info.property.emission,
+                    material_info.property.emission,
+                );
                 (emission, Some(*mat_position))
             } else {
                 let direction_candidates = if self._is_nee_enabled {
-                    NextEventEstimation::new().estimate(&material_info.position, &material_info.normal, scene)
+                    NextEventEstimation::new().estimate(
+                        &material_info.position,
+                        &material_info.normal,
+                        scene,
+                    )
                 } else {
-                    DefaultSamplingEstimation::new().estimate(&material_info.position, &material_info.normal, scene)
+                    DefaultSamplingEstimation::new().estimate(
+                        &material_info.position,
+                        &material_info.normal,
+                        scene,
+                    )
                 };
 
                 // 鏡面反射か、拡散反射かを確立で切り替える
@@ -52,15 +69,23 @@ impl PathTracer {
                 for direction_candidate in &direction_candidates {
                     let reflect_rate = rng.gen_range(0.0..1.0);
                     let value = if material_info.property.metaric < reflect_rate {
-                        Lambert::new().calculate(&material_info.normal, &direction, &direction_candidate)
-                    }
-                    else {
-                        PerfectSpecularReflection::new().calculate(&material_info.normal, &direction, &direction_candidate)
+                        Lambert::new().calculate(
+                            &material_info.normal,
+                            &direction,
+                            &direction_candidate,
+                        )
+                    } else {
+                        PerfectSpecularReflection::new().calculate(
+                            &material_info.normal,
+                            &direction,
+                            &direction_candidate,
+                        )
                     };
 
                     let new_position = *mat_position + 0.1 * *direction_candidate;
                     let albedo = material_info.property.albedo;
-                    let (result, hit_position_opt) = self.cast_ray(scene, &new_position, &direction_candidate, depth + 1);
+                    let (result, hit_position_opt) =
+                        self.cast_ray(scene, &new_position, &direction_candidate, depth + 1);
 
                     let distance = if let Some(hit_position) = hit_position_opt {
                         let diff = hit_position - *mat_position;
@@ -75,10 +100,14 @@ impl PathTracer {
                     blue += (result.z * value * albedo.z / ratio) / (distance * distance);
                 }
 
-                (Vector3f::new(red, green, blue), Some(material_info.position))
+                (
+                    Vector3f::new(red, green, blue),
+                    Some(material_info.position),
+                )
             }
         } else {
-            (Vector3f::new(0.0, 0.0, 0.0), None)
+            let sky_color = scene.find_background_color(&position, &direction);
+            (sky_color, None)
         }
     }
 }
