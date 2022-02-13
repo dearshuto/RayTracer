@@ -17,6 +17,9 @@ pub use bidirectional_reflectance_distribution_function::IBidirectionalReflectan
 
 pub mod brdf;
 
+mod camera;
+pub use camera::Camera;
+
 mod default_sampling_estimation;
 pub use default_sampling_estimation::DefaultSamplingEstimation;
 

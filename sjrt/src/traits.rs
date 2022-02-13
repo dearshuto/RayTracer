@@ -1,4 +1,4 @@
-use crate::{MaterialInfo, Vector3f};
+use crate::{MaterialInfo, Vector3f, Camera};
 
 pub trait IRenderer: Sync {
     fn render<TScene: IScene>(
@@ -42,26 +42,17 @@ impl System {
         buffer: &mut TBuffer,
         renderer: &TRenderer,
     ) {
-        let lower_left = Vector3f::new(2.77625, 2.72625, -7.990);
-        let stride_width = 0.0075 / (buffer.get_height() as f32);
-        let stride_height = 0.0075 / (buffer.get_height() as f32);
-
-        for y in 0..buffer.get_height() {
-            for x in 0..buffer.get_height() {
-                let camera_position = Vector3f::new(2.780, 2.730, -8.000);
-                let local_target = lower_left
-                    + Vector3f::new((x as f32) * stride_width, y as f32 * stride_height, 0.0);
-                let direction = local_target - camera_position;
-                let (red_result, green_result, blue_result) =
-                    renderer.render(scene, &camera_position, &direction);
-                buffer.set_color(
-                    buffer.get_width() - x - 1,
-                    buffer.get_height() - y - 1,
-                    (255.0 * red_result) as u8,
-                    (255.0 * green_result) as u8,
-                    (255.0 * blue_result) as u8,
-                );
-            }
+        let camera = Camera::new(buffer.get_width() as u32, buffer.get_height() as u32);
+        for ray_info in camera.calculate_ray_direction() {
+            let (red_result, green_result, blue_result) =
+                renderer.render(scene, &camera.position, &ray_info.directions[0]);
+            buffer.set_color(
+                buffer.get_width() - (ray_info.x as i32) - 1,
+                buffer.get_height() - (ray_info.y as i32) - 1,
+                (255.0 * red_result) as u8,
+                (255.0 * green_result) as u8,
+                (255.0 * blue_result) as u8,
+            );
         }
     }
 }
