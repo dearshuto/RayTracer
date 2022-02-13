@@ -69,14 +69,14 @@ impl ParallelizeSystem {
         width_range: Range<i32>,
         height_range: Range<i32>,
     ) -> ImageView {
-        let lower_left = Vector3f::new(-5.0, -5.0, 0.0);
-        let stride_width = 10.0 / (width as f32);
-        let stride_height = 10.0 / (height as f32);
+        let lower_left = Vector3f::new(2.77625, 2.72625, -7.990);
+        let stride_width = 0.0075 / (width as f32);
+        let stride_height = 0.0075 / (height as f32);
 
         let mut image_view = ImageView::new(width_range.clone(), height_range.clone());
         for y in height_range.start..height_range.end {
             for x in width_range.start..width_range.end {
-                let camera_position = Vector3f::new(0.0, 2.0, 5.0);
+                let camera_position = Vector3f::new(2.780, 2.730, -8.000);
                 let local_target = lower_left
                     + Vector3f::new((x as f32) * stride_width, y as f32 * stride_height, 0.0);
                 let direction = local_target - camera_position;
@@ -124,7 +124,13 @@ impl ImageView {
         for index in 0..self.buffer.len() {
             let (x, y) = self.to_position(index);
             let data = self.buffer[index];
-            buffer.set_color(x, buffer.get_height() - y - 1, data[0], data[1], data[2]);
+            buffer.set_color(
+                buffer.get_width() - x - 1,
+                buffer.get_height() - y - 1,
+                data[0],
+                data[1],
+                data[2],
+            );
         }
     }
 

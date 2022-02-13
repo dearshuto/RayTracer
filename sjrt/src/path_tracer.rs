@@ -33,10 +33,11 @@ impl PathTracer {
             return (sky_color, None);
         }
 
+        let normalized_direction = direction.normalize();
         let to = Vector3f::new(
-            position.x + 100.0 * direction.x,
-            position.y + 100.0 * direction.y,
-            position.z + 100.0 * direction.z,
+            position.x + 100.0 * normalized_direction.x,
+            position.y + 100.0 * normalized_direction.y,
+            position.z + 100.0 * normalized_direction.z,
         );
         if let Some(material_info) = scene.cast_ray(position, &to) {
             let _mat_normal = &material_info.normal;

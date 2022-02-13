@@ -17,6 +17,7 @@ impl RapierScene {
         let mut rigid_body_set = RigidBodySet::new();
         let mut collider_set = ColliderSet::new();
         let mut properties = Vec::new();
+        let mut emission_indices = Vec::new();
         for index in 0..scene.primitives.len() {
             let transform = &scene.transforms[index];
             let rigid_body = RigidBodyBuilder::new_static()
@@ -33,6 +34,16 @@ impl RapierScene {
                     ColliderBuilder::ball(data.radius).build()
                 }
                 crate::scene::primitive::Primitive::Box(_) => todo!(),
+                crate::scene::primitive::Primitive::TriMesh(data) => {
+                    let vertices = data
+                        .positions
+                        .chunks(3)
+                        .map(|x| Point::<Real>::new(x[0], x[1], x[2]))
+                        .collect();
+                    let indices: Vec<[u32; 3]> =
+                        data.indices.chunks(3).map(|x| [x[0], x[1], x[2]]).collect();
+                    ColliderBuilder::trimesh(vertices, indices).build()
+                }
             };
             collider_set.insert_with_parent(collider, handle, &mut rigid_body_set);
 
@@ -43,6 +54,10 @@ impl RapierScene {
                 ..std::default::Default::default()
             };
             properties.push(property);
+
+            if 0.0 < material.emission.x {
+                emission_indices.push(index as i32);
+            }
         }
 
         let island_manager = IslandManager::new();
@@ -56,141 +71,13 @@ impl RapierScene {
             _island_manager: island_manager,
             _query_pipeline: query_pipeline,
             _properties: properties,
-            _emission_object_indices: vec![0, 1],
+            _emission_object_indices: emission_indices,
         }
     }
 
     pub fn new() -> Self {
-        // 床
-        let floor_rigid_body = RigidBodyBuilder::new_static().build();
-        let floor_collier = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
-
-        // 光源
-        let light_body = RigidBodyBuilder::new_static()
-            .translation(vector![0.0, 5.0, 0.0])
-            .build();
-        let light_clollider = ColliderBuilder::cuboid(1.0, 0.1, 1.0).build();
-
-        let mut rigid_body_set = RigidBodySet::new();
-        let mut collider_set = ColliderSet::new();
-        let handle = rigid_body_set.insert(floor_rigid_body);
-        collider_set.insert_with_parent(floor_collier, handle, &mut rigid_body_set);
-        let handle = rigid_body_set.insert(light_body);
-        collider_set.insert_with_parent(light_clollider, handle, &mut rigid_body_set);
-
-        // 右の球
-        let handle = rigid_body_set.insert(
-            RigidBodyBuilder::new_static()
-                .translation(vector![1.5, 1.0, -1.0])
-                .build(),
-        );
-        collider_set.insert_with_parent(
-            ColliderBuilder::ball(0.75).build(),
-            handle,
-            &mut rigid_body_set,
-        );
-        // 左の球
-        let handle = rigid_body_set.insert(
-            RigidBodyBuilder::new_static()
-                .translation(vector![-2.25, 3.0, -1.5])
-                .build(),
-        );
-        collider_set.insert_with_parent(
-            ColliderBuilder::ball(1.0).build(),
-            handle,
-            &mut rigid_body_set,
-        );
-
-        // 左の壁
-        let handle = rigid_body_set.insert(
-            RigidBodyBuilder::new_static()
-                .translation(vector![-5.0, 0.0, 0.0])
-                .build(),
-        );
-        collider_set.insert_with_parent(
-            ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(),
-            handle,
-            &mut rigid_body_set,
-        );
-
-        // 右の壁
-        let handle = rigid_body_set.insert(
-            RigidBodyBuilder::new_static()
-                .translation(vector![5.0, 0.0, 0.0])
-                .build(),
-        );
-        collider_set.insert_with_parent(
-            ColliderBuilder::cuboid(0.5, 100.0, 100.0).build(),
-            handle,
-            &mut rigid_body_set,
-        );
-
-        // 奥の壁
-        let handle = rigid_body_set.insert(
-            RigidBodyBuilder::new_static()
-                .translation(vector![0.0, 0.0, -5.0])
-                .build(),
-        );
-        collider_set.insert_with_parent(
-            ColliderBuilder::cuboid(100.0, 100.0, 0.5).build(),
-            handle,
-            &mut rigid_body_set,
-        );
-
-        // 天井
-        let handle = rigid_body_set.insert(
-            RigidBodyBuilder::new_static()
-                .translation(vector![0.0, 6.5, 0.0])
-                .build(),
-        );
-        collider_set.insert_with_parent(
-            ColliderBuilder::cuboid(100.0, 0.5, 100.5).build(),
-            handle,
-            &mut rigid_body_set,
-        );
-
-        let island_manager = IslandManager::new();
-        let mut query_pipeline = QueryPipeline::new();
-        query_pipeline.update(&island_manager, &rigid_body_set, &collider_set);
-
-        Self {
-            sky_lower_color: Vector3f::zero(),
-            sky_upper_color: Vector3f::zero(),
-            _rigid_body_set: rigid_body_set,
-            _collider_set: collider_set,
-            _island_manager: island_manager,
-            _query_pipeline: query_pipeline,
-            _properties: vec![
-                std::default::Default::default(), // 床
-                Property {
-                    emission: 1000.0,
-                    albedo: Vector3f::new(1.0, 1.0, 1.0),
-                    ..std::default::Default::default()
-                }, // 光源
-                Property {
-                    metaric: 0.95,
-                    ..std::default::Default::default()
-                }, // 右の球
-                Property {
-                    metaric: 0.01,
-                    ..std::default::Default::default()
-                }, // 左の球
-                Property {
-                    albedo: Vector3f::new(0.6, 0.0, 0.0),
-                    ..std::default::Default::default()
-                }, // 左の壁
-                Property {
-                    albedo: Vector3f::new(0.0, 0.5, 0.0),
-                    ..std::default::Default::default()
-                }, // 右の壁
-                std::default::Default::default(), // 奥の壁
-                Property {
-                    albedo: Vector3f::new(0.0, 0.0, 0.7),
-                    ..std::default::Default::default()
-                }, // 天井
-            ],
-            _emission_object_indices: vec![1],
-        }
+        let cornell_box = Scene::create_cornell_box();
+        Self::new_from_scene(&cornell_box)
     }
 }
 
