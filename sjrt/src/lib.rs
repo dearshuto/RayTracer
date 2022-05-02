@@ -1,4 +1,3 @@
-
 // TODO: 名前空間の修正
 pub mod test {
     tonic::include_proto!("sjrt");
@@ -7,6 +6,7 @@ pub mod test {
 pub use test::ImageView;
 
 mod traits;
+pub use traits::EnumerateLightResult;
 pub use traits::IBuffer;
 pub use traits::IRenderer;
 pub use traits::IScene;
@@ -24,8 +24,8 @@ mod default_sampling_estimation;
 pub use default_sampling_estimation::DefaultSamplingEstimation;
 
 mod material_info;
-pub use material_info::MaterialInfo;
 pub use material_info::Brdf;
+pub use material_info::MaterialInfo;
 
 mod path_tracer;
 pub use path_tracer::PathTracer;
