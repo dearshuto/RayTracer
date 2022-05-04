@@ -5,12 +5,13 @@ pub mod test {
 
 pub use test::ImageView;
 
+mod system;
 mod traits;
 pub use traits::EnumerateLightResult;
 pub use traits::IBuffer;
 pub use traits::IRenderer;
 pub use traits::IScene;
-pub use traits::System;
+pub use system::{System, ParallelizeSystem};
 
 mod bidirectional_reflectance_distribution_function;
 pub use bidirectional_reflectance_distribution_function::IBidirectionalReflectanceDistributionFunction;
@@ -45,9 +46,6 @@ pub use ray::Ray;
 
 mod vector;
 pub use vector::Vector3f;
-
-mod parallelize_system;
-pub use parallelize_system::ParallelizeSystem;
 
 mod rapier_scene;
 pub use rapier_scene::RapierScene;
