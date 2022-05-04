@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "client",
   "sjrt",
+  "sjrt-ffi",
   "editor",
   "server",
 ]
