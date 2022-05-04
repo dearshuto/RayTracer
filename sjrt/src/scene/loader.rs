@@ -51,7 +51,7 @@ mod detail {
         #[serde(default = "SkyData::default")]
         pub sky: SkyData,
 
-        #[serde(rename = "sphere")]
+        #[serde(rename = "sphere", default = "Vec::new")]
         pub spheres: Vec<SphereData>,
     }
 
@@ -92,31 +92,34 @@ mod detail {
 
     #[derive(Deserialize, Debug, Default)]
     pub struct TransformData {
-        pub translation: [f32; 3],
+        #[serde(default = "Float3Data::default")]
+        pub translation: Float3Data,
 
-        pub rotation: [f32; 3],
+        #[serde(default = "Float3Data::default")]
+        pub rotation: Float3Data,
 
-        pub scale: [f32; 3],
+        #[serde(default = "Float3Data::one")]
+        pub scale: Float3Data,
     }
 
     impl TransformData {
         pub fn default() -> Self {
             Self {
-                translation: [0.0; 3],
-                rotation: [0.0; 3],
-                scale: [1.0, 1.0, 1.0],
+                translation: Float3Data::zero(),
+                rotation: Float3Data::zero(),
+                scale: Float3Data::one(),
             }
         }
 
         pub fn to_scene_data(&self) -> Transform {
             Transform {
                 translation: Vector3f::new(
-                    self.translation[0],
-                    self.translation[1],
-                    self.translation[2],
+                    self.translation.x,
+                    self.translation.y,
+                    self.translation.z,
                 ),
-                rotation: Vector3f::new(self.rotation[0], self.rotation[1], self.rotation[2]),
-                scale: Vector3f::new(self.scale[0], self.scale[1], self.scale[2]),
+                rotation: Vector3f::new(self.rotation.x, self.rotation.y, self.rotation.z),
+                scale: Vector3f::new(self.scale.x, self.scale.y, self.scale.z),
             }
         }
     }
@@ -141,5 +144,145 @@ mod detail {
                 emission: Vector3f::new(self.emission[0], self.emission[1], self.emission[2]),
             }
         }
+    }
+
+    #[derive(Deserialize, Debug, Default)]
+    pub struct Float3Data {
+        #[serde(default = "Default::default")]
+        pub x: f32,
+
+        #[serde(default = "Default::default")]
+        pub y: f32,
+
+        #[serde(default = "Default::default")]
+        pub z: f32,
+    }
+
+    impl Float3Data {
+        pub fn new(x: f32, y: f32, z: f32) -> Self {
+            Self { x, y, z }
+        }
+
+        pub fn zero() -> Self {
+            Self::new(0.0, 0.0, 0.0)
+        }
+
+        pub fn one() -> Self {
+            Self::new(1.0, 1.0, 1.0)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Loader;
+
+    #[test]
+    fn load_empty_scene() {
+        let xml = r##"
+<scene name="main_body">
+</scene>
+"##;
+
+        let scene = Loader::load_from_text(xml);
+        assert!(scene.primitives.is_empty());
+        assert!(scene.transforms.is_empty());
+    }
+
+    #[test]
+    fn load_simple_sphere_scene() {
+        let xml = r##"
+<scene name="main_body">
+    <sphere radius = "0.5"/>
+</scene>
+"##;
+
+        let scene = Loader::load_from_text(xml);
+        let _sphere = scene.primitives.first().unwrap();
+        let transform = scene.transforms.first().unwrap();
+
+        // 位置
+        assert_eq!(transform.translation.x, 0.0);
+        assert_eq!(transform.translation.y, 0.0);
+        assert_eq!(transform.translation.z, 0.0);
+
+        // 回転
+        assert_eq!(transform.rotation.x, 0.0);
+        assert_eq!(transform.rotation.y, 0.0);
+        assert_eq!(transform.rotation.z, 0.0);
+
+        // スケール
+        assert_eq!(transform.scale.x, 1.0);
+        assert_eq!(transform.scale.y, 1.0);
+        assert_eq!(transform.scale.z, 1.0);
+    }
+
+    #[test]
+    fn load_sphere_transform_scene() {
+        let xml = r##"
+<scene name="main_body">
+    <sphere radius = "0.5">
+        <transform>
+            <translation x = "1.0" y = "2.0" z = "3.0"/>
+            <rotation x = "15.0" y = "30.0" z = "45.0"/>
+            <scale x = "4.0" y = "5.0" z = "6.0"/>
+        </transform>
+    </sphere>
+</scene>
+"##;
+
+        let scene = Loader::load_from_text(xml);
+        let transform = scene.transforms.first().unwrap();
+
+        // 位置
+        assert_eq!(transform.translation.x, 1.0);
+        assert_eq!(transform.translation.y, 2.0);
+        assert_eq!(transform.translation.z, 3.0);
+
+        // 回転
+        assert_eq!(transform.rotation.x, 15.0);
+        assert_eq!(transform.rotation.y, 30.0);
+        assert_eq!(transform.rotation.z, 45.0);
+
+        // スケール
+        assert_eq!(transform.scale.x, 4.0);
+        assert_eq!(transform.scale.y, 5.0);
+        assert_eq!(transform.scale.z, 6.0);
+    }
+
+    #[test]
+    fn load_partial_transform_scene() {
+        let xml = r##"
+<scene name="main_body">
+    <sphere radius = "0.5">
+        <transform>
+            <translation x = "2.0" y = "3.0"/>
+            <rotation z = "120.0"/>
+        </transform>
+    </sphere>
+</scene>
+"##;
+
+        let scene = Loader::load_from_text(xml);
+        let transform = scene.transforms.first().unwrap();
+        match scene.primitives.first().unwrap() {
+            crate::scene::primitive::Primitive::Sphere(sphere) => assert_eq!(sphere.radius, 0.5),
+            _ => panic!(),
+        }
+
+        // 位置
+        assert_eq!(transform.translation.x, 2.0);
+        assert_eq!(transform.translation.y, 3.0);
+        assert_eq!(transform.translation.z, 0.0);
+
+        // 回転
+        assert_eq!(transform.rotation.x, 0.0);
+        assert_eq!(transform.rotation.y, 0.0);
+        assert_eq!(transform.rotation.z, 120.0);
+
+        // スケール
+        assert_eq!(transform.scale.x, 1.0);
+        assert_eq!(transform.scale.y, 1.0);
+        assert_eq!(transform.scale.z, 1.0);
     }
 }
