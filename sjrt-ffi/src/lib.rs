@@ -177,8 +177,14 @@ pub extern "C" fn destroy_external_scene(ptr: *mut ExternalScene) {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    fn create_path_tracer() {
+        let scene = crate::create_path_tracer(16, 6);
+        crate::destroy_path_tracer(scene);
+    }
+
+    #[test]
+    fn create_default_scene() {
+        let scene = crate::create_default_scene();
+        crate::destroy_default_scene(scene);
     }
 }
