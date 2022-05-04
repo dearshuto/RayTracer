@@ -1,15 +1,13 @@
 #[derive(Debug, Copy, Clone)]
-pub struct Vector3f
-{
+pub struct Vector3f {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 
-impl Vector3f
-{
+impl Vector3f {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vector3f{x, y, z}
+        Vector3f { x, y, z }
     }
 
     pub fn zero() -> Self {
@@ -30,11 +28,14 @@ impl Vector3f
     pub fn normalize(&self) -> Self {
         let result = self.to_nalgebra().normalize();
         Self::from_nalgebra(&result)
-
     }
 
     pub fn norm(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        !self.x.is_nan() && !self.y.is_nan() && !self.z.is_nan()
     }
 
     fn to_nalgebra(&self) -> nalgebra::Vector3<f32> {
