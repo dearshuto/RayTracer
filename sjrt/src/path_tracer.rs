@@ -51,7 +51,7 @@ impl PathTracer {
                 (emission, Some(*mat_position))
             } else {
                 let direction_candidates = if self._is_nee_enabled {
-                    NextEventEstimation::new().estimate(
+                    NextEventEstimation::new(self._sampling_count).estimate(
                         &material_info.position,
                         &material_info.normal,
                         scene,
@@ -67,7 +67,9 @@ impl PathTracer {
                 // 鏡面反射か、拡散反射かを確立で切り替える
                 let mut rng = rand::thread_rng();
                 let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
-                for direction_candidate in &direction_candidates {
+                for result in &direction_candidates {
+                    let direction_candidate = result.direction;
+                    let weight = result.weight;
                     let reflect_rate = rng.gen_range(0.0..1.0);
                     let value = if material_info.property.metaric < reflect_rate {
                         Lambert::new().calculate(
@@ -83,7 +85,7 @@ impl PathTracer {
                         )
                     };
 
-                    let new_position = *mat_position + 0.1 * *direction_candidate;
+                    let new_position = *mat_position + 0.1 * direction_candidate;
                     let albedo = material_info.property.albedo;
                     let (result, hit_position_opt) =
                         self.cast_ray(scene, &new_position, &direction_candidate, depth + 1);
@@ -96,9 +98,9 @@ impl PathTracer {
                     };
 
                     let ratio = direction_candidates.len() as f32;
-                    red += (result.x * value * albedo.x / ratio) / (distance * distance);
-                    green += (result.y * value * albedo.y / ratio) / (distance * distance);
-                    blue += (result.z * value * albedo.z / ratio) / (distance * distance);
+                    red += weight * (result.x * value * albedo.x / ratio) / (distance * distance);
+                    green += weight * (result.y * value * albedo.y / ratio) / (distance * distance);
+                    blue += weight * (result.z * value * albedo.z / ratio) / (distance * distance);
                 }
 
                 (
