@@ -33,7 +33,9 @@ impl RapierScene {
                 crate::scene::primitive::Primitive::Sphere(data) => {
                     ColliderBuilder::ball(data.radius).build()
                 }
-                crate::scene::primitive::Primitive::Box(_) => todo!(),
+                crate::scene::primitive::Primitive::Box(data) => {
+                    ColliderBuilder::cuboid(data.width, data.height, data.depth).build()
+                }
                 crate::scene::primitive::Primitive::TriMesh(data) => {
                     let vertices = data
                         .positions
