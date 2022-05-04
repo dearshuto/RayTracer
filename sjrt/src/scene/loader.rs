@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::{
-    primitive::{Primitive, SphereData},
+    primitive::{BoxData, Primitive, SphereData},
     Scene,
 };
 
@@ -33,6 +33,17 @@ impl Loader {
             materials.push(sphere.material.to_scene_data());
         }
 
+        for box_ in &scene.boxes {
+            let box_data = BoxData {
+                width: box_.width,
+                height: box_.height,
+                depth: box_.depth,
+            };
+            primitives.push(Primitive::Box(box_data));
+            transforms.push(detail::TransformData::default().to_scene_data());
+            materials.push(box_.material.to_scene_data());
+        }
+
         Scene {
             primitives,
             transforms,
@@ -59,6 +70,9 @@ mod detail {
 
         #[serde(rename = "sphere", default = "Vec::new")]
         pub spheres: Vec<SphereData>,
+
+        #[serde(rename = "box", default = "Vec::new")]
+        pub boxes: Vec<BoxData>,
     }
 
     #[derive(Deserialize, Debug, Default)]
@@ -88,6 +102,21 @@ mod detail {
     #[derive(Deserialize, Debug, Default)]
     pub struct SphereData {
         pub radius: f32,
+
+        #[serde(default = "TransformData::default")]
+        pub transform: TransformData,
+
+        #[serde(default = "MaterialData::default")]
+        pub material: MaterialData,
+    }
+
+    #[derive(Deserialize, Debug, Default)]
+    pub struct BoxData {
+        pub width: f32,
+
+        pub height: f32,
+
+        pub depth: f32,
 
         #[serde(default = "TransformData::default")]
         pub transform: TransformData,
