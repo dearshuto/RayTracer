@@ -8,17 +8,23 @@ use super::{
 pub struct Loader {}
 
 impl Loader {
-    pub fn load_from_file<TPath: AsRef<Path>>(_path: &TPath) -> Scene {
-        todo!()
+    pub fn load_from_file<TPath: AsRef<Path>>(path: &TPath) -> Scene {
+        let reader = std::io::BufReader::new(std::fs::File::open(path).unwrap());
+        let scene: detail::Scene = serde_xml_rs::from_reader(reader).unwrap();
+        Self::load_scene_impl(&scene)
     }
 
     pub fn load_from_text(text: &str) -> Scene {
         let scene: detail::Scene = serde_xml_rs::from_str(text).unwrap();
+        Self::load_scene_impl(&scene)
+    }
+
+    fn load_scene_impl(scene: &detail::Scene) -> Scene {
         let mut primitives = Vec::new();
         let mut transforms = Vec::new();
         let mut materials = Vec::new();
 
-        for sphere in scene.spheres {
+        for sphere in &scene.spheres {
             let sphere_data = SphereData {
                 radius: sphere.radius,
             };
@@ -126,22 +132,22 @@ mod detail {
 
     #[derive(Deserialize, Debug, Default)]
     pub struct MaterialData {
-        pub albedo: [f32; 3],
-        pub emission: [f32; 3],
+        pub albedo: Float3Data,
+        pub emission: Float3Data,
     }
 
     impl MaterialData {
         pub fn default() -> Self {
             Self {
-                albedo: [1.0, 1.0, 1.0],
-                emission: [0.0, 0.0, 0.0],
+                albedo: Float3Data::one(),
+                emission: Float3Data::zero(),
             }
         }
 
         pub fn to_scene_data(&self) -> Material {
             Material {
-                albedo: Vector3f::new(self.albedo[0], self.albedo[1], self.albedo[2]),
-                emission: Vector3f::new(self.emission[0], self.emission[1], self.emission[2]),
+                albedo: Vector3f::new(self.albedo.x, self.albedo.y, self.albedo.z),
+                emission: Vector3f::new(self.emission.x, self.emission.y, self.emission.z),
             }
         }
     }
