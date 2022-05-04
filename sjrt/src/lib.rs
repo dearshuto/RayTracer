@@ -6,11 +6,13 @@ pub mod test {
 pub use test::ImageView;
 
 mod system;
+mod sampling_algorithm;
 mod traits;
 pub use traits::EnumerateLightResult;
 pub use traits::IBuffer;
 pub use traits::IRenderer;
 pub use traits::IScene;
+pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::{System, ParallelizeSystem};
 
 mod bidirectional_reflectance_distribution_function;
@@ -21,9 +23,6 @@ pub mod brdf;
 mod camera;
 pub use camera::Camera;
 
-mod default_sampling_estimation;
-pub use default_sampling_estimation::DefaultSamplingEstimation;
-
 mod material_info;
 pub use material_info::Brdf;
 pub use material_info::MaterialInfo;
@@ -32,9 +31,6 @@ mod path_tracer;
 pub use path_tracer::PathTracer;
 
 pub mod image;
-
-mod nee;
-pub use nee::NextEventEstimation;
 
 pub mod net;
 
