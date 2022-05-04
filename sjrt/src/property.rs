@@ -14,7 +14,7 @@ pub struct Property
 impl Default for Property {
     fn default() -> Self {
         Self {
-            metaric: 0.2,
+            metaric: 0.0,
             roughness: Default::default(),
             emission: 0.0,
             diffuse_brdf: Brdf::Lambert,
