@@ -35,6 +35,9 @@ struct Args {
 
     #[clap(short = 'i', long = "ip-address", default_value = "")]
     ip_address: String,
+
+    #[clap(long = "scene-file", default_value = "_")]
+    scene_file: std::path::PathBuf,
 }
 
 #[tokio::main]
@@ -44,7 +47,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = sjrt::image::ImageBuffer::new(args.width, args.height);
     let path_tracer =
         sjrt::PathTracer::new(args.sampling_count, args.depth_max, args.is_nee_enabled);
-    let scene = sjrt::RapierScene::new();
+    let scene = if args.scene_file.exists() {
+        let scene = sjrt::scene::Loader::load_from_file(&args.scene_file);
+        sjrt::RapierScene::new_from_scene(&scene)
+    } else {
+        sjrt::RapierScene::new()
+    };
 
     if args.port != -1 {
         let client = sjrt::net::RenderingClient {
