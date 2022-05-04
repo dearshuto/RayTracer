@@ -64,23 +64,27 @@ impl PathTracer {
                     )
                 };
 
-                // 鏡面反射か、拡散反射かを確立で切り替える
                 let mut rng = rand::thread_rng();
                 let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
                 for result in &direction_candidates {
                     let direction_candidate = result.direction;
+                    if !direction_candidate.is_valid() {  continue; }
+
                     let weight = result.weight;
                     let reflect_rate = rng.gen_range(0.0..1.0);
-                    let value = if material_info.property.metaric < reflect_rate {
-                        Lambert::new().calculate(
+
+                    // 鏡面反射か、拡散反射かを確立で切り替える
+                    let metaric = material_info.property.metaric;
+                    let value = if reflect_rate < metaric {
+                        PerfectSpecularReflection::new().calculate(
                             &material_info.normal,
-                            &direction,
+                            &normalized_direction,
                             &direction_candidate,
                         )
                     } else {
-                        PerfectSpecularReflection::new().calculate(
+                        Lambert::new().calculate(
                             &material_info.normal,
-                            &direction,
+                            &normalized_direction,
                             &direction_candidate,
                         )
                     };
