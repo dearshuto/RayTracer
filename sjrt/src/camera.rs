@@ -9,6 +9,7 @@ pub struct Camera {
     resolution_x: u32,
     resolution_y: u32,
     pub position: Vector3f,
+    pub look_at: Vector3f,
 }
 
 impl Camera {
@@ -18,14 +19,15 @@ impl Camera {
             resolution_x: width,
             resolution_y: height,
             position: Vector3f::new(2.780, 2.730, -8.000),
+            look_at: Vector3f::zero(),
         }
     }
 
-    pub fn calculate_ray_direction(&self) -> Vec<RayInfo> {
+    pub fn calculate_ray_direction(&self) -> impl Iterator<Item = RayInfo> {
         self.calculate_ray_direction_range(0..self.resolution_x, 0..self.resolution_y)
     }
 
-    pub fn calculate_ray_direction_range(&self, width_range: Range<u32>, height_range: Range<u32>) -> Vec<RayInfo> {
+    pub fn calculate_ray_direction_range(&self, width_range: Range<u32>, height_range: Range<u32>) -> impl Iterator<Item = RayInfo> {
 
         let mut results = Vec::new();
         for y in height_range {
@@ -44,7 +46,7 @@ impl Camera {
             }
         }
 
-        results
+        results.into_iter()
     }
 }
 

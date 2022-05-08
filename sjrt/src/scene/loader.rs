@@ -65,6 +65,9 @@ mod detail {
     pub struct Scene {
         pub name: String,
 
+        #[serde(default = "CameraData::new")]
+        pub camera: CameraData,
+
         #[serde(default = "SkyData::default")]
         pub sky: SkyData,
 
@@ -73,6 +76,27 @@ mod detail {
 
         #[serde(rename = "box", default = "Vec::new")]
         pub boxes: Vec<BoxData>,
+    }
+
+    #[derive(Deserialize, Debug, Default)]
+    pub struct CameraData {
+        pub position: Float3Data,
+
+        #[serde(default = "Float3Data::zero")]
+        pub look_at: Float3Data,
+    }
+
+    impl CameraData {
+        pub fn new() -> Self {
+            Self {
+                position: Float3Data {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -10.0,
+                },
+                look_at: Float3Data::zero(),
+            }
+        }
     }
 
     #[derive(Deserialize, Debug, Default)]
