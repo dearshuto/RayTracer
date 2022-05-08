@@ -40,7 +40,7 @@ impl Loader {
                 depth: box_.depth,
             };
             primitives.push(Primitive::Box(box_data));
-            transforms.push(detail::TransformData::default().to_scene_data());
+            transforms.push(box_.transform.to_scene_data());
             materials.push(box_.material.to_scene_data());
         }
 
