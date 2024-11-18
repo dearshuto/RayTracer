@@ -1,18 +1,27 @@
-use crate::Vector3f;
+use crate::traits::IVector3;
 
-pub struct Ray
+pub struct Ray<TFloat, TVector3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
 {
-    pub origin: Vector3f,
-    pub direction: Vector3f,
+    pub origin: TVector3,
+    pub direction: TVector3,
     pub depth: u32,
+    _marker: std::marker::PhantomData<TFloat>,
 }
 
-impl Ray{
-    pub fn new(origin: Vector3f, direction: Vector3f, depth: u32) -> Self {
+impl<TFloat, TVector3> Ray<TFloat, TVector3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+{
+    pub fn new(origin: TVector3, direction: TVector3, depth: u32) -> Self {
         Self {
             origin,
             direction,
-            depth
+            depth,
+            _marker: std::marker::PhantomData,
         }
     }
 }
