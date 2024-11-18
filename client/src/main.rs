@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if args.port != -1 {
-        let client = sjrt::net::RenderingClient {
+        let client = sjrt_net::RenderingClient {
             width: args.width,
             height: args.height,
             sampling_count: args.sampling_count,

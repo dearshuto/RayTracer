@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 sjrt = { path = "../sjrt" }
-tokio = { version = "1.15.0", features = ["full"]}
+sjrt-net = { path = "../sjrt-net" }
+tokio = { version = "1.15.0", features = ["full"] }
 clap = { version = "3.0.12", features = ["derive"] }
 tonic = "0.6.2"
