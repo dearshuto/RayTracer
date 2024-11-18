@@ -1,20 +1,20 @@
-pub enum Primitive {
-    Sphere(SphereData),
-    Box(BoxData),
-    TriMesh(TriMeshData),
+pub enum Primitive<TFloat: num::Float> {
+    Sphere(SphereData<TFloat>),
+    Box(BoxData<TFloat>),
+    TriMesh(TriMeshData<TFloat>),
 }
 
-pub struct SphereData {
-    pub radius: f32,
+pub struct SphereData<TFloat: num::Float> {
+    pub radius: TFloat,
 }
 
-pub struct BoxData {
-    pub width: f32,
-    pub height: f32,
-    pub depth: f32,
+pub struct BoxData<TFloat: num::Float> {
+    pub width: TFloat,
+    pub height: TFloat,
+    pub depth: TFloat,
 }
 
-pub struct TriMeshData {
-    pub positions: Vec<f32>,
+pub struct TriMeshData<TFloat: num::Float> {
+    pub positions: Vec<TFloat>,
     pub indices: Vec<u32>,
 }
