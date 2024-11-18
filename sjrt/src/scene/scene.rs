@@ -23,7 +23,7 @@ impl Colors {
 
 pub struct Scene {
     pub sky: Sky,
-    pub primitives: Vec<Primitive>,
+    pub primitives: Vec<Primitive<f32>>,
     pub transforms: Vec<Transform>,
     pub materials: Vec<Material>,
 }
