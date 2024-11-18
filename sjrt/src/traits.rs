@@ -28,3 +28,18 @@ pub trait IBuffer {
 
     fn set_color(&mut self, x: i32, y: i32, red: u8, green: u8, blue: u8);
 }
+
+pub trait IVector3<TFloat>
+where
+    TFloat: num::Float,
+{
+    fn new(x: TFloat, y: TFloat, z: TFloat) -> Self;
+
+    fn zero() -> Self;
+
+    fn dot(&self, other: &Self) -> TFloat;
+
+    fn normalize(&self) -> Self;
+
+    fn length(&self) -> TFloat;
+}
