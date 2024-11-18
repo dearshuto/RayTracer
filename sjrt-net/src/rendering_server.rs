@@ -1,7 +1,7 @@
 use tonic::Response;
 
 use super::detail::{self, renderer_server::Renderer};
-use crate::{IBuffer, IScene};
+use sjrt::{IBuffer, IScene};
 use std::sync::Arc;
 
 pub struct RenderingServer<TScene>
@@ -52,9 +52,9 @@ where
         println!("Depth: {}", depth_count_max);
         println!("NEE: false");
 
-        let renderer = crate::PathTracer::new(sampling_count, depth_count_max, is_nee_enabled);
+        let renderer = sjrt::PathTracer::new(sampling_count, depth_count_max, is_nee_enabled);
         let mut buffer = Buffer::new(width, height);
-        crate::ParallelizeSystem::new_with_thread(thread_count_x, thread_count_y)
+        sjrt::ParallelizeSystem::new_with_thread(thread_count_x, thread_count_y)
             .execute(self.scene.clone(), &mut buffer, Arc::new(renderer))
             .await;
 

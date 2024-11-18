@@ -1,0 +1,12 @@
+[package]
+name = "sjrt-net"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sjrt = { path = "../sjrt" }
+tonic = "0.6.2"
+prost = "0.9"
+
+[build-dependencies]
+tonic-build = "0.6.2"
