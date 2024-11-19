@@ -13,7 +13,7 @@ pub struct EnumerateLightResult {
     pub centers: Vec<Vector3f>,
 }
 
-pub trait IScene: Sync {
+pub trait IScene {
     fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo>;
 
     fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult;

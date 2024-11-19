@@ -13,7 +13,7 @@ where
 
 impl<TScene> RenderingServer<TScene>
 where
-    TScene: IScene + std::marker::Send + 'static,
+    TScene: IScene + std::marker::Sync + std::marker::Send + 'static,
 {
     pub fn new(scene: Arc<TScene>) -> Self {
         Self {
@@ -32,7 +32,7 @@ where
 #[tonic::async_trait]
 impl<TScene> Renderer for RenderingServer<TScene>
 where
-    TScene: IScene + std::marker::Send + 'static,
+    TScene: IScene + std::marker::Sync + std::marker::Send + 'static,
 {
     async fn render(
         &self,
