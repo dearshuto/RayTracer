@@ -1,17 +1,20 @@
 use crate::sampling_algorithm::SamplingResult;
-use rand::Rng;
 use crate::{IScene, Vector3f};
+use rand::Rng;
 
-pub struct DefaultSamplingEstimation {
-}
-
+pub struct DefaultSamplingEstimation {}
 
 impl DefaultSamplingEstimation {
     pub fn new() -> Self {
-        Self{}
+        Self {}
     }
 
-    pub fn estimate<TScene: IScene>(&self, _position: &Vector3f, normal: &Vector3f, _scene: &TScene) -> Vec<SamplingResult> {
+    pub fn estimate<TScene: IScene>(
+        &self,
+        _position: &Vector3f,
+        normal: &Vector3f,
+        _scene: &TScene,
+    ) -> Vec<SamplingResult<f32, Vector3f>> {
         let mut rng = rand::thread_rng();
         let x: f32 = rng.gen_range(-1.0..1.0);
         let y: f32 = rng.gen_range(-1.0..1.0);
@@ -24,6 +27,9 @@ impl DefaultSamplingEstimation {
             random_direction + 2.0 * (-random_direction.dot(normal)) * *normal
         };
 
-        vec![SamplingResult{ weight: 1.0, direction: result  }]
+        vec![SamplingResult::<f32, Vector3f> {
+            weight: 1.0,
+            direction: result,
+        }]
     }
 }
