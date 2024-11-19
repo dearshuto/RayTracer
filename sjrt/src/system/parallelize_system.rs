@@ -1,4 +1,4 @@
-use crate::{IBuffer, IRenderer, IScene, Camera};
+use crate::{Camera, IBuffer, IRenderer, IScene};
 use std::ops::Range;
 
 pub struct ParallelizeSystem {
@@ -19,7 +19,7 @@ impl ParallelizeSystem {
     }
 
     pub async fn execute<
-        TScene: IScene + std::marker::Send + 'static,
+        TScene: IScene + std::marker::Sync + std::marker::Send + 'static,
         TBuffer: IBuffer,
         TRenderer: IRenderer + std::marker::Send + 'static,
     >(
