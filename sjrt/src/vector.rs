@@ -1,4 +1,4 @@
-use crate::traits::IVector3;
+use crate::traits::{IVector3, IVectorComponent3};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vector3f {
@@ -81,11 +81,37 @@ impl std::ops::Mul<f32> for Vector3f {
     }
 }
 
-impl IVector3<f32> for Vector3f {
+impl IVectorComponent3<f32> for Vector3f {
     fn new(x: f32, y: f32, z: f32) -> Self {
         Vector3f::new(x, y, z)
     }
 
+    fn x(&self) -> f32 {
+        self.x
+    }
+
+    fn y(&self) -> f32 {
+        self.y
+    }
+
+    fn z(&self) -> f32 {
+        self.z
+    }
+
+    fn set_x(&mut self, x: f32) {
+        self.x = x;
+    }
+
+    fn set_y(&mut self, y: f32) {
+        self.y = y;
+    }
+
+    fn set_z(&mut self, z: f32) {
+        self.z = z;
+    }
+}
+
+impl IVector3<f32> for Vector3f {
     fn zero() -> Self {
         Vector3f::zero()
     }

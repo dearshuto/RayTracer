@@ -1,4 +1,4 @@
-use crate::{Vector3f, Property};
+use crate::{Property, Vector3f};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Brdf {
@@ -6,18 +6,15 @@ pub enum Brdf {
     PerfectSpecularReflection,
 }
 
-pub struct MaterialInfo
-{
+pub struct MaterialInfo {
     pub normal: Vector3f,
     pub position: Vector3f,
-    pub property: Property,
+    pub property: Property<f32, Vector3f>,
 }
 
-impl MaterialInfo
-{
-    pub fn new(normal: Vector3f, position: Vector3f, property: Property) -> Self
-    {
-        Self{
+impl MaterialInfo {
+    pub fn new(normal: Vector3f, position: Vector3f, property: Property<f32, Vector3f>) -> Self {
+        Self {
             normal,
             position,
             property,

@@ -1,25 +1,36 @@
-use crate::{Brdf, Vector3f};
+use crate::{traits::IVectorComponent3, Brdf};
 
 #[derive(Debug, Copy, Clone)]
-pub struct Property
+pub struct Property<TFloat, TVectorComponent>
+where
+    TFloat: num::Float,
+    TVectorComponent: IVectorComponent3<TFloat>,
 {
-    pub metaric: f32,
-    pub roughness: f32,
-    pub emission: f32,
+    pub metaric: TFloat,
+    pub roughness: TFloat,
+    pub emission: TFloat,
     pub diffuse_brdf: Brdf,
     pub specular_brdf: Brdf,
-    pub albedo: Vector3f,
+    pub albedo: TVectorComponent,
 }
 
-impl Default for Property {
+impl<TFloat, TVectorComponent> Default for Property<TFloat, TVectorComponent>
+where
+    TFloat: num::Float,
+    TVectorComponent: IVectorComponent3<TFloat>,
+{
     fn default() -> Self {
         Self {
-            metaric: 0.0,
-            roughness: Default::default(),
-            emission: 0.0,
+            metaric: TFloat::zero(),
+            roughness: TFloat::zero(),
+            emission: TFloat::zero(),
             diffuse_brdf: Brdf::Lambert,
             specular_brdf: Brdf::PerfectSpecularReflection,
-            albedo: Vector3f::new(1.0, 1.0, 1.0)
+            albedo: TVectorComponent::new(
+                TFloat::from(1.0).unwrap(),
+                TFloat::from(1.0).unwrap(),
+                TFloat::from(1.0).unwrap(),
+            ),
         }
     }
 }
