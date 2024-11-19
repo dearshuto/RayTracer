@@ -21,7 +21,7 @@ impl ParallelizeSystem {
     pub async fn execute<
         TScene: IScene + std::marker::Sync + std::marker::Send + 'static,
         TBuffer: IBuffer,
-        TRenderer: IRenderer + std::marker::Send + 'static,
+        TRenderer: IRenderer + std::marker::Sync + std::marker::Send + 'static,
     >(
         &self,
         scene: std::sync::Arc<TScene>,

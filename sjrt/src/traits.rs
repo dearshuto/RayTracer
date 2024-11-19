@@ -1,6 +1,6 @@
 use crate::{MaterialInfo, Vector3f};
 
-pub trait IRenderer: Sync {
+pub trait IRenderer {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
