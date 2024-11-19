@@ -86,7 +86,7 @@ pub extern "C" fn destroy_default_system(ptr: *mut sjrt::System) {
 #[no_mangle]
 pub extern "C" fn render(
     system_ptr: *const sjrt::System,
-    scene_ptr: *mut sjrt::RapierScene,
+    scene_ptr: *mut sjrt::util::RapierScene,
     buffer_ptr: *mut sjrt::image::ImageBuffer,
 ) {
     let renderer = sjrt::PathTracer::new(64, 1, false);
@@ -96,7 +96,7 @@ pub extern "C" fn render(
 #[no_mangle]
 pub extern "C" fn render_to_external_buffer(
     system_ptr: *const sjrt::System,
-    scene_ptr: *mut sjrt::RapierScene,
+    scene_ptr: *mut sjrt::util::RapierScene,
     buffer_ptr: *mut ExternalBuffer,
 ) {
     let renderer = sjrt::PathTracer::new(64, 1, false);
@@ -114,14 +114,14 @@ pub extern "C" fn render_with_external_resource(
 }
 
 #[no_mangle]
-pub extern "C" fn create_default_scene() -> *mut sjrt::RapierScene {
+pub extern "C" fn create_default_scene() -> *mut sjrt::util::RapierScene {
     let cornel_box = sjrt::scene::Scene::create_cornell_box();
-    let instance = sjrt::RapierScene::new_from_scene(&cornel_box);
+    let instance = sjrt::util::RapierScene::new_from_scene(&cornel_box);
     Box::into_raw(Box::new(instance))
 }
 
 #[no_mangle]
-pub extern "C" fn destroy_default_scene(ptr: *mut sjrt::RapierScene) {
+pub extern "C" fn destroy_default_scene(ptr: *mut sjrt::util::RapierScene) {
     unsafe {
         let _ = Box::from_raw(ptr);
     }

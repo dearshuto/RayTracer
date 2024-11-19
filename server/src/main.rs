@@ -15,7 +15,7 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let scene = Arc::new(sjrt::RapierScene::new());
+    let scene = Arc::new(sjrt::util::RapierScene::new());
     let rendering_server = sjrt_net::RenderingServer::new(scene);
     println!("{}:{}", args.ip_address, args.port);
     let addr = format!("{}:{}", args.ip_address, args.port)

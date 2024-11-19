@@ -34,9 +34,6 @@ pub use ray::Ray;
 mod vector;
 pub use vector::Vector3f;
 
-mod rapier_scene;
-pub use rapier_scene::RapierScene;
-
 pub mod scene;
 
 pub mod util;

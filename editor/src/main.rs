@@ -60,7 +60,7 @@ impl iced::Sandbox for MainWindow {
                 self.buffer = buffer;
 
                 let sampling_count: u16 = self.sampling_count.parse().unwrap();
-                let scene = sjrt::RapierScene::new();
+                let scene = sjrt::util::RapierScene::new();
                 let renderer =
                     sjrt::PathTracer::new(sampling_count, 1 /*depth*/, false /*nee*/);
                 let system = sjrt::System::new();
