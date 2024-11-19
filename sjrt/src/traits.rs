@@ -33,8 +33,6 @@ pub trait IVector3<TFloat>
 where
     TFloat: num::Float,
 {
-    fn new(x: TFloat, y: TFloat, z: TFloat) -> Self;
-
     fn zero() -> Self;
 
     fn dot(&self, other: &Self) -> TFloat;
@@ -42,4 +40,23 @@ where
     fn normalize(&self) -> Self;
 
     fn length(&self) -> TFloat;
+}
+
+pub trait IVectorComponent3<TFloat>
+where
+    TFloat: num::Float,
+{
+    fn new(x: TFloat, y: TFloat, z: TFloat) -> Self;
+
+    fn x(&self) -> TFloat;
+
+    fn y(&self) -> TFloat;
+
+    fn z(&self) -> TFloat;
+
+    fn set_x(&mut self, x: TFloat);
+
+    fn set_y(&mut self, y: TFloat);
+
+    fn set_z(&mut self, z: TFloat);
 }

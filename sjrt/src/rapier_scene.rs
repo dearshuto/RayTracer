@@ -8,7 +8,7 @@ pub struct RapierScene {
     _collider_set: ColliderSet,
     _island_manager: IslandManager,
     _query_pipeline: QueryPipeline,
-    _properties: Vec<Property>,
+    _properties: Vec<Property<f32, Vector3f>>,
     _emission_object_indices: Vec<i32>,
 }
 
