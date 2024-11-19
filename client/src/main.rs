@@ -49,9 +49,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         sjrt::PathTracer::new(args.sampling_count, args.depth_max, args.is_nee_enabled);
     let scene = if args.scene_file.exists() {
         let scene = sjrt::scene::Loader::load_from_file(&args.scene_file);
-        sjrt::RapierScene::new_from_scene(&scene)
+        sjrt::util::RapierScene::new_from_scene(&scene)
     } else {
-        sjrt::RapierScene::new()
+        sjrt::util::RapierScene::new()
     };
 
     if args.port != -1 {

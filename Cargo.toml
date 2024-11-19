@@ -1,3 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["client", "sjrt", "sjrt-net", "sjrt-ffi", "editor", "server"]
+members = [
+    "client",
+    "sjrt",
+    "sjrt-net",
+    "sjrt-res",
+    "sjrt-ffi",
+    "editor",
+    "server",
+]
