@@ -1,12 +1,14 @@
-use crate::Vector3f;
+use crate::traits::IVector3;
 
-pub trait IBidirectionalReflectanceDistributionFunction {
-    fn new() -> Self;
-
+pub trait IBidirectionalReflectanceDistributionFunction<TFloat, TVector>
+where
+    TFloat: num::Float,
+    TVector: IVector3<TFloat>,
+{
     fn calculate(
         &self,
-        normal: &Vector3f,
-        in_direction: &Vector3f,
-        out_direction: &Vector3f,
-    ) -> f32;
+        normal: &TVector,
+        in_direction: &TVector,
+        out_direction: &TVector,
+    ) -> TFloat;
 }

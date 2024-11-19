@@ -76,7 +76,8 @@ impl PathTracer {
                     // 鏡面反射か、拡散反射かを確立で切り替える
                     let metaric = material_info.property.metaric;
                     let value = if reflect_rate < metaric {
-                        PerfectSpecularReflection::new().calculate(
+                        let perfect_specular_reflection = PerfectSpecularReflection::new();
+                        perfect_specular_reflection.calculate(
                             &material_info.normal,
                             &normalized_direction,
                             &direction_candidate,

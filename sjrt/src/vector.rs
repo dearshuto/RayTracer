@@ -1,3 +1,5 @@
+use crate::traits::IVector3;
+
 #[derive(Debug, Copy, Clone)]
 pub struct Vector3f {
     pub x: f32,
@@ -76,5 +78,27 @@ impl std::ops::Mul<f32> for Vector3f {
 
     fn mul(self, rhs: f32) -> Self::Output {
         Vector3f::new(self.x * rhs, self.y * rhs, self.z * rhs)
+    }
+}
+
+impl IVector3<f32> for Vector3f {
+    fn new(x: f32, y: f32, z: f32) -> Self {
+        Vector3f::new(x, y, z)
+    }
+
+    fn zero() -> Self {
+        Vector3f::zero()
+    }
+
+    fn dot(&self, other: &Self) -> f32 {
+        self.dot(other)
+    }
+
+    fn normalize(&self) -> Self {
+        self.normalize()
+    }
+
+    fn length(&self) -> f32 {
+        self.norm()
     }
 }
