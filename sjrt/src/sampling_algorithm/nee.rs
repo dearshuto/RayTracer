@@ -16,7 +16,7 @@ impl NextEventEstimation {
         position: &Vector3f,
         normal: &Vector3f,
         scene: &TScene,
-    ) -> Vec<SamplingResult> {
+    ) -> Vec<SamplingResult<f32, Vector3f>> {
         let result = scene.enumerate_related_lights(position);
         let mut direction_candidate = result
             .centers

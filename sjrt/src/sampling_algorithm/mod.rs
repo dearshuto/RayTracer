@@ -1,11 +1,15 @@
-use crate::Vector3f;
+use crate::traits::IVector3;
 
 mod default_sampling_estimation;
 mod nee;
-pub use nee::NextEventEstimation;
 pub use default_sampling_estimation::DefaultSamplingEstimation;
+pub use nee::NextEventEstimation;
 
-pub struct SamplingResult {
-    pub direction: Vector3f,
-    pub weight: f32,
+pub struct SamplingResult<TFloat, TVector3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+{
+    pub direction: TVector3,
+    pub weight: TFloat,
 }
