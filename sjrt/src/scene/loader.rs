@@ -63,6 +63,7 @@ mod detail {
 
     #[derive(Deserialize, Debug, Default)]
     pub struct Scene {
+        #[allow(unused)]
         pub name: String,
 
         #[serde(default = "SkyData::default")]

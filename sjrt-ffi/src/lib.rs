@@ -65,7 +65,9 @@ pub extern "C" fn create_path_tracer(sampling_count: u16, depth_max: u16) -> *mu
 
 #[no_mangle]
 pub extern "C" fn destroy_path_tracer(ptr: *mut sjrt::PathTracer) {
-    unsafe { Box::from_raw(ptr) };
+    unsafe {
+        let _ = Box::from_raw(ptr);
+    };
 }
 
 #[no_mangle]
@@ -77,7 +79,7 @@ pub extern "C" fn create_default_system() -> *mut sjrt::System {
 #[no_mangle]
 pub extern "C" fn destroy_default_system(ptr: *mut sjrt::System) {
     unsafe {
-        Box::from_raw(ptr);
+        let _ = Box::from_raw(ptr);
     }
 }
 
@@ -121,7 +123,7 @@ pub extern "C" fn create_default_scene() -> *mut sjrt::RapierScene {
 #[no_mangle]
 pub extern "C" fn destroy_default_scene(ptr: *mut sjrt::RapierScene) {
     unsafe {
-        Box::from_raw(ptr);
+        let _ = Box::from_raw(ptr);
     }
 }
 
@@ -134,7 +136,7 @@ pub extern "C" fn create_default_buffer(width: i32, height: i32) -> *mut sjrt::i
 #[no_mangle]
 pub extern "C" fn destroy_default_buffer(ptr: *mut sjrt::image::ImageBuffer) {
     unsafe {
-        Box::from_raw(ptr);
+        let _ = Box::from_raw(ptr);
     }
 }
 
@@ -151,7 +153,7 @@ pub extern "C" fn create_external_buffer(
 #[no_mangle]
 pub extern "C" fn destroy_external_buffer(ptr: *mut ExternalBuffer) {
     unsafe {
-        Box::from_raw(ptr);
+        let _ = Box::from_raw(ptr);
     }
 }
 
@@ -170,7 +172,7 @@ pub extern "C" fn create_external_scene(
 #[no_mangle]
 pub extern "C" fn destroy_external_scene(ptr: *mut ExternalScene) {
     unsafe {
-        Box::from_raw(ptr);
+        let _ = Box::from_raw(ptr);
     }
 }
 
