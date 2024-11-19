@@ -1,4 +1,8 @@
 use clap::Parser;
+use sjrt::{
+    scene::{primitive::SphereData, Material},
+    Vector3f,
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -7,50 +11,32 @@ struct Args {
     sampling_count: u16,
 }
 
-pub fn main()
-{
-    let scene_xml = r##"
-<?xml version="1.0" encoding="UTF-8"?>
-<scene name="main_body">
-  <sky>
-    <lower_color>0.0</lower_color>
-    <lower_color>0.0</lower_color>
-    <lower_color>0.0</lower_color>
-
-    <upper_color>0.7</upper_color>
-    <upper_color>0.75</upper_color>
-    <upper_color>0.95</upper_color>
-  </sky>
-  <sphere radius = "1.5"/>
-  <sphere radius = "0.75">
-    <transform>
-      <translation>0.0</translation>
-      <translation>5.0</translation>
-      <translation>0.0</translation>
-
-      <rotation>0.0</rotation>
-      <rotation>0.0</rotation>
-      <rotation>0.0</rotation>
-
-      <scale>1.0</scale>
-      <scale>1.0</scale>
-      <scale>1.0</scale>
-    </transform>
-    <material>
-      <albedo>1</albedo>
-      <albedo>0.5</albedo>
-      <albedo>0.5</albedo>
-      <emission>350</emission>
-      <emission>350</emission>
-      <emission>350</emission>
-    </material>
-  </sphere>
-</scene>
-  "##;
-
+pub fn main() {
     let args = Args::parse();
-
-    let scene_data = sjrt::scene::Loader::load_from_text(&scene_xml);
+    let scene_data = sjrt::scene::Scene {
+        sky: sjrt::scene::Sky {
+            lower_color: sjrt::Vector3f::zero(),
+            upper_color: sjrt::Vector3f::new(0.2, 0.2, 0.6),
+        },
+        primitives: vec![
+            sjrt::scene::primitive::Primitive::Sphere(SphereData { radius: 0.5f32 }),
+            sjrt::scene::primitive::Primitive::Sphere(SphereData { radius: 0.5f32 }),
+        ],
+        transforms: vec![
+            sjrt::scene::Transform::new_with_translation(&Vector3f::new(0.0, 0.0, 0.0)),
+            sjrt::scene::Transform::new_with_translation(&Vector3f::new(0.0, 1.0, 0.0)),
+        ],
+        materials: vec![
+            Material {
+                albedo: Vector3f::new(0.1, 0.2, 1.0),
+                emission: Vector3f::new(0.1, 0.1, 0.1),
+            },
+            Material {
+                albedo: Vector3f::new(1.0, 0.2, 0.3),
+                emission: Vector3f::new(0.7, 0.7, 0.7),
+            },
+        ],
+    };
     let scene = sjrt::RapierScene::new_from_scene(&scene_data);
     let renderer = sjrt::PathTracer::new(args.sampling_count, 4, false);
     let mut buffer = sjrt::image::ImageBuffer::new(480, 480);
