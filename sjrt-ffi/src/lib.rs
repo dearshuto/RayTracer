@@ -87,7 +87,7 @@ pub extern "C" fn destroy_default_system(ptr: *mut sjrt::System) {
 pub extern "C" fn render(
     system_ptr: *const sjrt::System,
     scene_ptr: *mut sjrt::util::RapierScene,
-    buffer_ptr: *mut sjrt::image::ImageBuffer,
+    buffer_ptr: *mut sjrt::util::ImageBuffer,
 ) {
     let renderer = sjrt::PathTracer::new(64, 1, false);
     unsafe { (*system_ptr).execute(&mut *scene_ptr, &mut *buffer_ptr, &renderer) };
@@ -128,13 +128,13 @@ pub extern "C" fn destroy_default_scene(ptr: *mut sjrt::util::RapierScene) {
 }
 
 #[no_mangle]
-pub extern "C" fn create_default_buffer(width: i32, height: i32) -> *mut sjrt::image::ImageBuffer {
-    let instance = sjrt::image::ImageBuffer::new(width, height);
+pub extern "C" fn create_default_buffer(width: i32, height: i32) -> *mut sjrt::util::ImageBuffer {
+    let instance = sjrt::util::ImageBuffer::new(width, height);
     Box::into_raw(Box::new(instance))
 }
 
 #[no_mangle]
-pub extern "C" fn destroy_default_buffer(ptr: *mut sjrt::image::ImageBuffer) {
+pub extern "C" fn destroy_default_buffer(ptr: *mut sjrt::util::ImageBuffer) {
     unsafe {
         let _ = Box::from_raw(ptr);
     }

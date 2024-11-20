@@ -18,7 +18,7 @@ enum MainWindowMessage {
 }
 
 struct MainWindow {
-    buffer: sjrt::image::ImageBuffer,
+    buffer: sjrt::util::ImageBuffer,
     sampling_count: String,
     width_string: String,
     height_string: String,
@@ -34,7 +34,7 @@ impl iced::Sandbox for MainWindow {
     type Message = MainWindowMessage;
 
     fn new() -> Self {
-        let buffer = sjrt::image::ImageBuffer::new(512, 512);
+        let buffer = sjrt::util::ImageBuffer::new(512, 512);
         let runtime = tokio::runtime::Builder::new_multi_thread().build().unwrap();
 
         Self {
@@ -59,7 +59,7 @@ impl iced::Sandbox for MainWindow {
         match message {
             MainWindowMessage::Run => {
                 let buffer = self.runtime.block_on(async {
-                    let mut buffer = sjrt::image::ImageBuffer::new(
+                    let mut buffer = sjrt::util::ImageBuffer::new(
                         self.width_string.parse().unwrap(),
                         self.height_string.parse().unwrap(),
                     );

@@ -23,8 +23,6 @@ pub use material_info::MaterialInfo;
 mod path_tracer;
 pub use path_tracer::PathTracer;
 
-pub mod image;
-
 mod property;
 pub use property::Property;
 
