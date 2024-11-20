@@ -37,3 +37,6 @@ pub use vector::Vector3f;
 pub mod scene;
 
 pub mod util;
+
+mod types;
+pub use types::Colors;
