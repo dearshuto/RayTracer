@@ -44,7 +44,7 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let mut buffer = sjrt::image::ImageBuffer::new(args.width, args.height);
+    let mut buffer = sjrt::util::ImageBuffer::new(args.width, args.height);
     let path_tracer =
         sjrt::PathTracer::new(args.sampling_count, args.depth_max, args.is_nee_enabled);
     let scene = if args.scene_file.exists() {
