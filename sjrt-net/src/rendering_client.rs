@@ -20,7 +20,7 @@ impl RenderingClient {
             thread_count_x: self.thread_count_x,
             thread_count_y: self.thread_count_y,
         };
-        let url = format!("http://{}", address.to_string());
+        let url = format!("http://{}", address);
         let mut client = detail::renderer_client::RendererClient::connect(url)
             .await
             .unwrap();

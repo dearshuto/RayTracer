@@ -1,6 +1,7 @@
 use crate::{Camera, IBuffer, IRenderer, IScene};
 use std::ops::Range;
 
+#[derive(Default)]
 pub struct ParallelizeSystem {
     thread_count_x: u8,
     thread_count_y: u8,
@@ -34,7 +35,7 @@ impl ParallelizeSystem {
         let width_count = self.thread_count_x as u32;
         let height_count = self.thread_count_y as u32;
         let mut handles = Vec::new();
-        let partial_width = (width / width_count) as u32;
+        let partial_width = width / width_count;
         let partial_height = height / height_count;
         for w in 0..width_count {
             for h in 0..height_count {

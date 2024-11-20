@@ -2,6 +2,7 @@ use crate::sampling_algorithm::SamplingResult;
 use crate::{IScene, Vector3f};
 use rand::Rng;
 
+#[derive(Default)]
 pub struct DefaultSamplingEstimation {}
 
 impl DefaultSamplingEstimation {

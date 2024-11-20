@@ -104,7 +104,7 @@ impl IBuffer for Buffer {
         let value = (((red as u32) << 24) & 0xFF000000)
             | (((green as u32) << 16) & 0xFF0000)
             | (((blue as u32) << 8) & 0xFF00)
-            | (std::u8::MAX as u32);
+            | (u8::MAX as u32);
         let index = (x + self.width * y) as usize;
         self.buffer[index] = value;
     }
