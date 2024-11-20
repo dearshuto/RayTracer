@@ -69,11 +69,11 @@ impl ParallelizeSystem {
         width_range: Range<u32>,
         height_range: Range<u32>,
     ) -> ImageView {
-        let camera = Camera::new(width, height);
+        let camera = Camera::builder().with_resolution(width, height).build();
         let mut image_view = ImageView::new(width_range.clone(), height_range.clone());
         for ray_info in camera.calculate_ray_direction_range(width_range, height_range) {
             let (red_result, green_result, blue_result) =
-                renderer.render(scene.as_ref(), &camera.position, &ray_info.directions[0]);
+                renderer.render(scene.as_ref(), camera.position(), &ray_info.directions[0]);
             image_view.set_color(
                 ray_info.x as i32,
                 ray_info.y as i32,
