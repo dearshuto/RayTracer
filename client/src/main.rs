@@ -94,7 +94,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         sjrt::System::new().execute(&scene, &mut buffer, &path_tracer);
         let end = start.elapsed();
 
-        println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
+        println!(
+            "{} sec, {}",
+            end.as_secs(),
+            end.subsec_nanos() as f32 / 1_000_000f32
+        );
     } else {
         let start = std::time::Instant::now();
         sjrt::ParallelizeSystem::new_with_thread(args.thread_count_x, args.thread_count_y)
@@ -106,7 +110,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .await;
         let end = start.elapsed();
 
-        println!("{} sec, {}", end.as_secs(), end.subsec_nanos() / 1_000_000);
+        println!(
+            "{} sec, {}",
+            end.as_secs(),
+            end.subsec_nanos() as f32 / 1_000_000f32
+        );
     }
 
     buffer.save(args.output_file_path);

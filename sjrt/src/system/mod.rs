@@ -3,6 +3,7 @@ pub use parallelize_system::ParallelizeSystem;
 
 use crate::{Camera, IBuffer, IRenderer, IScene};
 
+#[derive(Default)]
 pub struct System {}
 
 impl System {

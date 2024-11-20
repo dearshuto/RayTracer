@@ -142,8 +142,7 @@ impl IScene for RapierScene {
         {
             let rate = direction.dot(&Vector3f::new(0.0, 1.0, 0.0)).clamp(0.0, 1.0);
             if 0.0 < rate {
-                let sky_color = rate * self.sky_upper_color + (1.0 - rate) * self.sky_lower_color;
-                sky_color
+                rate * self.sky_upper_color + (1.0 - rate) * self.sky_lower_color
             } else {
                 Vector3f::zero()
             }

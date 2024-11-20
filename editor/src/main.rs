@@ -92,7 +92,7 @@ impl iced::Sandbox for MainWindow {
                 let red = self.buffer.get_red(x, y);
                 let blue = self.buffer.get_blue(x, y);
                 let green = self.buffer.get_green(x, y);
-                let alpha = std::u8::MAX;
+                let alpha = u8::MAX;
                 pixels.push(red);
                 pixels.push(green);
                 pixels.push(blue);

@@ -29,7 +29,7 @@ impl PathTracer {
     ) -> (Vector3f, Option<Vector3f>) // (色、位置)
     {
         if self._depth_max < depth as u16 {
-            let sky_color = scene.find_background_color(&position, &direction);
+            let sky_color = scene.find_background_color(position, direction);
             return (sky_color, None);
         }
 
@@ -68,7 +68,9 @@ impl PathTracer {
                 let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
                 for result in &direction_candidates {
                     let direction_candidate = result.direction;
-                    if !direction_candidate.is_valid() {  continue; }
+                    if !direction_candidate.is_valid() {
+                        continue;
+                    }
 
                     let weight = result.weight;
                     let reflect_rate = rng.gen_range(0.0..1.0);
@@ -114,7 +116,7 @@ impl PathTracer {
                 )
             }
         } else {
-            let sky_color = scene.find_background_color(&position, &direction);
+            let sky_color = scene.find_background_color(position, direction);
             (sky_color, None)
         }
     }
@@ -133,7 +135,7 @@ impl IRenderer for PathTracer {
         let mut green = 0.0;
         for _i in 0..sampling_count {
             let (color, _) = self.cast_ray(
-                scene, &position, &direction, 0, // depth
+                scene, position, direction, 0, // depth
             );
             red += color.x;
             green += color.y;

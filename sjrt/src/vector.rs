@@ -23,8 +23,7 @@ impl Vector3f {
     pub fn dot(&self, other: &Vector3f) -> f32 {
         let self_vector = self.to_nalgebra();
         let other_vector = other.to_nalgebra();
-        let result = self_vector.dot(&other_vector);
-        result
+        self_vector.dot(&other_vector)
     }
 
     pub fn normalize(&self) -> Self {
