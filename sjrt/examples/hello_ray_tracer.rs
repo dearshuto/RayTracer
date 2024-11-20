@@ -37,7 +37,7 @@ pub fn main() {
             },
         ],
     };
-    let scene = sjrt::RapierScene::new_from_scene(&scene_data);
+    let scene = sjrt::util::RapierScene::new_from_scene(&scene_data);
     let renderer = sjrt::PathTracer::new(args.sampling_count, 4, false);
     let mut buffer = sjrt::image::ImageBuffer::new(480, 480);
     let system = sjrt::System::new();
