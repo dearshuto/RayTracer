@@ -1,4 +1,4 @@
-use crate::{Camera, IBuffer, IRenderer, IScene};
+use crate::{Camera, IBuffer, IRenderer, IScene, Vector3f};
 use std::ops::Range;
 
 #[derive(Default)]
@@ -70,7 +70,10 @@ impl ParallelizeSystem {
         width_range: Range<u32>,
         height_range: Range<u32>,
     ) -> ImageView {
-        let camera = Camera::builder().with_resolution(width, height).build();
+        let camera = Camera::builder()
+            .with_position(&Vector3f::new(2.780, 2.730, -8.000))
+            .with_resolution(width, height)
+            .build();
         let mut image_view = ImageView::new(width_range.clone(), height_range.clone());
         for ray_info in camera.calculate_ray_direction_range(width_range, height_range) {
             let (red_result, green_result, blue_result) =
