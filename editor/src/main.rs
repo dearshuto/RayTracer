@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use iced::Sandbox;
 
 use sjrt::IBuffer;
@@ -25,6 +27,7 @@ struct MainWindow {
     width_state: iced::text_input::State,
     height_state: iced::text_input::State,
     sampling_count_state: iced::text_input::State,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl iced::Sandbox for MainWindow {
@@ -32,6 +35,7 @@ impl iced::Sandbox for MainWindow {
 
     fn new() -> Self {
         let buffer = sjrt::image::ImageBuffer::new(512, 512);
+        let runtime = tokio::runtime::Builder::new_multi_thread().build().unwrap();
 
         Self {
             buffer,
@@ -43,6 +47,7 @@ impl iced::Sandbox for MainWindow {
             width_state: std::default::Default::default(),
             height_state: std::default::Default::default(),
             sampling_count_state: std::default::Default::default(),
+            runtime,
         }
     }
 
@@ -53,18 +58,23 @@ impl iced::Sandbox for MainWindow {
     fn update(&mut self, message: Self::Message) {
         match message {
             MainWindowMessage::Run => {
-                let buffer = sjrt::image::ImageBuffer::new(
-                    self.width_string.parse().unwrap(),
-                    self.height_string.parse().unwrap(),
-                );
-                self.buffer = buffer;
+                let buffer = self.runtime.block_on(async {
+                    let mut buffer = sjrt::image::ImageBuffer::new(
+                        self.width_string.parse().unwrap(),
+                        self.height_string.parse().unwrap(),
+                    );
 
-                let sampling_count: u16 = self.sampling_count.parse().unwrap();
-                let scene = sjrt::util::RapierScene::new();
-                let renderer =
-                    sjrt::PathTracer::new(sampling_count, 1 /*depth*/, false /*nee*/);
-                let system = sjrt::System::new();
-                system.execute(&scene, &mut self.buffer, &renderer);
+                    let sampling_count: u16 = self.sampling_count.parse().unwrap();
+                    let scene = sjrt::util::RapierScene::new();
+                    let renderer =
+                        sjrt::PathTracer::new(sampling_count, 1 /*depth*/, false /*nee*/);
+                    let system = sjrt::ParallelizeSystem::new_with_thread(16, 16);
+                    system
+                        .execute(Arc::new(scene), &mut buffer, Arc::new(renderer))
+                        .await;
+                    buffer
+                });
+                self.buffer = buffer;
             }
             MainWindowMessage::Save => self.buffer.save("test.png"),
             MainWindowMessage::WidthChanged(new_width) => self.width_string = new_width,

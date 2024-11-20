@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 sjrt = { path = "../sjrt" }
+tokio = { version = "1.0" }
 iced = { version = "0.3", features = ["image"] }
