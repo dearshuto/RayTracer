@@ -14,6 +14,7 @@ enum MainWindowMessage {
     Save,
     WidthChanged(String),
     HeightChanged(String),
+    DepthChanged(String),
     InputChanged(String),
 }
 
@@ -22,10 +23,12 @@ struct MainWindow {
     sampling_count: String,
     width_string: String,
     height_string: String,
+    depth_string: String,
     button_state: iced::button::State,
     save_button_state: iced::button::State,
     width_state: iced::text_input::State,
     height_state: iced::text_input::State,
+    depth_state: iced::text_input::State,
     sampling_count_state: iced::text_input::State,
     runtime: tokio::runtime::Runtime,
 }
@@ -42,10 +45,12 @@ impl iced::Sandbox for MainWindow {
             sampling_count: String::from("32"),
             width_string: String::from("512"),
             height_string: String::from("512"),
+            depth_string: String::from("8"),
             button_state: iced::button::State::new(),
             save_button_state: iced::button::State::new(),
             width_state: std::default::Default::default(),
             height_state: std::default::Default::default(),
+            depth_state: std::default::Default::default(),
             sampling_count_state: std::default::Default::default(),
             runtime,
         }
@@ -66,8 +71,11 @@ impl iced::Sandbox for MainWindow {
 
                     let sampling_count: u16 = self.sampling_count.parse().unwrap();
                     let scene = sjrt::util::RapierScene::new();
-                    let renderer =
-                        sjrt::PathTracer::new(sampling_count, 1 /*depth*/, false /*nee*/);
+                    let renderer = sjrt::PathTracer::new(
+                        sampling_count,
+                        self.depth_string.parse().unwrap(), /*depth*/
+                        false,                              /*nee*/
+                    );
                     let system = sjrt::ParallelizeSystem::new_with_thread(16, 16);
                     system
                         .execute(Arc::new(scene), &mut buffer, Arc::new(renderer))
@@ -79,6 +87,7 @@ impl iced::Sandbox for MainWindow {
             MainWindowMessage::Save => self.buffer.save("test.png"),
             MainWindowMessage::WidthChanged(new_width) => self.width_string = new_width,
             MainWindowMessage::HeightChanged(new_height) => self.height_string = new_height,
+            MainWindowMessage::DepthChanged(new_depth) => self.depth_string = new_depth,
             MainWindowMessage::InputChanged(new_value) => {
                 self.sampling_count = new_value;
             }
@@ -129,6 +138,12 @@ impl iced::Sandbox for MainWindow {
                         "Height",
                         &self.height_string,
                         MainWindowMessage::HeightChanged,
+                    ))
+                    .push(iced::TextInput::new(
+                        &mut self.depth_state,
+                        "Depth",
+                        &self.depth_string,
+                        MainWindowMessage::DepthChanged,
                     ))
                     .push(iced::TextInput::new(
                         &mut self.sampling_count_state,
