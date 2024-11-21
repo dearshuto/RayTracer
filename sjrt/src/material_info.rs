@@ -1,4 +1,7 @@
-use crate::{Property, Vector3f};
+use crate::{
+    traits::{IVector3, IVectorComponent3},
+    Property,
+};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Brdf {
@@ -6,14 +9,28 @@ pub enum Brdf {
     PerfectSpecularReflection,
 }
 
-pub struct MaterialInfo {
-    pub normal: Vector3f,
-    pub position: Vector3f,
-    pub property: Property<f32, Vector3f>,
+pub struct MaterialInfo<TFloat, TVector3, TVectorComponent3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+    TVectorComponent3: IVectorComponent3<TFloat>,
+{
+    pub normal: TVector3,
+    pub position: TVector3,
+    pub property: Property<TFloat, TVectorComponent3>,
 }
 
-impl MaterialInfo {
-    pub fn new(normal: Vector3f, position: Vector3f, property: Property<f32, Vector3f>) -> Self {
+impl<TFloat, TVector3, TVectorComponent3> MaterialInfo<TFloat, TVector3, TVectorComponent3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+    TVectorComponent3: IVectorComponent3<TFloat>,
+{
+    pub fn new(
+        normal: TVector3,
+        position: TVector3,
+        property: Property<TFloat, TVectorComponent3>,
+    ) -> Self {
         Self {
             normal,
             position,

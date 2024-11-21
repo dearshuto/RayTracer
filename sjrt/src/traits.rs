@@ -9,14 +9,23 @@ pub trait IRenderer {
     ) -> (f32, f32, f32);
 }
 
-pub struct EnumerateLightResult {
-    pub centers: Vec<Vector3f>,
+pub struct EnumerateLightResult<TFloat, TVector3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+{
+    pub centers: Vec<TVector3>,
+    pub marker: std::marker::PhantomData<TFloat>,
 }
 
 pub trait IScene {
-    fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo>;
+    fn cast_ray(
+        &self,
+        from: &Vector3f,
+        to: &Vector3f,
+    ) -> Option<MaterialInfo<f32, Vector3f, Vector3f>>;
 
-    fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult;
+    fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult<f32, Vector3f>;
 
     fn find_background_color(&self, position: &Vector3f, direction: &Vector3f) -> Vector3f;
 }

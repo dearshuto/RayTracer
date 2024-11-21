@@ -84,7 +84,11 @@ impl RapierScene {
 }
 
 impl IScene for RapierScene {
-    fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo> {
+    fn cast_ray(
+        &self,
+        from: &Vector3f,
+        to: &Vector3f,
+    ) -> Option<MaterialInfo<f32, Vector3f, Vector3f>> {
         let line_segment = vector![to.x - from.x, to.y - from.y, to.z - from.z];
         let max_toi = line_segment.norm();
         let direction = line_segment / max_toi;
@@ -122,7 +126,10 @@ impl IScene for RapierScene {
         }
     }
 
-    fn enumerate_related_lights(&self, _position: &Vector3f) -> EnumerateLightResult {
+    fn enumerate_related_lights(
+        &self,
+        _position: &Vector3f,
+    ) -> EnumerateLightResult<f32, Vector3f> {
         let mut results = Vec::new();
         for index in &self._emission_object_indices {
             if let Some((_, handle)) = self._collider_set.get_unknown_gen(*index as u32) {
@@ -135,7 +142,10 @@ impl IScene for RapierScene {
                 results.push(light_position);
             }
         }
-        EnumerateLightResult { centers: results }
+        EnumerateLightResult {
+            centers: results,
+            marker: std::marker::PhantomData,
+        }
     }
 
     fn find_background_color(&self, _position: &Vector3f, direction: &Vector3f) -> Vector3f {
