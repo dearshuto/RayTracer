@@ -57,7 +57,7 @@ impl PathTracer {
                         scene,
                     )
                 } else {
-                    DefaultSamplingEstimation::new().estimate(
+                    DefaultSamplingEstimation::new().estimate::<f32, Vector3f, Vector3f, TScene>(
                         &material_info.position,
                         &material_info.normal,
                         scene,
