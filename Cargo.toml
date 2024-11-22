@@ -5,7 +5,6 @@ members = [
     "sjrt",
     "sjrt-net",
     "sjrt-res",
-    "sjrt-ffi",
     "editor/cornell_box",
     "server",
 ]
