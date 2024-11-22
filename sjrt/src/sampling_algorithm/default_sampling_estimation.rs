@@ -1,5 +1,8 @@
+use std::ops::{Add, Mul};
+
 use crate::sampling_algorithm::SamplingResult;
-use crate::{IScene, Vector3f};
+use crate::traits::{IVector3, IVectorComponent3};
+use crate::IScene;
 use rand::Rng;
 
 #[derive(Default)]
@@ -10,26 +13,34 @@ impl DefaultSamplingEstimation {
         Self {}
     }
 
-    pub fn estimate<TScene: IScene>(
+    pub fn estimate<TFloat, TVector3, TVectorComponent3, TScene>(
         &self,
-        _position: &Vector3f,
-        normal: &Vector3f,
+        _position: &TVector3,
+        normal: &TVector3,
         _scene: &TScene,
-    ) -> Vec<SamplingResult<f32, Vector3f>> {
+    ) -> Vec<SamplingResult<TFloat, TVector3>>
+    where
+        TFloat: num::Float + From<f32> + PartialOrd<TFloat> + Mul<TVector3, Output = TVector3>,
+        TVector3:
+            IVector3<TFloat> + IVectorComponent3<TFloat> + Add<TVector3, Output = TVector3> + Copy,
+        TVectorComponent3: IVectorComponent3<TFloat>,
+        TScene: IScene,
+    {
         let mut rng = rand::thread_rng();
-        let x: f32 = rng.gen_range(-1.0..1.0);
-        let y: f32 = rng.gen_range(-1.0..1.0);
-        let z: f32 = rng.gen_range(-1.0..1.0);
-        let random_direction = Vector3f::new(x, y, z).normalize();
+        let x: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
+        let y: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
+        let z: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
+        let random_direction = TVector3::new(x, y, z).normalize();
 
-        let result = if 0.0 < random_direction.dot(normal) {
+        let result = if TFloat::zero() < random_direction.dot(normal) {
             random_direction
         } else {
-            random_direction + 2.0 * (-random_direction.dot(normal)) * *normal
+            let two: TFloat = ::core::convert::From::<f32>::from(2.0f32);
+            random_direction + two * (-random_direction.dot(normal)) * (*normal)
         };
 
-        vec![SamplingResult::<f32, Vector3f> {
-            weight: 1.0,
+        vec![SamplingResult::<TFloat, TVector3> {
+            weight: ::core::convert::From::<f32>::from(1.0),
             direction: result,
         }]
     }
