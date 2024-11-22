@@ -1,11 +1,15 @@
 use crate::{MaterialInfo, Vector3f};
 
-pub trait IRenderer {
+pub trait IRenderer<TFloat, TVector3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+{
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &TVector3,
+        direction: &TVector3,
     ) -> (f32, f32, f32);
 }
 
@@ -18,16 +22,24 @@ where
     pub marker: std::marker::PhantomData<TFloat>,
 }
 
-pub trait IScene {
+pub trait IScene<TFloat, TVector3, TVectorComponent3>
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+    TVectorComponent3: IVectorComponent3<TFloat>,
+{
     fn cast_ray(
         &self,
-        from: &Vector3f,
-        to: &Vector3f,
-    ) -> Option<MaterialInfo<f32, Vector3f, Vector3f>>;
+        from: &TVector3,
+        to: &TVector3,
+    ) -> Option<MaterialInfo<TFloat, TVector3, TVectorComponent3>>;
 
-    fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult<f32, Vector3f>;
+    fn enumerate_related_lights(
+        &self,
+        position: &Vector3f,
+    ) -> EnumerateLightResult<TFloat, TVector3>;
 
-    fn find_background_color(&self, position: &Vector3f, direction: &Vector3f) -> Vector3f;
+    fn find_background_color(&self, position: &TVector3, direction: &TVector3) -> TVector3;
 }
 
 pub trait IBuffer {

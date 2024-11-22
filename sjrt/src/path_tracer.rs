@@ -1,5 +1,6 @@
 use crate::{
     brdf::{Lambert, PerfectSpecularReflection},
+    traits::IVector3,
     DefaultSamplingEstimation, IBidirectionalReflectanceDistributionFunction, IRenderer, IScene,
     NextEventEstimation, Vector3f,
 };
@@ -20,13 +21,18 @@ impl PathTracer {
         }
     }
 
-    pub fn cast_ray<TScene: IScene>(
+    pub fn cast_ray<TFloat, TVector3, TScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &TVector3,
+        direction: &TVector3,
         depth: u32,
-    ) -> (Vector3f, Option<Vector3f>) // (色、位置)
+    ) -> (TVector3, Option<TVector3>)
+    // (色、位置)
+    where
+        TFloat: num::Float,
+        TVector3: IVector3<TFloat>,
+        TScene: IScene,
     {
         if self._depth_max < depth as u16 {
             let sky_color = scene.find_background_color(position, direction);
@@ -122,12 +128,16 @@ impl PathTracer {
     }
 }
 
-impl IRenderer for PathTracer {
+impl<TFloat, TVector3> IRenderer<TFloat, TVector3> for PathTracer
+where
+    TFloat: num::Float,
+    TVector3: IVector3<TFloat>,
+{
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &TVector3,
+        direction: &TVector3,
     ) -> (f32, f32, f32) {
         let sampling_count = self._sampling_count;
         let mut red = 0.0;

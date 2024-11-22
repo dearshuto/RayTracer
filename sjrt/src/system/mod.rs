@@ -1,7 +1,7 @@
 mod parallelize_system;
 pub use parallelize_system::ParallelizeSystem;
 
-use crate::{Camera, IBuffer, IRenderer, IScene};
+use crate::{traits::IVector3, Camera, IBuffer, IRenderer, IScene};
 
 #[derive(Default)]
 pub struct System {}
@@ -11,12 +11,16 @@ impl System {
         Self {}
     }
 
-    pub fn execute<TScene: IScene, TBuffer: IBuffer, TRenderer: IRenderer>(
+    pub fn execute<TFloat, TVector3, TScene: IScene, TBuffer: IBuffer, TRenderer>(
         &self,
         scene: &TScene,
         buffer: &mut TBuffer,
         renderer: &TRenderer,
-    ) {
+    ) where
+        TFloat: num::Float,
+        TVector3: IVector3<TFloat>,
+        TRenderer: IRenderer<TFloat, TVector3>,
+    {
         let camera = Camera::builder()
             .with_resolution(buffer.get_width() as u32, buffer.get_height() as u32)
             .build();
