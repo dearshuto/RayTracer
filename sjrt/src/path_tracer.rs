@@ -1,6 +1,8 @@
+use std::ops::{AddAssign, Div};
+
 use crate::{
     brdf::{Lambert, PerfectSpecularReflection},
-    traits::IVector3,
+    traits::{IVector3, IVectorComponent3},
     DefaultSamplingEstimation, IBidirectionalReflectanceDistributionFunction, IRenderer, IScene,
     NextEventEstimation, Vector3f,
 };
@@ -128,32 +130,34 @@ impl PathTracer {
     }
 }
 
-impl<TFloat, TVector3> IRenderer<TFloat, TVector3> for PathTracer
+impl<TFloat, TVector3, TVectorComponent3> IRenderer<TFloat, TVector3, TVectorComponent3>
+    for PathTracer
 where
-    TFloat: num::Float,
-    TVector3: IVector3<TFloat>,
+    TFloat: num::Float + AddAssign<TFloat> + Div<TFloat, Output = TFloat> + From<u16>,
+    TVector3: IVector3<TFloat> + IVectorComponent3<TFloat>,
+    TVectorComponent3: IVectorComponent3<TFloat>,
 {
-    fn render<TScene: IScene>(
+    fn render<TScene: IScene<TFloat, TVector3, TVectorComponent3>(
         &self,
         scene: &TScene,
         position: &TVector3,
         direction: &TVector3,
-    ) -> (f32, f32, f32) {
+    ) -> TVectorComponent3 {
         let sampling_count = self._sampling_count;
-        let mut red = 0.0;
-        let mut blue = 0.0;
-        let mut green = 0.0;
+        let mut red = TFloat::zero();
+        let mut blue = TFloat::zero();
+        let mut green = TFloat::zero();
         for _i in 0..sampling_count {
             let (color, _) = self.cast_ray(
                 scene, position, direction, 0, // depth
             );
-            red += color.x;
-            green += color.y;
-            blue += color.z;
+            red += color.x();
+            green += color.y();
+            blue += color.z();
         }
-        let red_result = red / (sampling_count as f32);
-        let green_result = green / (sampling_count as f32);
-        let blue_result = blue / (sampling_count as f32);
-        (red_result, green_result, blue_result)
+        let red_result = red / ::core::convert::From::from(sampling_count);
+        let green_result = green / ::core::convert::From::from(sampling_count);
+        let blue_result = blue / ::core::convert::From::from(sampling_count);
+        TVectorComponent3::new(red_result, green_result, blue_result)
     }
 }

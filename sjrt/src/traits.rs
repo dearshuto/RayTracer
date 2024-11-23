@@ -1,16 +1,17 @@
 use crate::{MaterialInfo, Vector3f};
 
-pub trait IRenderer<TFloat, TVector3>
+pub trait IRenderer<TFloat, TVector3, TVectorComponent3>
 where
     TFloat: num::Float,
     TVector3: IVector3<TFloat>,
+    TVectorComponent3: IVectorComponent3<TFloat>,
 {
-    fn render<TScene: IScene>(
+    fn render<TScene: IScene<TFloat, TVector3, TVectorComponent3>>(
         &self,
         scene: &TScene,
         position: &TVector3,
         direction: &TVector3,
-    ) -> (f32, f32, f32);
+    ) -> TVectorComponent3;
 }
 
 pub struct EnumerateLightResult<TFloat, TVector3>

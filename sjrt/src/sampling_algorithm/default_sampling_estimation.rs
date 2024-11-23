@@ -24,7 +24,7 @@ impl DefaultSamplingEstimation {
         TVector3:
             IVector3<TFloat> + IVectorComponent3<TFloat> + Add<TVector3, Output = TVector3> + Copy,
         TVectorComponent3: IVectorComponent3<TFloat>,
-        TScene: IScene,
+        TScene: IScene<TFloat, TVector3, TVectorComponent3>,
     {
         let mut rng = rand::thread_rng();
         let x: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
