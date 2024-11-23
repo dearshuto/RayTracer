@@ -1,4 +1,9 @@
-use crate::{scene::Scene, traits::EnumerateLightResult, IScene, MaterialInfo, Property, Vector3f};
+use crate::{
+    sampling_algorithm::IRelatedLightEnumerator,
+    scene::Scene,
+    traits::{EnumerateLightResult, IVector3, IVectorComponent3},
+    IScene, MaterialInfo, Property, Vector3f,
+};
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
@@ -122,20 +127,9 @@ impl IScene for RapierScene {
         }
     }
 
-    fn enumerate_related_lights(&self, _position: &Vector3f) -> EnumerateLightResult {
-        let mut results = Vec::new();
-        for index in &self._emission_object_indices {
-            if let Some((_, handle)) = self._collider_set.get_unknown_gen(*index as u32) {
-                let collider = self._collider_set.get(handle).unwrap();
-                let light_position = Vector3f::new(
-                    collider.translation()[0],
-                    collider.translation()[1],
-                    collider.translation()[2],
-                );
-                results.push(light_position);
-            }
-        }
-        EnumerateLightResult { centers: results }
+    fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult {
+        let centers: Vec<_> = self.enumerate(position).collect();
+        EnumerateLightResult { centers }
     }
 
     fn find_background_color(&self, _position: &Vector3f, direction: &Vector3f) -> Vector3f {
@@ -147,5 +141,27 @@ impl IScene for RapierScene {
                 Vector3f::zero()
             }
         }
+    }
+}
+
+impl<TFloat, TVector3> IRelatedLightEnumerator<TFloat, TVector3> for RapierScene
+where
+    TFloat: num::Float + From<f32>,
+    TVector3: IVector3<TFloat> + IVectorComponent3<TFloat>,
+{
+    fn enumerate(&self, _position: &TVector3) -> impl Iterator<Item = TVector3> {
+        let mut results = Vec::new();
+        for index in &self._emission_object_indices {
+            if let Some((_, handle)) = self._collider_set.get_unknown_gen(*index as u32) {
+                let collider = self._collider_set.get(handle).unwrap();
+                let light_position = TVector3::new(
+                    ::core::convert::From::from(collider.translation()[0]),
+                    ::core::convert::From::from(collider.translation()[1]),
+                    ::core::convert::From::from(collider.translation()[2]),
+                );
+                results.push(light_position);
+            }
+        }
+        results.into_iter()
     }
 }
