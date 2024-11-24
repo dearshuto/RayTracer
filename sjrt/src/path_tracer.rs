@@ -6,17 +6,17 @@ use crate::{
 use rand::Rng;
 
 pub struct PathTracer {
-    _sampling_count: u16,
-    _depth_max: u16,
-    _is_nee_enabled: bool,
+    sampling_count: u16,
+    depth_max: u16,
+    is_nee_enabled: bool,
 }
 
 impl PathTracer {
     pub fn new(sampling_count: u16, depth_max: u16, is_nee_enabled: bool) -> Self {
         Self {
-            _sampling_count: sampling_count,
-            _depth_max: depth_max,
-            _is_nee_enabled: is_nee_enabled,
+            sampling_count,
+            depth_max,
+            is_nee_enabled,
         }
     }
 
@@ -28,7 +28,7 @@ impl PathTracer {
         depth: u32,
     ) -> (Vector3f, Option<Vector3f>) // (色、位置)
     {
-        if self._depth_max < depth as u16 {
+        if self.depth_max < depth as u16 {
             let sky_color = scene.find_background_color(position, direction);
             return (sky_color, None);
         }
@@ -50,8 +50,8 @@ impl PathTracer {
                 );
                 (emission, Some(*mat_position))
             } else {
-                let direction_candidates = if self._is_nee_enabled {
-                    NextEventEstimation::new(self._sampling_count).estimate(
+                let direction_candidates = if self.is_nee_enabled {
+                    NextEventEstimation::new(self.sampling_count).estimate(
                         &material_info.position,
                         &material_info.normal,
                         scene,
@@ -129,7 +129,7 @@ impl IRenderer for PathTracer {
         position: &Vector3f,
         direction: &Vector3f,
     ) -> (f32, f32, f32) {
-        let sampling_count = self._sampling_count;
+        let sampling_count = self.sampling_count;
         let mut red = 0.0;
         let mut blue = 0.0;
         let mut green = 0.0;
