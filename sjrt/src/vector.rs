@@ -21,14 +21,12 @@ impl Vector3f {
     }
 
     pub fn dot(&self, other: &Vector3f) -> f32 {
-        let self_vector = self.to_nalgebra();
-        let other_vector = other.to_nalgebra();
-        self_vector.dot(&other_vector)
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     pub fn normalize(&self) -> Self {
-        let result = self.to_nalgebra().normalize();
-        Self::from_nalgebra(&result)
+        let norm = self.norm();
+        Self::new(self.x / norm, self.y / norm, self.z / norm)
     }
 
     pub fn norm(&self) -> f32 {
@@ -37,14 +35,6 @@ impl Vector3f {
 
     pub fn is_valid(&self) -> bool {
         !self.x.is_nan() && !self.y.is_nan() && !self.z.is_nan()
-    }
-
-    fn to_nalgebra(&self) -> nalgebra::Vector3<f32> {
-        nalgebra::Vector3::new(self.x, self.y, self.z)
-    }
-
-    fn from_nalgebra(vector: &nalgebra::Vector3<f32>) -> Self {
-        Self::new(vector[0], vector[1], vector[2])
     }
 }
 
