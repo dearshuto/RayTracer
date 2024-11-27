@@ -6,18 +6,27 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.15.0", features = ["full"] }
 futures = "0.3.19"
 image = "0.23.14"
-rapier3d = { version = "0.11.1", features = ["simd-stable"] }
-num = "*"
 nalgebra = "0.30.1"
-rand = "0.8.4"
-rand_distr = "0.4.3"
-
-serde_derive = "1.0"
+num = { version = "*", default-features = true, features = [] }
+rand = { version = "0.6.1" }
 serde = "1.0"
+serde_derive = "1.0"
 serde-xml-rs = "*"
 
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+rapier3d = { version = "0.11.1", features = ["simd-stable"] }
+tokio = { version = "1.0", features = ["full"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+rapier3d = { version = "0.11.1", features = [] }
+tokio = { version = "1.0", features = [
+    "sync",
+    "macros",
+    "io-util",
+    "rt",
+    "time",
+] }
+
 [dev-dependencies]
-clap = { version = "3.0.12", features = ["derive"] }

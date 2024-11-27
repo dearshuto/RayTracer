@@ -27,9 +27,9 @@ impl DefaultSamplingEstimation {
         TScene: IScene,
     {
         let mut rng = rand::thread_rng();
-        let x: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
-        let y: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
-        let z: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
+        let x: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0, 1.0));
+        let y: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0, 1.0));
+        let z: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0, 1.0));
         let random_direction = TVector3::new(x, y, z).normalize();
 
         let result = if TFloat::zero() < random_direction.dot(normal) {

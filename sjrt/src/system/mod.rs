@@ -1,7 +1,7 @@
 mod parallelize_system;
 pub use parallelize_system::ParallelizeSystem;
 
-use crate::{Camera, IBuffer, IRenderer, IScene};
+use crate::{Camera, IBuffer, IRenderer, IScene, Vector3f};
 
 #[derive(Default)]
 pub struct System {}
@@ -18,6 +18,8 @@ impl System {
         renderer: &TRenderer,
     ) {
         let camera = Camera::builder()
+            // .with_position(&Vector3f::new(2.780, 2.730, -8.000))
+            .with_position(&Vector3f::new(-6.0, -6.0, 0.000))
             .with_resolution(buffer.get_width() as u32, buffer.get_height() as u32)
             .build();
         for ray_info in camera.calculate_ray_direction() {

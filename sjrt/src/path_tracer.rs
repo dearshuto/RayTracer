@@ -73,7 +73,7 @@ impl PathTracer {
                     }
 
                     let weight = result.weight;
-                    let reflect_rate = rng.gen_range(0.0..1.0);
+                    let reflect_rate = rng.gen_range(0.0, 1.0);
 
                     // 鏡面反射か、拡散反射かを確立で切り替える
                     let metaric = material_info.property.metaric;

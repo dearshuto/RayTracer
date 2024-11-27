@@ -1,0 +1,20 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sjrt = { path = "../../../sjrt" }
+wasm-bindgen = { version = "0.2.95", features = ["serde-serialize"] }
+wasm-bindgen-futures = { version = "0.4.45" }
+web-sys = { version = "0.3.72", features = [
+    "CustomEvent",
+    "CanvasRenderingContext2d",
+    "HtmlCanvasElement",
+    "ImageData",
+] }
+
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]

@@ -1,0 +1,36 @@
+{
+  "name": "hello_world",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "wasm-pack build ./runtime --target web; react-scripts start",
+    "build": "wasm-pack build ./runtime --target web; npm install; react-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "",
+  "description": "",
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^4.9.5",
+    "react-scripts": "^5.0.1"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "runtime": "file:./runtime/pkg"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

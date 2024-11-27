@@ -6,5 +6,6 @@ members = [
     "sjrt-net",
     "sjrt-res",
     "editor/cornell_box",
+    "editor/cornell_box_web/runtime",
     "server",
 ]
