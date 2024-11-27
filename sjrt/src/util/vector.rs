@@ -44,12 +44,7 @@ where
 
 impl<TFloat> IVector3<TFloat> for Vector3<TFloat>
 where
-    TFloat: num::Float
-        + nalgebra::Scalar
-        + nalgebra::ClosedAdd
-        + nalgebra::ClosedMul
-        + nalgebra::SimdComplexField
-        + nalgebra::SimdRealField,
+    TFloat: num::Float + nalgebra::Scalar + nalgebra::SimdComplexField + nalgebra::SimdRealField,
 {
     fn zero() -> Self {
         Self {
