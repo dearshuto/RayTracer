@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use iced::Sandbox;
+use iced::{
+    widget::{Button, Column, Container, Row, TextInput},
+    Alignment, Sandbox,
+};
 
 use sjrt::IBuffer;
 
@@ -24,12 +27,6 @@ struct MainWindow {
     width_string: String,
     height_string: String,
     depth_string: String,
-    button_state: iced::button::State,
-    save_button_state: iced::button::State,
-    width_state: iced::text_input::State,
-    height_state: iced::text_input::State,
-    depth_state: iced::text_input::State,
-    sampling_count_state: iced::text_input::State,
     runtime: tokio::runtime::Runtime,
 }
 
@@ -46,12 +43,6 @@ impl iced::Sandbox for MainWindow {
             width_string: String::from("512"),
             height_string: String::from("512"),
             depth_string: String::from("8"),
-            button_state: iced::button::State::new(),
-            save_button_state: iced::button::State::new(),
-            width_state: std::default::Default::default(),
-            height_state: std::default::Default::default(),
-            depth_state: std::default::Default::default(),
-            sampling_count_state: std::default::Default::default(),
             runtime,
         }
     }
@@ -94,7 +85,7 @@ impl iced::Sandbox for MainWindow {
         }
     }
 
-    fn view(&mut self) -> iced::Element<MainWindowMessage> {
+    fn view(&self) -> iced::Element<MainWindowMessage> {
         let mut pixels = Vec::new();
         for y in 0..self.buffer.get_height() {
             for x in 0..self.buffer.get_width() {
@@ -109,67 +100,46 @@ impl iced::Sandbox for MainWindow {
             }
         }
 
-        let handle = iced::image::Handle::from_pixels(
+        let handle = iced::widget::image::Handle::from_pixels(
             self.buffer.get_width() as u32,
             self.buffer.get_height() as u32,
             pixels,
         );
-        let image = iced::Image::new(handle)
+        let image = iced::widget::Image::new(handle)
             .width(iced::Length::Units(self.buffer.get_width() as u16))
             .height(iced::Length::Units(self.buffer.get_height() as u16));
 
-        let contents: iced::Element<_> = iced::Row::new()
-            .align_items(iced::Align::Start)
+        let contents: iced::Element<_> = Row::new()
+            .align_items(Alignment::Start)
             .width(iced::Length::Fill)
             .height(iced::Length::Fill)
             .push(image)
             .push(
-                iced::Column::new()
+                Column::new()
                     .spacing(20)
                     .padding(20)
-                    .push(iced::TextInput::new(
-                        &mut self.width_state,
-                        "Width",
-                        &self.width_string,
-                        MainWindowMessage::WidthChanged,
-                    ))
-                    .push(iced::TextInput::new(
-                        &mut self.height_state,
-                        "Height",
-                        &self.height_string,
-                        MainWindowMessage::HeightChanged,
-                    ))
-                    .push(iced::TextInput::new(
-                        &mut self.depth_state,
-                        "Depth",
-                        &self.depth_string,
-                        MainWindowMessage::DepthChanged,
-                    ))
-                    .push(iced::TextInput::new(
-                        &mut self.sampling_count_state,
-                        "",
-                        &self.sampling_count,
-                        MainWindowMessage::InputChanged,
-                    ))
+                    .push(TextInput::new("Width", &self.width_string, |str| {
+                        MainWindowMessage::WidthChanged(str)
+                    }))
+                    .push(TextInput::new("Height", &self.height_string, |str| {
+                        MainWindowMessage::HeightChanged(str)
+                    }))
+                    .push(TextInput::new("Depth", &self.depth_string, |str| {
+                        MainWindowMessage::DepthChanged(str)
+                    }))
+                    .push(TextInput::new("", &self.sampling_count, |str| {
+                        MainWindowMessage::InputChanged(str)
+                    }))
                     .push(
-                        iced::Row::new()
+                        Row::new()
                             .spacing(10)
-                            .push(
-                                iced::Button::new(&mut self.button_state, iced::Text::new("Run"))
-                                    .on_press(MainWindowMessage::Run),
-                            )
-                            .push(
-                                iced::Button::new(
-                                    &mut self.save_button_state,
-                                    iced::Text::new("Save"),
-                                )
-                                .on_press(MainWindowMessage::Save),
-                            ),
+                            .push(Button::new("Run").on_press(MainWindowMessage::Run))
+                            .push(Button::new("Save").on_press(MainWindowMessage::Save)),
                     ),
             )
             .into();
 
-        iced::Container::new(contents)
+        Container::new(contents)
             .height(iced::Length::Fill)
             .center_y()
             .into()
