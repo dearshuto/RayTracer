@@ -54,7 +54,7 @@ impl Loader {
 }
 
 mod detail {
-    use serde_derive::Deserialize;
+    use serde::Deserialize;
 
     use crate::{
         scene::scene::{Material, Sky, Transform},
