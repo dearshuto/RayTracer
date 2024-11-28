@@ -9,7 +9,7 @@ edition = "2021"
 tokio = { version = "1.15.0", features = ["full"] }
 futures = "0.3.19"
 image = "0.25"
-rapier3d = { version = "0.11.1", features = ["simd-stable"] }
+rapier3d = { version = "0.22", features = ["simd-stable"] }
 num = "*"
 nalgebra = "0.33"
 rand = "0.8.4"

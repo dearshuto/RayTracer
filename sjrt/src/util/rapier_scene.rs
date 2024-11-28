@@ -25,7 +25,7 @@ impl RapierScene {
         let mut emission_indices = Vec::new();
         for index in 0..scene.primitives.len() {
             let transform = &scene.transforms[index];
-            let rigid_body = RigidBodyBuilder::new_static()
+            let rigid_body = RigidBodyBuilder::fixed()
                 .translation(vector![
                     transform.translation.x,
                     transform.translation.y,
@@ -69,7 +69,7 @@ impl RapierScene {
 
         let island_manager = IslandManager::new();
         let mut query_pipeline = QueryPipeline::new();
-        query_pipeline.update(&island_manager, &rigid_body_set, &collider_set);
+        query_pipeline.update(&collider_set);
         Self {
             sky_lower_color: scene.sky.lower_color,
             sky_upper_color: scene.sky.upper_color,
@@ -96,14 +96,13 @@ impl IScene for RapierScene {
         let ray = &Ray::new(point![from.x, from.y, from.z], direction);
         let colliders = &self._collider_set;
         let solid = false;
-        let query_groups = InteractionGroups::all();
-        let filter = None;
+        let filter = QueryFilter::default();
         if let Some((handle, intersection)) = self._query_pipeline.cast_ray_and_get_normal(
+            &self._rigid_body_set,
             colliders,
             ray,
             max_toi,
             solid,
-            query_groups,
             filter,
         ) {
             // TODO: プロパティの検索
@@ -114,7 +113,7 @@ impl IScene for RapierScene {
                 intersection.normal[1],
                 intersection.normal[2],
             );
-            let position = ray.point_at(intersection.toi);
+            let position = ray.point_at(intersection.time_of_impact);
             let property = &self._properties[parent_handle.index()];
             let material = MaterialInfo::new(
                 normal,
