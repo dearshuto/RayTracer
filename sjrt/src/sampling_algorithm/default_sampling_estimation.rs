@@ -1,12 +1,13 @@
-use std::ops::{Add, Mul};
+use std::marker::PhantomData;
+use std::ops::{Add, Mul, Range};
 
 use crate::sampling_algorithm::SamplingResult;
-use crate::traits::{IVector3, IVectorComponent3};
+use crate::traits::{IRandomEngine, IVector3, IVectorComponent3};
 use crate::IScene;
 use rand::Rng;
 
 #[derive(Default)]
-pub struct DefaultSamplingEstimation {}
+pub struct DefaultSamplingEstimation;
 
 impl DefaultSamplingEstimation {
     pub fn new() -> Self {
@@ -15,6 +16,73 @@ impl DefaultSamplingEstimation {
 
     pub fn estimate<TFloat, TVector3, TVectorComponent3, TScene>(
         &self,
+        position: &TVector3,
+        normal: &TVector3,
+        scene: &TScene,
+    ) -> Vec<SamplingResult<TFloat, TVector3>>
+    where
+        TFloat: num::Float
+            + From<f32>
+            + Into<f32>
+            + PartialOrd<TFloat>
+            + Mul<TVector3, Output = TVector3>,
+        TVector3:
+            IVector3<TFloat> + IVectorComponent3<TFloat> + Add<TVector3, Output = TVector3> + Copy,
+        TVectorComponent3: IVectorComponent3<TFloat>,
+        TScene: IScene,
+    {
+        let random_engine = RandomEngineAdapter::new();
+        let mut internal = DefaultSamplingEstimationInternal::new(random_engine);
+        internal.estimate(position, normal, scene)
+    }
+}
+
+struct RandomEngineAdapter {
+    rng: rand::rngs::ThreadRng,
+}
+
+impl RandomEngineAdapter {
+    pub fn new() -> Self {
+        let rng = rand::thread_rng();
+        Self { rng }
+    }
+}
+
+impl<TFloat> IRandomEngine<TFloat> for RandomEngineAdapter
+where
+    TFloat: num::Float + From<f32> + Into<f32>,
+{
+    fn generate_range(&mut self, range: Range<TFloat>) -> TFloat {
+        let start: f32 = range.start.into();
+        let end = range.end.into();
+        let value = self.rng.gen_range(start..end);
+        From::from(value)
+    }
+}
+
+pub struct DefaultSamplingEstimationInternal<TFloat, TRandomEngine>
+where
+    TFloat: num::Float,
+    TRandomEngine: IRandomEngine<TFloat>,
+{
+    random_engine: TRandomEngine,
+    _marker: PhantomData<TFloat>,
+}
+
+impl<TFloat, TRandomEngine> DefaultSamplingEstimationInternal<TFloat, TRandomEngine>
+where
+    TFloat: num::Float,
+    TRandomEngine: IRandomEngine<TFloat>,
+{
+    pub fn new(random_engine: TRandomEngine) -> Self {
+        Self {
+            random_engine,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn estimate<TVector3, TScene>(
+        &mut self,
         _position: &TVector3,
         normal: &TVector3,
         _scene: &TScene,
@@ -23,13 +91,12 @@ impl DefaultSamplingEstimation {
         TFloat: num::Float + From<f32> + PartialOrd<TFloat> + Mul<TVector3, Output = TVector3>,
         TVector3:
             IVector3<TFloat> + IVectorComponent3<TFloat> + Add<TVector3, Output = TVector3> + Copy,
-        TVectorComponent3: IVectorComponent3<TFloat>,
         TScene: IScene,
     {
-        let mut rng = rand::thread_rng();
-        let x: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
-        let y: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
-        let z: TFloat = ::core::convert::From::<f32>::from(rng.gen_range(-1.0..1.0));
+        let range = From::<f32>::from(-1.0)..From::<f32>::from(1.0);
+        let x = self.random_engine.generate_range(range.clone());
+        let y = self.random_engine.generate_range(range.clone());
+        let z = self.random_engine.generate_range(range);
         let random_direction = TVector3::new(x, y, z).normalize();
 
         let result = if TFloat::zero() < random_direction.dot(normal) {
@@ -43,5 +110,59 @@ impl DefaultSamplingEstimation {
             weight: ::core::convert::From::<f32>::from(1.0),
             direction: result,
         }]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ops::Range;
+
+    use crate::Vector3f;
+
+    use super::*;
+
+    struct RandomEngineMock;
+    impl IRandomEngine<f32> for RandomEngineMock {
+        fn generate_range(&mut self, _range: Range<f32>) -> f32 {
+            0.0f32
+        }
+    }
+
+    struct SceneMock;
+    impl IScene for SceneMock {
+        fn cast_ray(
+            &self,
+            _from: &crate::Vector3f,
+            _to: &crate::Vector3f,
+        ) -> Option<crate::MaterialInfo> {
+            None
+        }
+
+        fn enumerate_related_lights(
+            &self,
+            _position: &crate::Vector3f,
+        ) -> crate::EnumerateLightResult {
+            crate::EnumerateLightResult {
+                centers: Default::default(),
+            }
+        }
+
+        fn find_background_color(
+            &self,
+            _position: &crate::Vector3f,
+            _direction: &crate::Vector3f,
+        ) -> crate::Vector3f {
+            Vector3f::zero()
+        }
+    }
+
+    #[test]
+    fn new_f32() {
+        let random_engine = RandomEngineMock {};
+        let scene = SceneMock {};
+        let position = Vector3f::zero();
+        let normal = Vector3f::new(0.0, 1.0, 0.0);
+        let mut estimation = DefaultSamplingEstimationInternal::new(random_engine);
+        let _ = estimation.estimate(&position, &normal, &scene);
     }
 }
