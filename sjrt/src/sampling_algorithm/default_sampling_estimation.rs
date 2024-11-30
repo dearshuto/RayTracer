@@ -1,10 +1,11 @@
 use std::marker::PhantomData;
-use std::ops::{Add, Mul, Range};
+use std::ops::{Add, Mul};
 
 use crate::sampling_algorithm::SamplingResult;
 use crate::traits::{IRandomEngine, IVector3, IVectorComponent3};
 use crate::IScene;
-use rand::Rng;
+
+use super::detail::RandomEngineAdapter;
 
 #[derive(Default)]
 pub struct DefaultSamplingEstimation;
@@ -34,29 +35,6 @@ impl DefaultSamplingEstimation {
         let random_engine = RandomEngineAdapter::new();
         let mut internal = DefaultSamplingEstimationInternal::new(random_engine);
         internal.estimate(position, normal, scene)
-    }
-}
-
-struct RandomEngineAdapter {
-    rng: rand::rngs::ThreadRng,
-}
-
-impl RandomEngineAdapter {
-    pub fn new() -> Self {
-        let rng = rand::thread_rng();
-        Self { rng }
-    }
-}
-
-impl<TFloat> IRandomEngine<TFloat> for RandomEngineAdapter
-where
-    TFloat: num::Float + From<f32> + Into<f32>,
-{
-    fn generate_range(&mut self, range: Range<TFloat>) -> TFloat {
-        let start: f32 = range.start.into();
-        let end = range.end.into();
-        let value = self.rng.gen_range(start..end);
-        From::from(value)
     }
 }
 

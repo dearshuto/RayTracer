@@ -1,9 +1,11 @@
+use std::marker::PhantomData;
 use std::ops::{Add, Mul, Sub};
 
 use crate::sampling_algorithm::SamplingResult;
-use crate::traits::{IVector3, IVectorComponent3};
+use crate::traits::{IRandomEngine, IVector3, IVectorComponent3};
 use crate::{IScene, Vector3f};
-use rand::prelude::*;
+
+use super::detail::RandomEngineAdapter;
 
 pub trait IRelatedLightEnumerator<TFloat, TVector3>
 where
@@ -31,11 +33,74 @@ impl NextEventEstimation {
     where
         TFloat: num::Float
             + From<f32>
+            + Into<f32>
             + Mul<TVector3, Output = TVector3>
             + num::traits::Inv<Output = TFloat>,
         TVector3: IVector3<TFloat>
             + IVectorComponent3<TFloat>
             + Add<TVector3, Output = TVector3>
+            + Sub<TVector3, Output = TVector3>
+            + Mul<TFloat, Output = TVector3>
+            + Copy,
+        TEnumerator: IRelatedLightEnumerator<TFloat, TVector3>,
+    {
+        let random_engine = RandomEngineAdapter::new();
+        let mut internal = NextEventEstimationInternal::<TFloat, RandomEngineAdapter>::new(
+            self.sampling_count,
+            random_engine,
+        );
+        internal.estimate_with(position, normal, scene)
+    }
+
+    pub fn estimate<TScene: IScene>(
+        &self,
+        position: &Vector3f,
+        normal: &Vector3f,
+        scene: &TScene,
+    ) -> Vec<SamplingResult<f32, Vector3f>> {
+        let random_engine = RandomEngineAdapter::new();
+        let mut internal = NextEventEstimationInternal::<f32, RandomEngineAdapter>::new(
+            self.sampling_count,
+            random_engine,
+        );
+        internal.estimate(position, normal, scene)
+    }
+}
+
+struct NextEventEstimationInternal<TFloat, TRandomEngine>
+where
+    TFloat: num::Float,
+    TRandomEngine: IRandomEngine<TFloat>,
+{
+    sampling_count: u16,
+    random_engine: TRandomEngine,
+    _marker: PhantomData<TFloat>,
+}
+
+impl<TFloat, TRandomEngine> NextEventEstimationInternal<TFloat, TRandomEngine>
+where
+    TFloat: num::Float + From<f32> + Into<f32> + num::traits::Inv<Output = TFloat>,
+    TRandomEngine: IRandomEngine<TFloat>,
+{
+    pub fn new(sampling_count: u16, random_engine: TRandomEngine) -> Self {
+        Self {
+            sampling_count,
+            random_engine,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn estimate_with<TVector3, TEnumerator>(
+        &mut self,
+        position: &TVector3,
+        normal: &TVector3,
+        scene: &TEnumerator,
+    ) -> Vec<SamplingResult<TFloat, TVector3>>
+    where
+        TVector3: IVector3<TFloat>
+            + IVectorComponent3<TFloat>
+            + Add<TVector3, Output = TVector3>
+            + Mul<TFloat, Output = TVector3>
             + Sub<TVector3, Output = TVector3>
             + Copy,
         TEnumerator: IRelatedLightEnumerator<TFloat, TVector3>,
@@ -51,17 +116,17 @@ impl NextEventEstimation {
             })
             .collect::<Vec<_>>();
 
-        let mut rng = rand::thread_rng();
-        let x: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
-        let y: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
-        let z: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
+        let range = From::<f32>::from(-1.0)..From::<f32>::from(1.0);
+        let x = self.random_engine.generate_range(range.clone());
+        let y = self.random_engine.generate_range(range.clone());
+        let z = self.random_engine.generate_range(range);
         let random_direction = TVector3::new(x, y, z).normalize();
 
         let result = if TFloat::zero() < random_direction.dot(normal) {
             random_direction
         } else {
             let two: TFloat = ::core::convert::From::from(2.0f32);
-            random_direction + two * (-random_direction.dot(normal)) * *normal
+            random_direction + *normal * two * (-random_direction.dot(normal))
         };
         let random_direction_result = SamplingResult {
             weight: ::core::convert::From::from(1.0),
@@ -72,7 +137,7 @@ impl NextEventEstimation {
     }
 
     pub fn estimate<TScene: IScene>(
-        &self,
+        &mut self,
         position: &Vector3f,
         normal: &Vector3f,
         scene: &TScene,
@@ -87,11 +152,11 @@ impl NextEventEstimation {
             })
             .collect::<Vec<_>>();
 
-        let mut rng = rand::thread_rng();
-        let x: f32 = rng.gen_range(-1.0..1.0);
-        let y: f32 = rng.gen_range(-1.0..1.0);
-        let z: f32 = rng.gen_range(-1.0..1.0);
-        let random_direction = Vector3f::new(x, y, z).normalize();
+        let range = From::<f32>::from(-1.0)..From::<f32>::from(1.0);
+        let x = self.random_engine.generate_range(range.clone());
+        let y = self.random_engine.generate_range(range.clone());
+        let z = self.random_engine.generate_range(range);
+        let random_direction = Vector3f::new(x.into(), y.into(), z.into()).normalize();
 
         let result = if 0.0 < random_direction.dot(normal) {
             random_direction

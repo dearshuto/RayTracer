@@ -1,6 +1,7 @@
 use crate::traits::IVector3;
 
 mod default_sampling_estimation;
+mod detail;
 mod nee;
 pub use default_sampling_estimation::DefaultSamplingEstimation;
 pub use nee::{IRelatedLightEnumerator, NextEventEstimation};
