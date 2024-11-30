@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::{MaterialInfo, Vector3f};
 
 pub trait IRenderer {
@@ -59,4 +61,11 @@ where
     fn set_y(&mut self, y: TFloat);
 
     fn set_z(&mut self, z: TFloat);
+}
+
+pub trait IRandomEngine<TFloat>
+where
+    TFloat: num::Float,
+{
+    fn generate_range(&mut self, range: Range<TFloat>) -> TFloat;
 }
