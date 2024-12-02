@@ -120,6 +120,165 @@ impl PathTracer {
             (sky_color, None)
         }
     }
+
+    fn cast_ray_loop<TScene: IScene>(
+        &self,
+        scene: &TScene,
+        position: &Vector3f,
+        direction: &Vector3f,
+        depth: u32,
+    ) -> (Vector3f, Option<Vector3f>) // (色、位置)
+    {
+        let mut ray_tree = vec![RayTreeItem {
+            from: *position,
+            to: direction.normalize(),
+            depth: 0,
+            weight: 1.0f32, // 最初の 1 発は 100% 採用
+        }];
+        let mut color = Vector3f::zero();
+        while let Some(ray_tree_item) = ray_tree.pop() {
+            // 探索限界
+            if depth < ray_tree_item.depth {
+                break;
+            }
+
+            // シーン内にレイを飛ばして衝突判定
+            let from = ray_tree_item.from;
+            let to = ray_tree_item.to;
+            let Some(material_info) = scene.cast_ray(&from, &to) else {
+                // レイの衝突がなかったので背景色を加味して終わる
+                let sky_color = scene.find_background_color(position, direction);
+                color = color + sky_color;
+                return (color, None);
+            };
+
+            // 衝突した物体の発光を加味
+            if 0.0 < material_info.property.emission {
+                let emission = Vector3f::new(
+                    material_info.property.emission,
+                    material_info.property.emission,
+                    material_info.property.emission,
+                );
+                color = color + emission;
+            }
+
+            let direction_candidates = if self.is_nee_enabled {
+                NextEventEstimation::new(self.sampling_count).estimate(
+                    &material_info.position,
+                    &material_info.normal,
+                    scene,
+                )
+            } else {
+                DefaultSamplingEstimation::new().estimate::<f32, Vector3f, Vector3f, TScene>(
+                    &material_info.position,
+                    &material_info.normal,
+                    scene,
+                )
+            };
+
+            for direction_candidate in direction_candidates {
+                let ray_tree_item = RayTreeItem {
+                    from: direction_candidate.direction,
+                    to: direction_candidate.direction,
+                    depth: ray_tree_item.depth + 1,
+                    weight: ray_tree_item.weight * direction_candidate.weight,
+                };
+                ray_tree.push(ray_tree_item);
+            }
+        }
+
+        if self.depth_max < depth as u16 {
+            let sky_color = scene.find_background_color(position, direction);
+            return (sky_color, None);
+        }
+
+        let normalized_direction = direction.normalize();
+        let to = Vector3f::new(
+            position.x + 100.0 * normalized_direction.x,
+            position.y + 100.0 * normalized_direction.y,
+            position.z + 100.0 * normalized_direction.z,
+        );
+        if let Some(material_info) = scene.cast_ray(position, &to) {
+            let _mat_normal = &material_info.normal;
+            let mat_position = &material_info.position;
+            if 0.0 < material_info.property.emission {
+                let emission = Vector3f::new(
+                    material_info.property.emission,
+                    material_info.property.emission,
+                    material_info.property.emission,
+                );
+                (emission, Some(*mat_position))
+            } else {
+                let direction_candidates = if self.is_nee_enabled {
+                    NextEventEstimation::new(self.sampling_count).estimate(
+                        &material_info.position,
+                        &material_info.normal,
+                        scene,
+                    )
+                } else {
+                    DefaultSamplingEstimation::new().estimate::<f32, Vector3f, Vector3f, TScene>(
+                        &material_info.position,
+                        &material_info.normal,
+                        scene,
+                    )
+                };
+
+                let mut rng = rand::thread_rng();
+                let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
+                for result in &direction_candidates {
+                    let direction_candidate = result.direction;
+                    if !direction_candidate.is_valid() {
+                        continue;
+                    }
+
+                    let weight = result.weight;
+                    let reflect_rate = rng.gen_range(0.0..1.0);
+
+                    // 鏡面反射か、拡散反射かを確立で切り替える
+                    let metaric = material_info.property.metaric;
+                    let value = if reflect_rate < metaric {
+                        let perfect_specular_reflection = PerfectSpecularReflection::new();
+                        perfect_specular_reflection.calculate(
+                            &material_info.normal,
+                            &normalized_direction,
+                            &direction_candidate,
+                        )
+                    } else {
+                        Lambert::new().calculate(
+                            &material_info.normal,
+                            &normalized_direction,
+                            &direction_candidate,
+                        )
+                    };
+
+                    let new_position = *mat_position + 0.1 * direction_candidate;
+                    let albedo = material_info.property.albedo;
+                    let (result, hit_position_opt) =
+                        self.cast_ray(scene, &new_position, &direction_candidate, depth + 1);
+
+                    let distance = if let Some(hit_position) = hit_position_opt {
+                        let diff = hit_position - *mat_position;
+                        diff.norm()
+                    } else {
+                        1.0
+                    };
+
+                    let ratio = direction_candidates.len() as f32;
+                    red += weight * (result.x * value * albedo.x / ratio) / (distance * distance);
+                    green += weight * (result.y * value * albedo.y / ratio) / (distance * distance);
+                    blue += weight * (result.z * value * albedo.z / ratio) / (distance * distance);
+                }
+
+                (
+                    Vector3f::new(red, green, blue),
+                    Some(material_info.position),
+                )
+            }
+        } else {
+            let sky_color = scene.find_background_color(position, direction);
+            (sky_color, None)
+        }
+    }
 }
 
 impl IRenderer for PathTracer {
@@ -146,4 +305,11 @@ impl IRenderer for PathTracer {
         let blue_result = blue / (sampling_count as f32);
         (red_result, green_result, blue_result)
     }
+}
+
+struct RayTreeItem {
+    pub from: Vector3f,
+    pub to: Vector3f,
+    pub depth: u32,
+    pub weight: f32,
 }
