@@ -9,10 +9,15 @@ edition = "2021"
 tokio = { version = "1.15.0", features = ["full"] }
 futures = "0.3.19"
 image = "0.25"
-rapier3d = { version = "0.22", features = ["simd-stable"] }
 num = "*"
 nalgebra = "0.33"
 rand = "0.8.4"
 
 serde = { version = "1.0", features = ["derive"] }
 serde-xml-rs = "*"
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+rapier3d = { version = "0.22", features = ["simd-stable"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+rapier3d = { version = "0.22", features = [] }
