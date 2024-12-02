@@ -21,3 +21,6 @@ rapier3d = { version = "0.22", features = ["simd-stable"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 rapier3d = { version = "0.22", features = [] }
+
+[dev-dependencies]
+clap = "*"
