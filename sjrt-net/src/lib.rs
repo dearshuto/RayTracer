@@ -1,6 +1,4 @@
-mod detail {
-    tonic::include_proto!("sjrt");
-}
+mod detail;
 
 pub use detail::ImageView;
 
