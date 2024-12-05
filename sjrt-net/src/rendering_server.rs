@@ -1,8 +1,9 @@
 use tonic::Response;
 
-use super::detail::{self, renderer_server::Renderer};
 use sjrt::{IBuffer, IScene};
 use std::sync::Arc;
+
+use crate::detail::generated::sjrt::{renderer_server::Renderer, ImageView, RenderRequest};
 
 pub struct RenderingServer<TScene>
 where
@@ -23,7 +24,7 @@ where
 
     pub async fn run(self, address: std::net::SocketAddr) {
         let _result = tonic::transport::Server::builder()
-            .add_service(detail::renderer_server::RendererServer::new(self))
+            .add_service(crate::detail::generated::sjrt::renderer_server::RendererServer::new(self))
             .serve(address)
             .await;
     }
@@ -36,8 +37,8 @@ where
 {
     async fn render(
         &self,
-        request: tonic::Request<detail::RenderRequest>,
-    ) -> Result<tonic::Response<detail::ImageView>, tonic::Status> {
+        request: tonic::Request<RenderRequest>,
+    ) -> Result<tonic::Response<ImageView>, tonic::Status> {
         let info = request.into_inner();
         let width = info.width;
         let height = info.height;
@@ -58,7 +59,7 @@ where
             .execute(self.scene.clone(), &mut buffer, Arc::new(renderer))
             .await;
 
-        let request = detail::ImageView {
+        let request = ImageView {
             width_start: 0,
             width_end: width,
             height_start: 0,
