@@ -5,8 +5,12 @@ edition = "2021"
 
 [dependencies]
 sjrt = { path = "../sjrt" }
+image = "0.25.0"
 tonic = "0.6.2"
 prost = "0.9"
+serde = "*"
+serde_qs = "*"
+warp = "0.3.7"
 
 [build-dependencies]
 tonic-build = "0.6.2"
