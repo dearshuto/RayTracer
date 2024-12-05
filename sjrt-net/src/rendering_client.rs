@@ -1,4 +1,4 @@
-use super::detail::{self, ImageView};
+use crate::detail::generated::sjrt::{ImageView, RenderRequest};
 
 pub struct RenderingClient {
     pub width: i32,
@@ -13,7 +13,7 @@ impl RenderingClient {
         &self,
         address: std::net::SocketAddr,
     ) -> Result<tonic::Response<ImageView>, tonic::Status> {
-        let request = detail::RenderRequest {
+        let request = RenderRequest {
             width: self.width,
             height: self.height,
             sampling_count: self.sampling_count as u32,
@@ -21,9 +21,10 @@ impl RenderingClient {
             thread_count_y: self.thread_count_y,
         };
         let url = format!("http://{}", address);
-        let mut client = detail::renderer_client::RendererClient::connect(url)
-            .await
-            .unwrap();
+        let mut client =
+            crate::detail::generated::sjrt::renderer_client::RendererClient::connect(url)
+                .await
+                .unwrap();
         client.render(request).await
     }
 }
