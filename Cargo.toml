@@ -7,5 +7,4 @@ members = [
     "sjrt-res",
     "editor/cornell_box",
     "server",
-    "server_http",
 ]
