@@ -5,11 +5,15 @@ edition = "2021"
 
 [dependencies]
 sjrt = { path = "../sjrt" }
+futures-util = "0.3"
 image = "0.25.0"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = { version = "*" }
 tonic = "0.6.2"
 prost = "0.9"
 serde = "*"
 serde_qs = "*"
+uuid = { version = "1", features = ["v4"] }
 warp = "0.3.7"
 
 [build-dependencies]
