@@ -135,12 +135,44 @@ impl PathTracer {
     }
 }
 
-impl IRenderer for PathTracer {
+impl<T: IRandomEngine<f32>> IRenderer<T> for PathTracer {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
         position: &Vector3f,
         direction: &Vector3f,
+        mut additional_params: T,
+    ) -> (f32, f32, f32) {
+        let sampling_count = self.sampling_count;
+        let mut red = 0.0;
+        let mut blue = 0.0;
+        let mut green = 0.0;
+        for _i in 0..sampling_count {
+            let (color, _) = self.cast_ray_with_random_engine(
+                scene,
+                position,
+                direction,
+                0, // depth
+                &mut additional_params,
+            );
+            red += color.x;
+            green += color.y;
+            blue += color.z;
+        }
+        let red_result = red / (sampling_count as f32);
+        let green_result = green / (sampling_count as f32);
+        let blue_result = blue / (sampling_count as f32);
+        (red_result, green_result, blue_result)
+    }
+}
+
+impl IRenderer<()> for PathTracer {
+    fn render<TScene: IScene>(
+        &self,
+        scene: &TScene,
+        position: &Vector3f,
+        direction: &Vector3f,
+        _additional_params: (),
     ) -> (f32, f32, f32) {
         let sampling_count = self.sampling_count;
         let mut red = 0.0;
