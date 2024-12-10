@@ -2,8 +2,9 @@ build/*
 doc/*
 bin/*
 lib/*
-target/*
+/target/*
 *.pyc
 .DS_Store
 *.lock
 sjrt-net/src/detail/generated/sjrt.rs
+editor/cornell_box_web/runtime
