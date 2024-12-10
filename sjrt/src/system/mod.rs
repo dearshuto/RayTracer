@@ -11,7 +11,7 @@ impl System {
         Self {}
     }
 
-    pub fn execute<TScene: IScene, TBuffer: IBuffer, TRenderer: IRenderer>(
+    pub fn execute<TScene: IScene, TBuffer: IBuffer, TRenderer: IRenderer<()>>(
         &self,
         scene: &TScene,
         buffer: &mut TBuffer,
@@ -22,7 +22,7 @@ impl System {
             .build();
         for ray_info in camera.calculate_ray_direction() {
             let (red_result, green_result, blue_result) =
-                renderer.render(scene, camera.position(), &ray_info.directions[0]);
+                renderer.render(scene, camera.position(), &ray_info.directions[0], ());
             buffer.set_color(
                 buffer.get_width() - (ray_info.x as i32) - 1,
                 buffer.get_height() - (ray_info.y as i32) - 1,

@@ -22,7 +22,7 @@ impl ParallelizeSystem {
     pub async fn execute<
         TScene: IScene + std::marker::Sync + std::marker::Send + 'static,
         TBuffer: IBuffer,
-        TRenderer: IRenderer + std::marker::Sync + std::marker::Send + 'static,
+        TRenderer: IRenderer<()> + std::marker::Sync + std::marker::Send + 'static,
     >(
         &self,
         scene: std::sync::Arc<TScene>,
@@ -62,7 +62,7 @@ impl ParallelizeSystem {
         }
     }
 
-    fn execute_impl<TScene: IScene, TRenderer: IRenderer>(
+    fn execute_impl<TScene: IScene, TRenderer: IRenderer<()>>(
         width: u32,
         height: u32,
         scene: std::sync::Arc<TScene>,
@@ -76,8 +76,12 @@ impl ParallelizeSystem {
             .build();
         let mut image_view = ImageView::new(width_range.clone(), height_range.clone());
         for ray_info in camera.calculate_ray_direction_range(width_range, height_range) {
-            let (red_result, green_result, blue_result) =
-                renderer.render(scene.as_ref(), camera.position(), &ray_info.directions[0]);
+            let (red_result, green_result, blue_result) = renderer.render(
+                scene.as_ref(),
+                camera.position(),
+                &ray_info.directions[0],
+                (),
+            );
             image_view.set_color(
                 ray_info.x as i32,
                 ray_info.y as i32,

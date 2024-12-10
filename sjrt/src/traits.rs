@@ -2,12 +2,13 @@ use std::ops::Range;
 
 use crate::{MaterialInfo, Vector3f};
 
-pub trait IRenderer {
+pub trait IRenderer<T> {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
         position: &Vector3f,
         direction: &Vector3f,
+        additional_params: T,
     ) -> (f32, f32, f32);
 }
 
