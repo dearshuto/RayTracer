@@ -1,7 +1,7 @@
 mod detail;
-pub mod http;
-pub mod ws;
+mod server;
 
+pub use server::Server;
 mod rendering_client;
 pub use rendering_client::RenderingClient;
 

@@ -1,5 +1,5 @@
 use crate::detail::generated::sjrt::RenderRequest;
-use std::{io::Cursor, net::SocketAddr, sync::Arc, u8};
+use std::{io::Cursor, sync::Arc, u8};
 
 use sjrt::IBuffer;
 use warp::{reject::Rejection, reply::Reply, Filter};
@@ -8,12 +8,10 @@ use warp::{reject::Rejection, reply::Reply, Filter};
 pub struct Server;
 
 impl Server {
-    #[allow(unused)]
-    pub async fn serve(addr: SocketAddr) {
-        let filter = warp::get()
+    pub fn filter() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+        warp::get()
             .and(warp::query::<RenderRequest>())
-            .and_then(Self::render);
-        warp::serve(filter).run(addr).await;
+            .and_then(Self::render)
     }
 
     async fn render(render_request: RenderRequest) -> Result<impl Reply, Rejection> {

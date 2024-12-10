@@ -23,24 +23,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     };
 
+    // http and ws
+    let socket_addr = SocketAddr::new(addr, args.port);
+    let server = sjrt_net::Server::serve(socket_addr);
+
     // RPC
     let scene = Arc::new(sjrt::util::RapierScene::new());
     let rendering_server = sjrt_net::RenderingServer::new(scene);
-    let socket_addr = SocketAddr::new(addr, args.port);
-    println!("Rpc: {:?}", socket_addr);
+    let socket_addr = SocketAddr::new(addr, args.port + 1);
     let rpc_server = rendering_server.run(socket_addr);
 
-    // http
-    let socket_addr = SocketAddr::new(addr, args.port + 1);
-    println!("http: {:?}", socket_addr);
-    let http_server = sjrt_net::http::Server::serve(socket_addr);
+    println!("http or ws: {:?}", socket_addr);
+    println!("Rpc: {:?}", socket_addr);
+    println!("");
+    println!("http request ex: curl 'http://127.0.0.1:8080?width=128&height=128&sampling_count=100&thread_count_x=4&thread_count_y=4' --output ,/test.png");
+    println!("ws request ex  : curl -i -N -H \"Connection: Upgrade\" -H \"Upgrade: websocket\" -H \"Sec-WebSocket-Version: 13\" -H \"Sec-WebSocket-Key: WIY4slX50bnnSF1GaedKhg==\" -H \"Host: localhost:8080\" http://localhost:8080/chat/ws");
 
-    // WebSocket
-    let socket_addr = SocketAddr::new(addr, args.port + 2);
-    println!("WebSocket: {:?}", socket_addr);
-    let web_socket_server = sjrt_net::ws::Server::serve(socket_addr);
-
-    futures::join!(rpc_server, http_server, web_socket_server);
+    futures::join!(rpc_server, server);
 
     Ok(())
 }

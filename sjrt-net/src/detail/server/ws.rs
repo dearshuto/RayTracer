@@ -1,9 +1,11 @@
-use std::{collections::HashMap, net::SocketAddr, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::RwLock;
 use warp::{
     filters::ws::{Message, WebSocket},
+    reject::Rejection,
+    reply::Reply,
     Filter,
 };
 
@@ -13,16 +15,14 @@ type InstanceTable = Arc<RwLock<HashMap<uuid::Uuid, tokio::sync::mpsc::Unbounded
 pub struct Server {}
 
 impl Server {
-    pub async fn serve(addr: SocketAddr) {
+    pub fn filter() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
         let instance_table = InstanceTable::default();
         let instance_table = warp::any().map(move || instance_table.clone());
-        let filter = warp::path("chat").and(warp::ws()).and(instance_table).map(
+        warp::path("chat").and(warp::ws()).and(instance_table).map(
             |ws: warp::ws::Ws, instance_table| {
                 ws.on_upgrade(move |socket| Self::user_connected(socket, instance_table))
             },
-        );
-
-        warp::serve(filter).run(addr).await;
+        )
     }
 
     async fn user_connected(ws: WebSocket, instance_table: InstanceTable) {
