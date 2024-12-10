@@ -2,12 +2,10 @@ use std::collections::HashMap;
 
 use super::instance::Instance;
 
-#[allow(unused)]
 pub struct Workspace {
     instance_table: HashMap<uuid::Uuid, Instance>,
 }
 
-#[allow(unused)]
 impl Workspace {
     pub fn new() -> Self {
         Self {
@@ -30,5 +28,17 @@ impl Workspace {
         for instance in self.instance_table.values_mut() {
             instance.update().await;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let mut workspace = Workspace::new();
+        let id = workspace.create_instance();
+        workspace.destroy_instance(id);
     }
 }

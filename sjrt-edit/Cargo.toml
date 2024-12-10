@@ -1,0 +1,12 @@
+[package]
+name = "sjrt-edit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sjrt = { path = "../sjrt" }
+sjrt-res = { path = "../sjrt-res" }
+
+image = "0.25.0"
+tokio = { version = "1" }
+uuid = { version = "1", features = ["v4"] }
