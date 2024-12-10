@@ -1,5 +1,6 @@
 use crate::{
     brdf::{Lambert, PerfectSpecularReflection},
+    traits::IRandomEngine,
     DefaultSamplingEstimation, IBidirectionalReflectanceDistributionFunction, IRenderer, IScene,
     NextEventEstimation, Vector3f,
 };
@@ -26,6 +27,19 @@ impl PathTracer {
         position: &Vector3f,
         direction: &Vector3f,
         depth: u32,
+    ) -> (Vector3f, Option<Vector3f>) // (色、位置)
+    {
+        let mut random_engine = RandomEngine::new();
+        self.cast_ray_with_random_engine(scene, position, direction, depth, &mut random_engine)
+    }
+
+    pub fn cast_ray_with_random_engine<TScene: IScene, TRandomEngine: IRandomEngine<f32>>(
+        &self,
+        scene: &TScene,
+        position: &Vector3f,
+        direction: &Vector3f,
+        depth: u32,
+        random_engine: &mut TRandomEngine,
     ) -> (Vector3f, Option<Vector3f>) // (色、位置)
     {
         if self.depth_max < depth as u16 {
@@ -64,7 +78,6 @@ impl PathTracer {
                     )
                 };
 
-                let mut rng = rand::thread_rng();
                 let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
                 for result in &direction_candidates {
                     let direction_candidate = result.direction;
@@ -73,7 +86,7 @@ impl PathTracer {
                     }
 
                     let weight = result.weight;
-                    let reflect_rate = rng.gen_range(0.0..1.0);
+                    let reflect_rate = random_engine.generate_range(0.0..1.0);
 
                     // 鏡面反射か、拡散反射かを確立で切り替える
                     let metaric = material_info.property.metaric;
@@ -145,5 +158,22 @@ impl IRenderer for PathTracer {
         let green_result = green / (sampling_count as f32);
         let blue_result = blue / (sampling_count as f32);
         (red_result, green_result, blue_result)
+    }
+}
+
+struct RandomEngine {
+    rng: rand::rngs::ThreadRng,
+}
+
+impl RandomEngine {
+    pub fn new() -> Self {
+        let rng = rand::thread_rng();
+        Self { rng }
+    }
+}
+
+impl IRandomEngine<f32> for RandomEngine {
+    fn generate_range(&mut self, range: std::ops::Range<f32>) -> f32 {
+        self.rng.gen_range(range)
     }
 }
