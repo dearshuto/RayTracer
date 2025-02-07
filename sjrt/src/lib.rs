@@ -3,7 +3,7 @@ mod sampling_algorithm;
 mod system;
 mod traits;
 pub use executor::{
-    ExecuteParams, Executor, HitAction, IPayloadBuffer, IRayTracingPipeline, IReceiver, RayParams,
+    ExecuteParams, Executor, HitAction, IPayloadBuffer, IRayTracingPipeline, RayParams, TraceAction,
 };
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::{ParallelizeSystem, System};
