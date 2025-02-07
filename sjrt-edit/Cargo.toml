@@ -10,3 +10,6 @@ sjrt-res = { path = "../sjrt-res" }
 image = "0.25.0"
 tokio = { version = "1" }
 uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tokio = { version = "1" }

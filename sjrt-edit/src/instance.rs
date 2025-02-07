@@ -25,7 +25,7 @@ pub struct Instance {
 
 impl Instance {
     pub fn new() -> Self {
-        let sampling_count = 1;
+        let sampling_count = 100;
         Self {
             sampling_count,
             current_sampling_count: 0,
@@ -88,19 +88,17 @@ impl Instance {
         }
     }
 
-    #[allow(unused)]
     pub fn request_render(&mut self, width: u32, height: u32) {
         let render_request = RenderRequest { width, height };
         self.render_request = Some(render_request);
     }
 
-    #[allow(unused)]
     pub fn peek_rendered_image<W>(&self, writer: &mut W)
     where
         W: std::io::Write + std::io::Seek,
     {
         let image = self.image.read().unwrap();
-        image.write_to(writer, image::ImageFormat::Png);
+        image.write_to(writer, image::ImageFormat::Png).unwrap();
     }
 
     fn spawn_task(mut task_context: TaskContext) -> RenderingTask {

@@ -29,6 +29,33 @@ impl Workspace {
             instance.update().await;
         }
     }
+
+    pub fn request_render(&mut self, id: uuid::Uuid, width: u32, height: u32) {
+        let Some(instance) = self.instance_table.get_mut(&id) else {
+            return;
+        };
+
+        instance.request_render(width, height);
+    }
+
+    pub async fn wait(&mut self, id: uuid::Uuid) {
+        let Some(_instance) = self.instance_table.get_mut(&id) else {
+            return;
+        };
+
+        // TODO
+    }
+
+    pub fn peek_rendered_image<W>(&self, id: uuid::Uuid, writer: &mut W)
+    where
+        W: std::io::Write + std::io::Seek,
+    {
+        let Some(instance) = self.instance_table.get(&id) else {
+            return;
+        };
+
+        instance.peek_rendered_image(writer);
+    }
 }
 
 #[cfg(test)]
