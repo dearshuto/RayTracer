@@ -1,6 +1,10 @@
+mod executor;
 mod sampling_algorithm;
 mod system;
 mod traits;
+pub use executor::{
+    ExecuteParams, Executor, HitAction, IPayloadBuffer, IRayTracingPipeline, IReceiver, RayParams,
+};
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::{ParallelizeSystem, System};
 pub use traits::EnumerateLightResult;
