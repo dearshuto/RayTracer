@@ -1,57 +1,95 @@
 use image::GenericImage;
 use sjrt::Vector3f;
 
+#[derive(Debug, Default)]
+struct Payload {
+    pub id: u32,
+    pub depth: u32,
+    pub color: [u8; 4],
+}
+
 struct Image(image::DynamicImage);
 
-impl sjrt::IPayloadBuffer<u32, [u8; 4]> for &mut Image {
-    fn write(&mut self, id: u32, payload: [u8; 4]) {
+impl sjrt::IPayloadBuffer<Payload> for &mut Image {
+    fn write(&mut self, payload: Payload) {
+        let id = payload.id;
         let x = id & 0xFFFF;
         let y = (id >> 16) & 0xFFFF;
-        self.0.put_pixel(x, y, image::Rgba::from(payload));
+        self.0.put_pixel(x, y, image::Rgba::from(payload.color));
     }
 }
 
 struct Pipeline;
 
 impl sjrt::IRayTracingPipeline for &mut Pipeline {
-    type PayloadType = [u8; 4];
-    type RayId = u32;
+    type PayloadType = Payload;
 
-    fn generate_rays(&self) -> impl Iterator<Item = (Self::RayId, sjrt::RayParams)> {
+    fn entry(&self) -> impl Iterator<Item = Self::PayloadType> {
         let mut results = Vec::default();
 
-        let from = Vector3f::new(0.0, 0.0, -10.0);
         for y in 0..480 {
             for x in 0..640 {
-                let ray = Vector3f::new(-320.0 + x as f32, -240.0 + y as f32, 1000.0) - from;
-                let ray_params = sjrt::RayParams {
-                    from,
-                    to: Vector3f::new(ray.x, ray.y, ray.z),
-                };
-
                 // (x, y) を 16bit ずつパッキング
                 // ユニークな値なのでそのまま ID として使いつつ、ID から x, y が抽出できるようにする
                 let id = (y << 16) | x;
-                results.push((id as u32, ray_params));
+                results.push(Payload {
+                    id,
+                    ..Default::default()
+                });
             }
         }
 
         results.into_iter()
     }
 
+    fn trace(&self, payload: Self::PayloadType) -> sjrt::TraceAction<Self::PayloadType> {
+        if 0 < payload.depth {
+            return sjrt::TraceAction::Finish(payload);
+        }
+
+        let id = payload.id;
+        let x = id & 0xFFFF;
+        let y = (id >> 16) & 0xFFFF;
+
+        let from = Vector3f::new(0.0, 0.0, -10.0);
+        let ray = Vector3f::new(-320.0 + x as f32, -240.0 + y as f32, 1000.0) - from;
+        let ray_params = sjrt::RayParams {
+            from,
+            to: Vector3f::new(ray.x, ray.y, ray.z),
+        };
+
+        sjrt::TraceAction::Next((
+            ray_params,
+            Payload {
+                id,
+                depth: 1,
+                ..Default::default()
+            },
+        ))
+    }
+
     fn react_closest_hit(
         &self,
+        payload: Self::PayloadType,
     ) -> sjrt::HitAction<Self::PayloadType, impl Iterator<Item = sjrt::RayParams>> {
         if true {
-            sjrt::HitAction::Payload([u8::MAX, u8::MAX, u8::MAX, u8::MAX])
+            sjrt::HitAction::Payload(Payload {
+                id: payload.id,
+                depth: payload.depth,
+                color: [u8::MAX; 4],
+            })
         } else {
             sjrt::HitAction::RayGenerate([].into_iter())
         }
     }
 
-    fn react_hit_miss(&self) -> Self::PayloadType {
+    fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
         // 背景色
-        [25, 50, 75, u8::MAX]
+        Payload {
+            id: payload.id,
+            depth: payload.depth,
+            color: [25, 50, 75, u8::MAX],
+        }
     }
 }
 
