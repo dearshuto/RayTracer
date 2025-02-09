@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+sjrt-macro = { path = "../sjrt-macro" }
+
 tokio = { version = "1.15.0", features = ["full"] }
 futures = "0.3.19"
 image = "0.25"
