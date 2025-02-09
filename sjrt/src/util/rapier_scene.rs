@@ -1,4 +1,5 @@
 use crate::{
+    executor::ISceneStructure,
     sampling_algorithm::IRelatedLightEnumerator,
     scene::Scene,
     traits::{EnumerateLightResult, IVector3, IVectorComponent3},
@@ -162,5 +163,30 @@ where
             }
         }
         results.into_iter()
+    }
+}
+
+impl ISceneStructure<RayIntersection> for RapierScene {
+    fn cast(&mut self, from: &Vector3f, to: &Vector3f) -> Option<RayIntersection> {
+        let line_segment = vector![to.x - from.x, to.y - from.y, to.z - from.z];
+        let max_toi = line_segment.norm();
+        let direction = line_segment / max_toi;
+        let ray = &Ray::new(point![from.x, from.y, from.z], direction);
+        let colliders = &self._collider_set;
+        let solid = false;
+        let filter = QueryFilter::default();
+
+        let Some((_handle, intersection)) = self._query_pipeline.cast_ray_and_get_normal(
+            &self._rigid_body_set,
+            colliders,
+            ray,
+            max_toi,
+            solid,
+            filter,
+        ) else {
+            return None;
+        };
+
+        Some(intersection)
     }
 }

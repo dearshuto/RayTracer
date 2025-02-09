@@ -1,4 +1,4 @@
-use crate::{IScene, Vector3f};
+use crate::Vector3f;
 
 pub enum TraceAction<T> {
     Next((RayParams, T)),
@@ -18,8 +18,13 @@ pub struct RayParams {
     pub to: Vector3f,
 }
 
+pub trait ISceneStructure<T> {
+    fn cast(&mut self, from: &Vector3f, to: &Vector3f) -> Option<T>;
+}
+
 pub trait IRayTracingPipeline {
     type PayloadType;
+    type HitParams;
 
     fn entry(&self) -> impl Iterator<Item = Self::PayloadType>;
 
@@ -28,6 +33,7 @@ pub trait IRayTracingPipeline {
     fn react_closest_hit(
         &self,
         payload: Self::PayloadType,
+        hit_params: &Self::HitParams,
     ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams>>;
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
@@ -40,7 +46,7 @@ pub trait IPayloadBuffer<TPayload> {
 pub struct ExecuteParams<TRayTracingPipeline, TScene>
 where
     TRayTracingPipeline: IRayTracingPipeline,
-    TScene: IScene,
+    TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
 {
     pub scene: TScene,
     pub ray_tracing_pipeline: TRayTracingPipeline,
@@ -53,12 +59,12 @@ impl Executor {
     pub fn execute<TPayloadBuffer, TRayTracingPipeline, TScene>(
         &self,
         mut payload_buffer: TPayloadBuffer,
-        scene: TScene,
+        mut scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TPayloadBuffer: IPayloadBuffer<TRayTracingPipeline::PayloadType>,
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: IScene,
+        TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
         for mut payload in ray_tracing_pipeline.entry() {
             let final_payload = loop {
@@ -66,13 +72,15 @@ impl Executor {
                     // トレースが続くかぎりループを回す
                     TraceAction::Next((ray_params, next_payload)) => {
                         // 衝突判定
-                        let cast_result = scene.cast_ray(&ray_params.from, &ray_params.to);
+                        let cast_result = scene.cast(&ray_params.from, &ray_params.to);
 
                         // 衝突の結果によって分岐しつつ次のループへ
                         let new_payload = match cast_result {
                             // 衝突した
-                            Some(_cast_result) => {
-                                match ray_tracing_pipeline.react_closest_hit(next_payload) {
+                            Some(cast_result) => {
+                                match ray_tracing_pipeline
+                                    .react_closest_hit(next_payload, &cast_result)
+                                {
                                     HitAction::RayGenerate(_rays) => {
                                         todo!()
                                     }
