@@ -4,6 +4,7 @@ members = [
     "client",
     "sjrt",
     "sjrt-edit",
+    "sjrt-macro",
     "sjrt-net",
     "sjrt-res",
     "editor/cornell_box",
