@@ -23,6 +23,7 @@ struct Pipeline;
 
 impl sjrt::IRayTracingPipeline for &mut Pipeline {
     type PayloadType = Payload;
+    type HitParams = rapier3d::geometry::RayIntersection;
 
     fn entry(&self) -> impl Iterator<Item = Self::PayloadType> {
         let mut results = Vec::default();
@@ -71,12 +72,17 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
     fn react_closest_hit(
         &self,
         payload: Self::PayloadType,
+        hit_params: &Self::HitParams,
     ) -> sjrt::HitAction<Self::PayloadType, impl Iterator<Item = sjrt::RayParams>> {
         if true {
+            let normal = hit_params
+                .normal
+                .map(|c| (c * 255.0).clamp(0.0, u8::MAX as f32) as u8);
+
             sjrt::HitAction::Payload(Payload {
                 id: payload.id,
                 depth: payload.depth,
-                color: [u8::MAX; 4],
+                color: [normal.x, normal.y, normal.z, u8::MAX],
             })
         } else {
             sjrt::HitAction::RayGenerate([].into_iter())
