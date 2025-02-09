@@ -6,20 +6,41 @@ pub trait IHitParams {
     fn position(&self) -> Vector3f;
 }
 
+pub trait IRandomEngine {
+    fn generate(&mut self) -> f32;
+}
+
+pub trait IKernel {
+    type RondomEngine: IRandomEngine;
+
+    fn random_engine(&self) -> Self::RondomEngine;
+}
+
 #[derive(sjrt_macro::Immutable)]
-pub struct Payload {
+pub struct Payload<T>
+where
+    T: IRandomEngine,
+{
     current_depth: u32,
     current_sampling: u32,
     value: [u8; 4],
+    random_engine: T,
 }
 
-pub struct PathTracerEx<T> {
+pub struct PathTracerEx<T, TKernel>
+where
+    TKernel: IKernel,
+{
     depth: u32,
+    kernel: TKernel,
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: IHitParams> IRayTracingPipeline for PathTracerEx<T> {
-    type PayloadType = Payload;
+impl<T: IHitParams, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
+where
+    TKernel: IKernel,
+{
+    type PayloadType = Payload<TKernel::RondomEngine>;
 
     // TODO: rapier3d に限定しないよう抽象化する
     type HitParams = T;
