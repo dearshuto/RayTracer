@@ -52,8 +52,11 @@ pub fn immutable_device(input: TokenStream) -> TokenStream {
     // 構造体名
     let struct_name = &input.ident;
 
+    // generics, where句の情報
+    let (impl_generics, _, where_clause) = &input.generics.split_for_impl();
+
     let expanded = quote! {
-    impl #struct_name  {
+    impl #impl_generics #struct_name #impl_generics #where_clause  {
         #(#with_fields)*
     }
      };
