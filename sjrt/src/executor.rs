@@ -1,21 +1,22 @@
 use crate::Vector3f;
 
 pub enum TraceAction<T> {
-    Next((RayParams, T)),
+    Next(RayParams<T>),
     Finish(T),
 }
 
 pub enum HitAction<T, U>
 where
-    U: Iterator<Item = RayParams>,
+    U: Iterator<Item = RayParams<T>>,
 {
     RayGenerate(U),
     Payload(T),
 }
 
-pub struct RayParams {
+pub struct RayParams<T> {
     pub from: Vector3f,
     pub to: Vector3f,
+    pub payload: T,
 }
 
 pub trait ISceneStructure<T> {
@@ -34,7 +35,7 @@ pub trait IRayTracingPipeline {
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams>>;
+    ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams<Self::PayloadType>>>;
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
 }
@@ -70,7 +71,9 @@ impl Executor {
             let final_payload = loop {
                 match ray_tracing_pipeline.trace(payload) {
                     // トレースが続くかぎりループを回す
-                    TraceAction::Next((ray_params, next_payload)) => {
+                    TraceAction::Next(ray_params) => {
+                        let next_payload = ray_params.payload;
+
                         // 衝突判定
                         let cast_result = scene.cast(&ray_params.from, &ray_params.to);
 
