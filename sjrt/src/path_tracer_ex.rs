@@ -72,15 +72,19 @@ where
         let ray_params = RayParams {
             from: Vector3f::zero(),
             to: Vector3f::zero(),
+            payload,
         };
-        crate::TraceAction::Next((ray_params, payload))
+        crate::TraceAction::Next(ray_params)
     }
 
     fn react_closest_hit(
         &self,
         mut payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> crate::HitAction<Self::PayloadType, impl Iterator<Item = crate::RayParams>> {
+    ) -> crate::HitAction<
+        Self::PayloadType,
+        impl Iterator<Item = crate::RayParams<Self::PayloadType>>,
+    > {
         if false {
             return HitAction::RayGenerate([].into_iter());
         }
