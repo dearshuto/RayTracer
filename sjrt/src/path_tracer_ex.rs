@@ -4,6 +4,10 @@ pub trait IHitParams {
     fn normal(&self) -> Vector3f;
 
     fn position(&self) -> Vector3f;
+
+    fn emission(&self) -> Vector3f;
+
+    fn albedo(&self) -> Vector3f;
 }
 
 pub trait IRandomEngine {
@@ -23,8 +27,10 @@ where
 {
     current_depth: u32,
     current_sampling: u32,
-    value: [u8; 4],
+    values: Vec<(Vector3f /*albedo*/, Vector3f /*emission*/)>,
     random_engine: T,
+    from: Vector3f,
+    to: Option<Vector3f>,
 }
 
 pub struct PathTracerEx<T, TKernel>
@@ -46,7 +52,15 @@ where
     type HitParams = T;
 
     fn entry(&self) -> impl Iterator<Item = Self::PayloadType> {
-        [].into_iter()
+        [Payload {
+            current_depth: 0,
+            current_sampling: 0,
+            values: Vec::default(),
+            random_engine: self.kernel.random_engine(),
+            from: Vector3f::zero(),
+            to: None,
+        }]
+        .into_iter()
     }
 
     fn trace(&self, payload: Self::PayloadType) -> crate::TraceAction<Self::PayloadType> {
@@ -64,19 +78,30 @@ where
 
     fn react_closest_hit(
         &self,
-        payload: Self::PayloadType,
+        mut payload: Self::PayloadType,
         hit_params: &Self::HitParams,
     ) -> crate::HitAction<Self::PayloadType, impl Iterator<Item = crate::RayParams>> {
         if false {
             return HitAction::RayGenerate([].into_iter());
         }
 
-        let _normal = hit_params.normal();
-        let _position = hit_params.position();
+        let ratio_x = payload.random_engine.generate();
+        let ratio_y = payload.random_engine.generate();
+        let ratio_z = payload.random_engine.generate();
+        let normal = hit_params.normal();
+        let new_to = 500.0
+            * Vector3f::new(normal.x * ratio_x, normal.y * ratio_y, normal.z * ratio_z).normalize();
+
+        let position = hit_params.position();
 
         // 反射回数をひとつ増やして再びレイの生成判定へ
         let new_depth = payload.current_depth + 1;
-        return HitAction::Payload(payload.with_current_depth(new_depth));
+        return HitAction::Payload(
+            payload
+                .with_current_depth(new_depth)
+                .with_from(position)
+                .with_to(Some(new_to)),
+        );
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
@@ -85,9 +110,12 @@ where
 
         // どこにもヒットしなかったら背景色を返す
         if payload.current_depth == 0 {
+            let mut new_values = payload.values.clone();
+            new_values.push((Vector3f::zero(), Vector3f::new(0.1, 0.2, 0.3)));
+
             return payload
                 .with_current_depth(next_depth)
-                .with_value([25, 50, 75, u8::MAX]);
+                .with_values(new_values);
         }
 
         // 何回か反射してからミスしたら色は更新しない
