@@ -57,23 +57,22 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
         let ray_params = sjrt::RayParams {
             from,
             to: Vector3f::new(ray.x, ray.y, ray.z),
-        };
-
-        sjrt::TraceAction::Next((
-            ray_params,
-            Payload {
+            payload: Payload {
                 id,
                 depth: 1,
                 ..Default::default()
             },
-        ))
+        };
+
+        sjrt::TraceAction::Next(ray_params)
     }
 
     fn react_closest_hit(
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> sjrt::HitAction<Self::PayloadType, impl Iterator<Item = sjrt::RayParams>> {
+    ) -> sjrt::HitAction<Self::PayloadType, impl Iterator<Item = sjrt::RayParams<Self::PayloadType>>>
+    {
         if true {
             let normal = hit_params
                 .normal
