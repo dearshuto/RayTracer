@@ -13,6 +13,11 @@ where
     Payload(T),
 }
 
+pub struct EntryParams {
+    pub x: u32,
+    pub y: u32,
+}
+
 pub struct RayParams<T> {
     pub from: Vector3f,
     pub to: Vector3f,
@@ -27,9 +32,7 @@ pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
 
-    fn entry(&self) -> impl Iterator<Item = Self::PayloadType>;
-
-    fn trace(&self, payload: Self::PayloadType) -> TraceAction<Self::PayloadType>;
+    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType;
 
     fn react_closest_hit(
         &self,
@@ -38,6 +41,8 @@ pub trait IRayTracingPipeline {
     ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams<Self::PayloadType>>>;
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
+
+    fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType>;
 }
 
 pub trait IPayloadBuffer<TPayload> {
@@ -67,40 +72,57 @@ impl Executor {
         TRayTracingPipeline: IRayTracingPipeline,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
-        for mut payload in ray_tracing_pipeline.entry() {
-            let final_payload = loop {
-                match ray_tracing_pipeline.trace(payload) {
-                    // トレースが続くかぎりループを回す
-                    TraceAction::Next(ray_params) => {
-                        let next_payload = ray_params.payload;
+        for y in 0..480 {
+            for x in 0..640 {
+                // 初期値生成
+                let payload = ray_tracing_pipeline.entry(&EntryParams { x, y });
 
-                        // 衝突判定
-                        let cast_result = scene.cast(&ray_params.from, &ray_params.to);
+                // 初期レイ
+                // TODO: 外部から注入できるようにする
+                let mut ray_params = RayParams {
+                    from: Vector3f::new(0.0, 0.0, -10.0),
+                    to: Vector3f::new(-320.0 + x as f32, -240.0 + y as f32, 1000.0),
+                    payload,
+                };
 
-                        // 衝突の結果によって分岐しつつ次のループへ
-                        let new_payload = match cast_result {
-                            // 衝突した
-                            Some(cast_result) => {
-                                match ray_tracing_pipeline
-                                    .react_closest_hit(next_payload, &cast_result)
-                                {
-                                    HitAction::RayGenerate(_rays) => {
-                                        todo!()
-                                    }
-                                    HitAction::Payload(payload) => payload,
+                // レイを飛ばすループ
+                let final_payload = loop {
+                    // 衝突判定
+                    let cast_result = scene.cast(&ray_params.from, &ray_params.to);
+
+                    // 衝突の結果による値の更新
+                    let new_payload = match cast_result {
+                        // 衝突した
+                        Some(cast_result) => {
+                            match ray_tracing_pipeline
+                                .react_closest_hit(ray_params.payload, &cast_result)
+                            {
+                                HitAction::RayGenerate(_rays) => {
+                                    todo!()
                                 }
+                                HitAction::Payload(payload) => payload,
                             }
-                            // 衝突しなかった
-                            None => ray_tracing_pipeline.react_hit_miss(next_payload),
-                        };
-                        payload = new_payload;
-                    }
-                    // トレースの終了。ここでループを抜ける
-                    TraceAction::Finish(payload) => break payload,
-                }
-            };
+                        }
+                        // 衝突しなかった
+                        None => ray_tracing_pipeline.react_hit_miss(ray_params.payload),
+                    };
 
-            payload_buffer.write(final_payload);
+                    // つぎのアクション選定
+                    let trace_action = ray_tracing_pipeline.trace(RayParams {
+                        from: ray_params.from,
+                        to: ray_params.to,
+                        payload: new_payload,
+                    });
+                    match trace_action {
+                        TraceAction::Next(next_ray_params) => ray_params = next_ray_params,
+                        TraceAction::Finish(payload) => break payload,
+                    }
+                };
+                //  end of loop --------------------------------------
+
+                // 出力して終了
+                payload_buffer.write(final_payload);
+            }
         }
     }
 }

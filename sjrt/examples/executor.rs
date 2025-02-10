@@ -25,46 +25,15 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
     type PayloadType = Payload;
     type HitParams = rapier3d::geometry::RayIntersection;
 
-    fn entry(&self) -> impl Iterator<Item = Self::PayloadType> {
-        let mut results = Vec::default();
+    fn entry(&self, entry_params: &sjrt::EntryParams) -> Self::PayloadType {
+        let x = entry_params.x;
+        let y = entry_params.y;
+        let id = (y << 16) | x;
 
-        for y in 0..480 {
-            for x in 0..640 {
-                // (x, y) を 16bit ずつパッキング
-                // ユニークな値なのでそのまま ID として使いつつ、ID から x, y が抽出できるようにする
-                let id = (y << 16) | x;
-                results.push(Payload {
-                    id,
-                    ..Default::default()
-                });
-            }
+        Payload {
+            id,
+            ..Default::default()
         }
-
-        results.into_iter()
-    }
-
-    fn trace(&self, payload: Self::PayloadType) -> sjrt::TraceAction<Self::PayloadType> {
-        if 0 < payload.depth {
-            return sjrt::TraceAction::Finish(payload);
-        }
-
-        let id = payload.id;
-        let x = id & 0xFFFF;
-        let y = (id >> 16) & 0xFFFF;
-
-        let from = Vector3f::new(0.0, 0.0, -10.0);
-        let ray = Vector3f::new(-320.0 + x as f32, -240.0 + y as f32, 1000.0) - from;
-        let ray_params = sjrt::RayParams {
-            from,
-            to: Vector3f::new(ray.x, ray.y, ray.z),
-            payload: Payload {
-                id,
-                depth: 1,
-                ..Default::default()
-            },
-        };
-
-        sjrt::TraceAction::Next(ray_params)
     }
 
     fn react_closest_hit(
@@ -95,6 +64,14 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
             depth: payload.depth,
             color: [25, 50, 75, u8::MAX],
         }
+    }
+
+    fn trace(
+        &self,
+        ray_params: sjrt::RayParams<Self::PayloadType>,
+    ) -> sjrt::TraceAction<Self::PayloadType> {
+        // レイの反射は 1 回だけにするので即終了
+        sjrt::TraceAction::Finish(ray_params.payload)
     }
 }
 
