@@ -1,6 +1,6 @@
 use crate::traits::{IVector3, IVectorComponent3};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vector3f {
     pub x: f32,
     pub y: f32,
@@ -67,6 +67,14 @@ impl std::ops::Mul<f32> for Vector3f {
 
     fn mul(self, rhs: f32) -> Self::Output {
         Vector3f::new(self.x * rhs, self.y * rhs, self.z * rhs)
+    }
+}
+
+impl std::ops::Div<f32> for Vector3f {
+    type Output = Vector3f;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Vector3f::new(self.x / rhs, self.y / rhs, self.z / rhs)
     }
 }
 

@@ -17,9 +17,7 @@ impl System {
         buffer: &mut TBuffer,
         renderer: &TRenderer,
     ) {
-        let camera = Camera::builder()
-            .with_resolution(buffer.get_width() as u32, buffer.get_height() as u32)
-            .build();
+        let camera = Camera::builder().build();
         for ray_info in camera.calculate_ray_direction() {
             let (red_result, green_result, blue_result) =
                 renderer.render(scene, camera.position(), &ray_info.directions[0], ());
