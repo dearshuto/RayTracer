@@ -1,11 +1,14 @@
 mod executor;
+mod path_tracer_ex;
 mod sampling_algorithm;
 mod system;
 mod traits;
+
 pub use executor::{
     Color, EntryParams, ExecuteParams, Executor, HitAction, IColorBuffer, IRayTracingPipeline,
     RayParams, TraceAction,
 };
+pub use path_tracer_ex::PathTracerEx;
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::{ParallelizeSystem, System};
 pub use traits::EnumerateLightResult;

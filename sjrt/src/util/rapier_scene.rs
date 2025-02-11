@@ -1,5 +1,6 @@
 use crate::{
     executor::ISceneStructure,
+    path_tracer_ex::IHitParams,
     sampling_algorithm::IRelatedLightEnumerator,
     scene::Scene,
     traits::{EnumerateLightResult, IVector3, IVectorComponent3},
@@ -188,5 +189,49 @@ impl ISceneStructure<RayIntersection> for RapierScene {
         };
 
         Some(intersection)
+    }
+}
+
+impl ISceneStructure<HitParams> for RapierScene {
+    fn cast(&mut self, from: &Vector3f, to: &Vector3f) -> Option<HitParams> {
+        let Some(material_info) = self.cast_ray(from, to) else {
+            return None;
+        };
+
+        Some(HitParams {
+            normal: material_info.normal,
+            position: material_info.position,
+            emission: Vector3f::new(
+                material_info.property.emission,
+                material_info.property.emission,
+                material_info.property.emission,
+            ),
+            albedo: material_info.property.albedo,
+        })
+    }
+}
+
+pub struct HitParams {
+    normal: Vector3f,
+    position: Vector3f,
+    emission: Vector3f,
+    albedo: Vector3f,
+}
+
+impl IHitParams for HitParams {
+    fn normal(&self) -> Vector3f {
+        self.normal
+    }
+
+    fn position(&self) -> Vector3f {
+        self.position
+    }
+
+    fn emission(&self) -> Vector3f {
+        self.emission
+    }
+
+    fn albedo(&self) -> Vector3f {
+        self.albedo
     }
 }
