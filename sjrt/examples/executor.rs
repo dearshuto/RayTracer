@@ -3,19 +3,19 @@ use sjrt::Vector3f;
 
 #[derive(Debug, Default)]
 struct Payload {
-    pub id: u32,
     pub depth: u32,
     pub color: [u8; 4],
 }
 
 struct Image(image::DynamicImage);
 
-impl sjrt::IPayloadBuffer<Payload> for &mut Image {
-    fn write(&mut self, payload: Payload) {
-        let id = payload.id;
-        let x = id & 0xFFFF;
-        let y = (id >> 16) & 0xFFFF;
-        self.0.put_pixel(x, y, image::Rgba::from(payload.color));
+impl sjrt::IColorBuffer for &mut Image {
+    fn write(&mut self, x: u32, y: u32, color: sjrt::Color) {
+        let sjrt::Color::R8G8B8A8_Uint(data) = color else {
+            return;
+        };
+
+        self.0.put_pixel(x, y, image::Rgba::from(data));
     }
 }
 
@@ -25,15 +25,8 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
     type PayloadType = Payload;
     type HitParams = rapier3d::geometry::RayIntersection;
 
-    fn entry(&self, entry_params: &sjrt::EntryParams) -> Self::PayloadType {
-        let x = entry_params.x;
-        let y = entry_params.y;
-        let id = (y << 16) | x;
-
-        Payload {
-            id,
-            ..Default::default()
-        }
+    fn entry(&self, _entry_params: &sjrt::EntryParams) -> Self::PayloadType {
+        Payload::default()
     }
 
     fn react_closest_hit(
@@ -48,7 +41,6 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
                 .map(|c| (c * 255.0).clamp(0.0, u8::MAX as f32) as u8);
 
             sjrt::HitAction::Payload(Payload {
-                id: payload.id,
                 depth: payload.depth,
                 color: [normal.x, normal.y, normal.z, u8::MAX],
             })
@@ -60,7 +52,6 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
         // 背景色
         Payload {
-            id: payload.id,
             depth: payload.depth,
             color: [25, 50, 75, u8::MAX],
         }
@@ -72,6 +63,10 @@ impl sjrt::IRayTracingPipeline for &mut Pipeline {
     ) -> sjrt::TraceAction<Self::PayloadType> {
         // レイの反射は 1 回だけにするので即終了
         sjrt::TraceAction::Finish(ray_params.payload)
+    }
+
+    fn write(&self, payload: Self::PayloadType) -> sjrt::Color {
+        sjrt::Color::R8G8B8A8_Uint(payload.color)
     }
 }
 

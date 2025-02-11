@@ -1,5 +1,12 @@
 use crate::Vector3f;
 
+pub enum Color {
+    #[allow(non_camel_case_types)]
+    R8G8B8A8_Uint([u8; 4]),
+    #[allow(non_camel_case_types)]
+    R32G32B32A32_Unorm([f32; 4]),
+}
+
 pub enum TraceAction<T> {
     Next(RayParams<T>),
     Finish(T),
@@ -43,10 +50,12 @@ pub trait IRayTracingPipeline {
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
 
     fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType>;
+
+    fn write(&self, payload: Self::PayloadType) -> Color;
 }
 
-pub trait IPayloadBuffer<TPayload> {
-    fn write(&mut self, payload: TPayload);
+pub trait IColorBuffer {
+    fn write(&mut self, x: u32, y: u32, color: Color);
 }
 
 pub struct ExecuteParams<TRayTracingPipeline, TScene>
@@ -62,13 +71,13 @@ where
 pub struct Executor;
 
 impl Executor {
-    pub fn execute<TPayloadBuffer, TRayTracingPipeline, TScene>(
+    pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
         &self,
-        mut payload_buffer: TPayloadBuffer,
+        mut color_buffer: TColorBuffer,
         mut scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
-        TPayloadBuffer: IPayloadBuffer<TRayTracingPipeline::PayloadType>,
+        TColorBuffer: IColorBuffer,
         TRayTracingPipeline: IRayTracingPipeline,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
@@ -121,7 +130,8 @@ impl Executor {
                 //  end of loop --------------------------------------
 
                 // 出力して終了
-                payload_buffer.write(final_payload);
+                let color = ray_tracing_pipeline.write(final_payload);
+                color_buffer.write(x, y, color);
             }
         }
     }
