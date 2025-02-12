@@ -19,6 +19,7 @@ pub trait IKernel {
     fn random_engine(&self) -> Self::RondomEngine;
 }
 
+#[derive(Clone)]
 pub struct DefaultKernel;
 impl IKernel for DefaultKernel {
     type RondomEngine = crate::util::RandomEngine;
@@ -31,15 +32,16 @@ impl IKernel for DefaultKernel {
 #[derive(sjrt_macro::Immutable)]
 pub struct Payload<T>
 where
-    T: IRandomEngine<f32>,
+    T: IKernel,
 {
     current_depth: u32,
     current_sampling: u32,
     values: Vec<(Vector3f /*albedo*/, Vector3f /*emission*/)>,
-    random_engine: T,
 
     latest_hit_position: Vector3f,
     latest_hit_normal: Vector3f,
+
+    kernel: T,
 }
 
 pub struct PathTracerEx<T, TKernel>
@@ -74,9 +76,9 @@ where
 
 impl<T: IHitParams, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
 where
-    TKernel: IKernel,
+    TKernel: IKernel + Clone,
 {
-    type PayloadType = Payload<TKernel::RondomEngine>;
+    type PayloadType = Payload<TKernel>;
     type HitParams = T;
 
     fn entry(&self, _entry_params: &EntryParams) -> Self::PayloadType {
@@ -84,9 +86,9 @@ where
             current_depth: 0,
             current_sampling: 0,
             values: Vec::default(),
-            random_engine: self.kernel.random_engine(),
             latest_hit_normal: Vector3f::zero(),
             latest_hit_position: Vector3f::zero(),
+            kernel: self.kernel.clone(),
         }
     }
 
@@ -143,7 +145,7 @@ where
         &self,
         ray_params: RayParams<Self::PayloadType>,
     ) -> crate::TraceAction<Self::PayloadType> {
-        let mut payload = ray_params.payload;
+        let payload = ray_params.payload;
 
         // 反射回数が規定回数を超えていたら終了
         if self.depth < payload.current_depth {
@@ -153,9 +155,10 @@ where
         // 最初にヒットしたポイントの情報から次にレイを飛ばす方向を決める
         // とりあえず適当に乱数を生成して法線の向きに飛ばす
         let normal = payload.latest_hit_normal;
-        let ratio_x = payload.random_engine.generate_range(0.0..1.0);
-        let ratio_y = payload.random_engine.generate_range(0.0..1.0);
-        let ratio_z = payload.random_engine.generate_range(0.0..1.0);
+        let mut random_engine = payload.kernel.random_engine();
+        let ratio_x = random_engine.generate_range(0.0..1.0);
+        let ratio_y = random_engine.generate_range(0.0..1.0);
+        let ratio_z = random_engine.generate_range(0.0..1.0);
         let new_to = 500.0
             * Vector3f::new(normal.x * ratio_x, normal.y * ratio_y, normal.z * ratio_z).normalize();
 
