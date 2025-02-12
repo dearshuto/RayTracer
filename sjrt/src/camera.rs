@@ -133,7 +133,7 @@ mod tests {
     fn default() {
         // デフォルトで原点から画角 45 度で  (0.0, 0.0, -1.0) を見ている
         let camera = Camera::builder().build();
-        let rays = camera.calculate_ray_direction_range(0..10, 0..10);
+        let rays = camera.calculate_ray_direction_range(10, 10, 0..10, 0..10);
         assert_eq!(rays.len(), 100);
 
         assert_eq!(
@@ -163,7 +163,7 @@ mod tests {
             .with_position(&Vector3f::zero())
             .with_look_at(&Vector3f::new(-1.0, 0.0, 0.0))
             .build();
-        let rays = camera.calculate_ray_direction_range(0..10, 0..10);
+        let rays = camera.calculate_ray_direction_range(10, 10, 0..10, 0..10);
         assert_eq!(rays.len(), 100);
 
         assert_eq!(
