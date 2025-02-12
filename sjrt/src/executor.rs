@@ -81,58 +81,67 @@ impl Executor {
         TRayTracingPipeline: IRayTracingPipeline,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
-        for y in 0..480 {
-            for x in 0..640 {
-                // 初期値生成
-                let payload = ray_tracing_pipeline.entry(&EntryParams { x, y });
+        let camera = crate::Camera::builder()
+            .with_position(&Vector3f::new(0.0, 0.0, -10.0))
+            .with_look_at(&Vector3f::new(0.0, 0.0, 0.0))
+            .with_field_of_view(std::f32::consts::PI / 6.0)
+            .build();
 
-                // 初期レイ
-                // TODO: 外部から注入できるようにする
-                let mut ray_params = RayParams {
-                    from: Vector3f::new(0.0, 0.0, -10.0),
-                    to: Vector3f::new(-320.0 + x as f32, -240.0 + y as f32, 1000.0),
-                    payload,
-                };
+        let rays = camera.calculate_ray_direction_range(640, 480, 0..640, 0..480);
+        for ray in rays {
+            let x = ray.x;
+            let y = ray.y;
+            let direction = ray.directions[0];
 
-                // レイを飛ばすループ
-                let final_payload = loop {
-                    // 衝突判定
-                    let cast_result = scene.cast(&ray_params.from, &ray_params.to);
+            // 初期値生成
+            let payload = ray_tracing_pipeline.entry(&EntryParams { x, y });
 
-                    // 衝突の結果による値の更新
-                    let new_payload = match cast_result {
-                        // 衝突した
-                        Some(cast_result) => {
-                            match ray_tracing_pipeline
-                                .react_closest_hit(ray_params.payload, &cast_result)
-                            {
-                                HitAction::RayGenerate(_rays) => {
-                                    todo!()
-                                }
-                                HitAction::Payload(payload) => payload,
+            // 初期レイ
+            // TODO: 外部から注入できるようにする
+            let mut ray_params = RayParams {
+                from: Vector3f::new(0.0, 0.0, -10.0),
+                to: 1000.0 * direction,
+                payload,
+            };
+
+            // レイを飛ばすループ
+            let final_payload = loop {
+                // 衝突判定
+                let cast_result = scene.cast(&ray_params.from, &ray_params.to);
+
+                // 衝突の結果による値の更新
+                let new_payload = match cast_result {
+                    // 衝突した
+                    Some(cast_result) => {
+                        match ray_tracing_pipeline
+                            .react_closest_hit(ray_params.payload, &cast_result)
+                        {
+                            HitAction::RayGenerate(_rays) => {
+                                todo!()
                             }
+                            HitAction::Payload(payload) => payload,
                         }
-                        // 衝突しなかった
-                        None => ray_tracing_pipeline.react_hit_miss(ray_params.payload),
-                    };
-
-                    // つぎのアクション選定
-                    let trace_action = ray_tracing_pipeline.trace(RayParams {
-                        from: ray_params.from,
-                        to: ray_params.to,
-                        payload: new_payload,
-                    });
-                    match trace_action {
-                        TraceAction::Next(next_ray_params) => ray_params = next_ray_params,
-                        TraceAction::Finish(payload) => break payload,
                     }
+                    // 衝突しなかった
+                    None => ray_tracing_pipeline.react_hit_miss(ray_params.payload),
                 };
-                //  end of loop --------------------------------------
 
-                // 出力して終了
-                let color = ray_tracing_pipeline.write(final_payload);
-                color_buffer.write(x, y, color);
-            }
+                // つぎのアクション選定
+                let trace_action = ray_tracing_pipeline.trace(RayParams {
+                    from: ray_params.from,
+                    to: ray_params.to,
+                    payload: new_payload,
+                });
+                match trace_action {
+                    TraceAction::Next(next_ray_params) => ray_params = next_ray_params,
+                    TraceAction::Finish(payload) => break payload,
+                }
+            };
+            //  end of loop --------------------------------------
+
+            // 出力して終了
+            let color = ray_tracing_pipeline.write(final_payload);
+            color_buffer.write(x, y, color);
         }
     }
 }
