@@ -1,14 +1,13 @@
 use std::ops::{Add, Mul, Sub};
 
 use crate::sampling_algorithm::SamplingResult;
-use crate::traits::{IVector3, IVectorComponent3};
+use crate::traits::{IInnerProduct, INormalized, IVectorComponent3};
 use crate::{IScene, Vector3f};
 use rand::prelude::*;
 
 pub trait IRelatedLightEnumerator<TFloat, TVector3>
 where
     TFloat: num::Float,
-    TVector3: IVector3<TFloat>,
 {
     fn enumerate(&self, position: &TVector3) -> impl Iterator<Item = TVector3>;
 }
@@ -33,7 +32,8 @@ impl NextEventEstimation {
             + From<f32>
             + Mul<TVector3, Output = TVector3>
             + num::traits::Inv<Output = TFloat>,
-        TVector3: IVector3<TFloat>
+        TVector3: INormalized
+            + IInnerProduct<TFloat>
             + IVectorComponent3<TFloat>
             + Add<TVector3, Output = TVector3>
             + Sub<TVector3, Output = TVector3>
@@ -46,7 +46,7 @@ impl NextEventEstimation {
         let mut direction_candidate = lights
             .into_iter()
             .map(|light_center| SamplingResult {
-                direction: (light_center - *position).normalize(),
+                direction: (light_center - *position).normalized(),
                 weight,
             })
             .collect::<Vec<_>>();
@@ -55,7 +55,7 @@ impl NextEventEstimation {
         let x: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
         let y: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
         let z: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
-        let random_direction = TVector3::new(x, y, z).normalize();
+        let random_direction = TVector3::new(x, y, z).normalized();
 
         let result = if TFloat::zero() < random_direction.dot(normal) {
             random_direction

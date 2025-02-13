@@ -1,4 +1,4 @@
-use crate::traits::{IInnerProduct, IVector3, IVectorComponent3};
+use crate::traits::{IInnerProduct, INormalized, IVectorComponent3};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vector3f {
@@ -108,21 +108,9 @@ impl IVectorComponent3<f32> for Vector3f {
     }
 }
 
-impl IVector3<f32> for Vector3f {
-    fn zero() -> Self {
-        Vector3f::zero()
-    }
-
-    fn dot(&self, other: &Self) -> f32 {
-        self.dot(other)
-    }
-
-    fn normalize(&self) -> Self {
+impl INormalized for Vector3f {
+    fn normalized(&self) -> Self {
         self.normalize()
-    }
-
-    fn length(&self) -> f32 {
-        self.norm()
     }
 }
 

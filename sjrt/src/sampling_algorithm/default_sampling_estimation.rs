@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::ops::{Add, Mul, Range};
 
 use crate::sampling_algorithm::SamplingResult;
-use crate::traits::{IRandomEngine, IVector3, IVectorComponent3};
+use crate::traits::{IInnerProduct, INormalized, IRandomEngine, IVectorComponent3};
 use crate::IScene;
 use rand::Rng;
 
@@ -26,8 +26,11 @@ impl DefaultSamplingEstimation {
             + Into<f32>
             + PartialOrd<TFloat>
             + Mul<TVector3, Output = TVector3>,
-        TVector3:
-            IVector3<TFloat> + IVectorComponent3<TFloat> + Add<TVector3, Output = TVector3> + Copy,
+        TVector3: IVectorComponent3<TFloat>
+            + INormalized
+            + IInnerProduct<TFloat>
+            + Add<TVector3, Output = TVector3>
+            + Copy,
         TVectorComponent3: IVectorComponent3<TFloat>,
         TScene: IScene,
     {
@@ -89,15 +92,18 @@ where
     ) -> Vec<SamplingResult<TFloat, TVector3>>
     where
         TFloat: num::Float + From<f32> + PartialOrd<TFloat> + Mul<TVector3, Output = TVector3>,
-        TVector3:
-            IVector3<TFloat> + IVectorComponent3<TFloat> + Add<TVector3, Output = TVector3> + Copy,
+        TVector3: IVectorComponent3<TFloat>
+            + INormalized
+            + IInnerProduct<TFloat>
+            + Add<TVector3, Output = TVector3>
+            + Copy,
         TScene: IScene,
     {
         let range = From::<f32>::from(-1.0)..From::<f32>::from(1.0);
         let x = self.random_engine.generate_range(range.clone());
         let y = self.random_engine.generate_range(range.clone());
         let z = self.random_engine.generate_range(range);
-        let random_direction = TVector3::new(x, y, z).normalize();
+        let random_direction = TVector3::new(x, y, z).normalized();
 
         let result = if TFloat::zero() < random_direction.dot(normal) {
             random_direction

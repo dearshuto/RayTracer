@@ -1,4 +1,4 @@
-use crate::traits::{IVector3, IVectorComponent3};
+use crate::traits::IVectorComponent3;
 
 impl<TFloat> IVectorComponent3<TFloat> for nalgebra::Vector3<TFloat>
 where
@@ -30,26 +30,5 @@ where
 
     fn set_z(&mut self, z: TFloat) {
         self.z = z;
-    }
-}
-
-impl<TFloat> IVector3<TFloat> for nalgebra::Vector3<TFloat>
-where
-    TFloat: num::Float + nalgebra::Scalar + nalgebra::SimdComplexField + nalgebra::SimdRealField,
-{
-    fn zero() -> Self {
-        Self::zeros()
-    }
-
-    fn dot(&self, other: &Self) -> TFloat {
-        self.dot(other)
-    }
-
-    fn normalize(&self) -> Self {
-        self.normalize()
-    }
-
-    fn length(&self) -> TFloat {
-        self.norm()
     }
 }
