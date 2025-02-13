@@ -33,6 +33,13 @@ pub struct Payload<T>
 where
     T: IKernel,
 {
+    // 最初にレイを飛ばしたときの始点と終点
+    from: nalgebra::Vector3<f32>,
+    to: nalgebra::Vector3<f32>,
+
+    // 蓄積した色
+    value: Option<nalgebra::Vector3<f32>>,
+
     current_depth: u32,
     current_sampling: u32,
 
@@ -50,6 +57,7 @@ where
     TKernel: IKernel,
 {
     depth: u32,
+    sampling_count: u32,
     kernel: TKernel,
     _marker: std::marker::PhantomData<T>,
 }
@@ -68,7 +76,8 @@ where
 {
     pub fn new(kernel: TKernel) -> Self {
         Self {
-            depth: 0, // TODO
+            depth: 0,          // TODO
+            sampling_count: 1, // TODO
             kernel,
             _marker: std::marker::PhantomData,
         }
@@ -82,8 +91,11 @@ where
     type PayloadType = Payload<TKernel>;
     type HitParams = T;
 
-    fn entry(&self, _entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
         Payload {
+            from: entry_params.from,
+            to: entry_params.to,
+            value: None,
             current_depth: 0,
             current_sampling: 0,
             latest_hit_normal: nalgebra::Vector3::zeros(),
@@ -142,11 +154,37 @@ where
         &self,
         ray_params: RayParams<Self::PayloadType>,
     ) -> crate::TraceAction<Self::PayloadType> {
-        let payload = ray_params.payload;
+        let mut payload = ray_params.payload;
 
-        // 反射回数が規定回数を超えていたら終了
+        // 反射回数が規定回数を超えていたら...
         if self.depth < payload.current_depth {
-            return crate::TraceAction::Finish(payload);
+            // 指定の回数のサンプリングが完了していたら終了
+            if self.sampling_count <= payload.current_sampling {
+                return crate::TraceAction::Finish(payload);
+            }
+
+            // 今回のサンプリングの結果を保持
+            let mut color = nalgebra::Vector3::zeros();
+            while let Some((emission, albedo)) = payload.hit_history.pop() {
+                color = albedo.component_mul(&color);
+                color += emission;
+            }
+
+            // 前回のサンプリング結果との平均をとっていく
+            let current_color = payload.value.unwrap_or(color);
+            let new_color = (current_color + color) / 2.0;
+
+            // 今回のサンプリングで保持していた情報を削除して、
+            // 開始点に巻き戻してレイのトレースを続ける
+            let new_sampling_count = payload.current_sampling + 1;
+            return crate::TraceAction::Next(RayParams {
+                from: payload.from,
+                to: payload.to,
+                payload: payload
+                    .with_value(Some(new_color))
+                    .with_current_depth(0)
+                    .with_current_sampling(new_sampling_count),
+            });
         }
 
         // 最初にヒットしたポイントの情報から次にレイを飛ばす方向を決める
@@ -169,7 +207,10 @@ where
     }
 
     fn write(&self, payload: Self::PayloadType) -> crate::executor::Color {
-        let normal = payload.latest_hit_normal;
-        crate::executor::Color::R32G32B32A32_Unorm([normal.x, normal.y, normal.z, 1.0])
+        let Some(color) = payload.value else {
+            return crate::executor::Color::R8G8B8A8_Uint([0; 4]);
+        };
+
+        crate::executor::Color::R32G32B32A32_Unorm([color.x, color.y, color.z, 1.0])
     }
 }
