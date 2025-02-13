@@ -89,16 +89,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 buffer.set_color(x, y, red, green, blue);
             }
         }
-    } else if args.thread_count_x == 1 && args.thread_count_y == 1 {
-        let start = std::time::Instant::now();
-        sjrt::System::new().execute(&scene, &mut buffer, &path_tracer);
-        let end = start.elapsed();
-
-        println!(
-            "{} sec, {}",
-            end.as_secs(),
-            end.subsec_nanos() as f32 / 1_000_000f32
-        );
     } else {
         let start = std::time::Instant::now();
         sjrt::ParallelizeSystem::new_with_thread(args.thread_count_x, args.thread_count_y)

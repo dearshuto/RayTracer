@@ -10,7 +10,7 @@ pub use executor::{
 };
 pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
-pub use system::{ParallelizeSystem, System};
+pub use system::ParallelizeSystem;
 pub use traits::EnumerateLightResult;
 pub use traits::IBuffer;
 pub use traits::IRenderer;
