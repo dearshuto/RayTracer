@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{camera::RayInfo, util::HitParams, Vector3f};
+use crate::{camera::RayInfo, util::HitParams};
 
 pub enum Color {
     #[allow(non_camel_case_types)]
@@ -28,13 +28,13 @@ pub struct EntryParams {
 }
 
 pub struct RayParams<T> {
-    pub from: Vector3f,
-    pub to: Vector3f,
+    pub from: nalgebra::Vector3<f32>,
+    pub to: nalgebra::Vector3<f32>,
     pub payload: T,
 }
 
 pub trait ISceneStructure<T> {
-    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<T>;
+    fn cast(&self, from: &nalgebra::Vector3<f32>, to: &nalgebra::Vector3<f32>) -> Option<T>;
 }
 
 pub trait IRayTracingPipeline {
@@ -84,8 +84,8 @@ impl Executor {
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
         let camera = crate::Camera::builder()
-            .with_position(&Vector3f::new(0.0, 0.0, -10.0))
-            .with_look_at(&Vector3f::new(0.0, 0.0, 0.0))
+            .with_position(&nalgebra::Vector3::new(0.0, 0.0, -10.0))
+            .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
             .with_field_of_view(std::f32::consts::PI / 6.0)
             .build();
 
@@ -122,8 +122,8 @@ impl Executor {
     {
         // 初期レイの生成
         let camera = crate::Camera::builder()
-            .with_position(&Vector3f::new(0.0, 0.0, -10.0))
-            .with_look_at(&Vector3f::new(0.0, 0.0, 0.0))
+            .with_position(&nalgebra::Vector3::new(0.0, 0.0, -10.0))
+            .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
             .with_field_of_view(std::f32::consts::PI / 6.0)
             .build();
         let mut rays = camera.calculate_ray_direction_range(640, 480, 0..640, 0..480);
@@ -192,7 +192,7 @@ impl Executor {
         // 初期レイ
         // TODO: 外部から注入できるようにする
         let mut ray_params = RayParams {
-            from: Vector3f::new(0.0, 0.0, -10.0),
+            from: nalgebra::Vector3::new(0.0, 0.0, -10.0),
             to: 1000.0 * direction,
             payload,
         };
@@ -245,7 +245,11 @@ where
     TScene: ISceneStructure<TPipeline::HitParams>,
     TPipeline: IRayTracingPipeline,
 {
-    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<TPipeline::HitParams> {
+    fn cast(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<TPipeline::HitParams> {
         self.scene.cast(from, to)
     }
 }
@@ -294,7 +298,11 @@ impl<T> ISceneStructure<HitParams> for Arc<T>
 where
     T: ISceneStructure<HitParams>,
 {
-    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<HitParams> {
+    fn cast(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<HitParams> {
         self.as_ref().cast(from, to)
     }
 }

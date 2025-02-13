@@ -1,16 +1,15 @@
 use crate::{
     traits::IRandomEngine, util::HitParams, EntryParams, HitAction, IRayTracingPipeline, RayParams,
-    Vector3f,
 };
 
 pub trait IHitParams {
-    fn normal(&self) -> Vector3f;
+    fn normal(&self) -> nalgebra::Vector3<f32>;
 
-    fn position(&self) -> Vector3f;
+    fn position(&self) -> nalgebra::Vector3<f32>;
 
-    fn emission(&self) -> Vector3f;
+    fn emission(&self) -> nalgebra::Vector3<f32>;
 
-    fn albedo(&self) -> Vector3f;
+    fn albedo(&self) -> nalgebra::Vector3<f32>;
 }
 
 pub trait IKernel {
@@ -36,10 +35,13 @@ where
 {
     current_depth: u32,
     current_sampling: u32,
-    values: Vec<(Vector3f /*albedo*/, Vector3f /*emission*/)>,
+    values: Vec<(
+        nalgebra::Vector3<f32>, /*albedo*/
+        nalgebra::Vector3<f32>, /*emission*/
+    )>,
 
-    latest_hit_position: Vector3f,
-    latest_hit_normal: Vector3f,
+    latest_hit_position: nalgebra::Vector3<f32>,
+    latest_hit_normal: nalgebra::Vector3<f32>,
 
     kernel: T,
 }
@@ -86,8 +88,8 @@ where
             current_depth: 0,
             current_sampling: 0,
             values: Vec::default(),
-            latest_hit_normal: Vector3f::zero(),
-            latest_hit_position: Vector3f::zero(),
+            latest_hit_normal: nalgebra::Vector3::zeros(),
+            latest_hit_position: nalgebra::Vector3::zeros(),
             kernel: self.kernel.clone(),
         }
     }
@@ -130,7 +132,10 @@ where
         // どこにもヒットしなかったら背景色を返す
         if payload.current_depth == 0 {
             let mut new_values = payload.values.clone();
-            new_values.push((Vector3f::zero(), Vector3f::new(0.1, 0.2, 0.3)));
+            new_values.push((
+                nalgebra::Vector3::zeros(),
+                nalgebra::Vector3::new(0.1, 0.2, 0.3),
+            ));
 
             return payload
                 .with_current_depth(next_depth)
@@ -160,7 +165,8 @@ where
         let ratio_y = random_engine.generate_range(0.0..1.0);
         let ratio_z = random_engine.generate_range(0.0..1.0);
         let new_to = 500.0
-            * Vector3f::new(normal.x * ratio_x, normal.y * ratio_y, normal.z * ratio_z).normalize();
+            * nalgebra::Vector3::new(normal.x * ratio_x, normal.y * ratio_y, normal.z * ratio_z)
+                .normalize();
 
         let ray_params = RayParams {
             from: payload.latest_hit_position,

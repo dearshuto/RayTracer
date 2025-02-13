@@ -4,18 +4,18 @@ use crate::{
     sampling_algorithm::IRelatedLightEnumerator,
     scene::Scene,
     traits::{EnumerateLightResult, IVectorComponent3},
-    IScene, MaterialInfo, Property, Vector3f,
+    IScene, MaterialInfo, Property,
 };
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
 pub struct RapierScene {
-    sky_lower_color: Vector3f,
-    sky_upper_color: Vector3f,
+    sky_lower_color: nalgebra::Vector3<f32>,
+    sky_upper_color: nalgebra::Vector3<f32>,
     _rigid_body_set: RigidBodySet,
     _collider_set: ColliderSet,
     _island_manager: IslandManager,
     _query_pipeline: QueryPipeline,
-    _properties: Vec<Property<f32, Vector3f>>,
+    _properties: Vec<Property<f32, nalgebra::Vector3<f32>>>,
     _emission_object_indices: Vec<i32>,
 }
 
@@ -59,7 +59,11 @@ impl RapierScene {
             let material = &scene.materials[index];
             let property = Property {
                 emission: material.emission.x,
-                albedo: Vector3f::new(material.albedo.x, material.albedo.y, material.albedo.z),
+                albedo: nalgebra::Vector3::new(
+                    material.albedo.x,
+                    material.albedo.y,
+                    material.albedo.z,
+                ),
                 ..std::default::Default::default()
             };
             properties.push(property);
@@ -91,7 +95,11 @@ impl RapierScene {
 }
 
 impl IScene for RapierScene {
-    fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo> {
+    fn cast_ray(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<MaterialInfo> {
         let line_segment = vector![to.x - from.x, to.y - from.y, to.z - from.z];
         let max_toi = line_segment.norm();
         let direction = line_segment / max_toi;
@@ -110,7 +118,7 @@ impl IScene for RapierScene {
             // TODO: プロパティの検索
             let collider = colliders.get(handle).unwrap();
             let parent_handle = collider.parent().unwrap();
-            let normal = Vector3f::new(
+            let normal = nalgebra::Vector3::new(
                 intersection.normal[0],
                 intersection.normal[1],
                 intersection.normal[2],
@@ -119,7 +127,7 @@ impl IScene for RapierScene {
             let property = &self._properties[parent_handle.index()];
             let material = MaterialInfo::new(
                 normal,
-                Vector3f::new(position[0], position[1], position[2]),
+                nalgebra::Vector3::new(position[0], position[1], position[2]),
                 *property,
             );
             Some(material)
@@ -128,18 +136,24 @@ impl IScene for RapierScene {
         }
     }
 
-    fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult {
+    fn enumerate_related_lights(&self, position: &nalgebra::Vector3<f32>) -> EnumerateLightResult {
         let centers: Vec<_> = self.enumerate(position).collect();
         EnumerateLightResult { centers }
     }
 
-    fn find_background_color(&self, _position: &Vector3f, direction: &Vector3f) -> Vector3f {
+    fn find_background_color(
+        &self,
+        _position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
+    ) -> nalgebra::Vector3<f32> {
         {
-            let rate = direction.dot(&Vector3f::new(0.0, 1.0, 0.0)).clamp(0.0, 1.0);
+            let rate = direction
+                .dot(&nalgebra::Vector3::new(0.0, 1.0, 0.0))
+                .clamp(0.0, 1.0);
             if 0.0 < rate {
                 rate * self.sky_upper_color + (1.0 - rate) * self.sky_lower_color
             } else {
-                Vector3f::zero()
+                nalgebra::Vector3::zeros()
             }
         }
     }
@@ -168,7 +182,11 @@ where
 }
 
 impl ISceneStructure<RayIntersection> for RapierScene {
-    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<RayIntersection> {
+    fn cast(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<RayIntersection> {
         let line_segment = vector![to.x - from.x, to.y - from.y, to.z - from.z];
         let max_toi = line_segment.norm();
         let direction = line_segment / max_toi;
@@ -193,7 +211,11 @@ impl ISceneStructure<RayIntersection> for RapierScene {
 }
 
 impl ISceneStructure<HitParams> for RapierScene {
-    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<HitParams> {
+    fn cast(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<HitParams> {
         let Some(material_info) = self.cast_ray(from, to) else {
             return None;
         };
@@ -201,7 +223,7 @@ impl ISceneStructure<HitParams> for RapierScene {
         Some(HitParams {
             normal: material_info.normal,
             position: material_info.position,
-            emission: Vector3f::new(
+            emission: nalgebra::Vector3::new(
                 material_info.property.emission,
                 material_info.property.emission,
                 material_info.property.emission,
@@ -212,26 +234,26 @@ impl ISceneStructure<HitParams> for RapierScene {
 }
 
 pub struct HitParams {
-    normal: Vector3f,
-    position: Vector3f,
-    emission: Vector3f,
-    albedo: Vector3f,
+    normal: nalgebra::Vector3<f32>,
+    position: nalgebra::Vector3<f32>,
+    emission: nalgebra::Vector3<f32>,
+    albedo: nalgebra::Vector3<f32>,
 }
 
 impl IHitParams for HitParams {
-    fn normal(&self) -> Vector3f {
+    fn normal(&self) -> nalgebra::Vector3<f32> {
         self.normal
     }
 
-    fn position(&self) -> Vector3f {
+    fn position(&self) -> nalgebra::Vector3<f32> {
         self.position
     }
 
-    fn emission(&self) -> Vector3f {
+    fn emission(&self) -> nalgebra::Vector3<f32> {
         self.emission
     }
 
-    fn albedo(&self) -> Vector3f {
+    fn albedo(&self) -> nalgebra::Vector3<f32> {
         self.albedo
     }
 }

@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use image::GenericImage;
-use sjrt::Vector3f;
 
 struct Image(image::DynamicImage);
 
@@ -25,18 +24,18 @@ impl sjrt::IColorBuffer for &mut Image {
 async fn main() {
     let scene_data = sjrt::scene::Scene {
         sky: sjrt::scene::Sky {
-            lower_color: sjrt::Vector3f::zero(),
-            upper_color: sjrt::Vector3f::new(0.2, 0.2, 0.6),
+            lower_color: nalgebra::Vector3::zeros(),
+            upper_color: nalgebra::Vector3::new(0.2, 0.2, 0.6),
         },
         primitives: vec![sjrt::scene::primitive::Primitive::Sphere(
             sjrt::scene::primitive::SphereData { radius: 5.0f32 },
         )],
         transforms: vec![sjrt::scene::Transform::new_with_translation(
-            &Vector3f::new(0.0, 0.0, 10.0),
+            &nalgebra::Vector3::new(0.0, 0.0, 10.0),
         )],
         materials: vec![sjrt::scene::Material {
-            albedo: Vector3f::new(0.1, 0.2, 1.0),
-            emission: Vector3f::new(0.1, 0.1, 0.1),
+            albedo: nalgebra::Vector3::new(0.1, 0.2, 1.0),
+            emission: nalgebra::Vector3::new(0.1, 0.1, 0.1),
         }],
     };
     let scene = Arc::new(sjrt::util::RapierScene::new_from_scene(&scene_data));

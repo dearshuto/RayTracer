@@ -56,10 +56,7 @@ impl Loader {
 mod detail {
     use serde::Deserialize;
 
-    use crate::{
-        scene::scene::{Material, Sky, Transform},
-        Vector3f,
-    };
+    use crate::scene::scene::{Material, Sky, Transform};
 
     #[derive(Deserialize, Debug, Default)]
     pub struct Scene {
@@ -86,12 +83,12 @@ mod detail {
     impl SkyData {
         pub fn to_scene_data(&self) -> Sky {
             Sky {
-                lower_color: Vector3f::new(
+                lower_color: nalgebra::Vector3::new(
                     self.lower_color[0],
                     self.lower_color[1],
                     self.lower_color[2],
                 ),
-                upper_color: Vector3f::new(
+                upper_color: nalgebra::Vector3::new(
                     self.upper_color[0],
                     self.upper_color[1],
                     self.upper_color[2],
@@ -149,13 +146,13 @@ mod detail {
 
         pub fn to_scene_data(&self) -> Transform {
             Transform {
-                translation: Vector3f::new(
+                translation: nalgebra::Vector3::new(
                     self.translation.x,
                     self.translation.y,
                     self.translation.z,
                 ),
-                rotation: Vector3f::new(self.rotation.x, self.rotation.y, self.rotation.z),
-                scale: Vector3f::new(self.scale.x, self.scale.y, self.scale.z),
+                rotation: nalgebra::Vector3::new(self.rotation.x, self.rotation.y, self.rotation.z),
+                scale: nalgebra::Vector3::new(self.scale.x, self.scale.y, self.scale.z),
             }
         }
     }
@@ -176,8 +173,8 @@ mod detail {
 
         pub fn to_scene_data(&self) -> Material {
             Material {
-                albedo: Vector3f::new(self.albedo.x, self.albedo.y, self.albedo.z),
-                emission: Vector3f::new(self.emission.x, self.emission.y, self.emission.z),
+                albedo: nalgebra::Vector3::new(self.albedo.x, self.albedo.y, self.albedo.z),
+                emission: nalgebra::Vector3::new(self.emission.x, self.emission.y, self.emission.z),
             }
         }
     }

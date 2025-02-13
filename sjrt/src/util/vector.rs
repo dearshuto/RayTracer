@@ -1,4 +1,4 @@
-use crate::traits::IVectorComponent3;
+use crate::traits::{IInnerProduct, INormalized, IVectorComponent3};
 
 impl<TFloat> IVectorComponent3<TFloat> for nalgebra::Vector3<TFloat>
 where
@@ -30,5 +30,27 @@ where
 
     fn set_z(&mut self, z: TFloat) {
         self.z = z;
+    }
+}
+
+impl<T> INormalized for nalgebra::Vector3<T>
+where
+    T: nalgebra::Scalar + nalgebra::SimdComplexField,
+{
+    fn normalized(&self) -> Self {
+        self.normalize()
+    }
+}
+
+impl<T> IInnerProduct<T> for nalgebra::Vector3<T>
+where
+    T: num::Float
+        + num::Zero
+        + nalgebra::Scalar
+        + nalgebra::ClosedAddAssign
+        + nalgebra::ClosedMulAssign,
+{
+    fn dot(&self, other: &Self) -> T {
+        self.dot(other)
     }
 }

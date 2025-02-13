@@ -1,27 +1,35 @@
 use std::ops::Range;
 
-use crate::{MaterialInfo, Vector3f};
+use crate::MaterialInfo;
 
 pub trait IRenderer<T> {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
         additional_params: T,
     ) -> (f32, f32, f32);
 }
 
 pub struct EnumerateLightResult {
-    pub centers: Vec<Vector3f>,
+    pub centers: Vec<nalgebra::Vector3<f32>>,
 }
 
 pub trait IScene {
-    fn cast_ray(&self, from: &Vector3f, to: &Vector3f) -> Option<MaterialInfo>;
+    fn cast_ray(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<MaterialInfo>;
 
-    fn enumerate_related_lights(&self, position: &Vector3f) -> EnumerateLightResult;
+    fn enumerate_related_lights(&self, position: &nalgebra::Vector3<f32>) -> EnumerateLightResult;
 
-    fn find_background_color(&self, position: &Vector3f, direction: &Vector3f) -> Vector3f;
+    fn find_background_color(
+        &self,
+        position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
+    ) -> nalgebra::Vector3<f32>;
 }
 
 pub trait IBuffer {
