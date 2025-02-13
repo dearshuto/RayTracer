@@ -34,9 +34,6 @@ pub use path_tracer::PathTracer;
 mod property;
 pub use property::Property;
 
-mod ray;
-pub use ray::Ray;
-
 mod vector;
 pub use vector::Vector3f;
 
