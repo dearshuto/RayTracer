@@ -22,22 +22,7 @@ impl sjrt::IColorBuffer for &mut Image {
 
 #[tokio::main]
 async fn main() {
-    let scene_data = sjrt::scene::Scene {
-        sky: sjrt::scene::Sky {
-            lower_color: nalgebra::Vector3::zeros(),
-            upper_color: nalgebra::Vector3::new(0.2, 0.2, 0.6),
-        },
-        primitives: vec![sjrt::scene::primitive::Primitive::Sphere(
-            sjrt::scene::primitive::SphereData { radius: 5.0f32 },
-        )],
-        transforms: vec![sjrt::scene::Transform::new_with_translation(
-            &nalgebra::Vector3::new(0.0, 0.0, 10.0),
-        )],
-        materials: vec![sjrt::scene::Material {
-            albedo: nalgebra::Vector3::new(0.1, 0.2, 1.0),
-            emission: nalgebra::Vector3::new(0.1, 0.1, 0.1),
-        }],
-    };
+    let scene_data = sjrt::scene::Scene::box_point_light();
     let scene = Arc::new(sjrt::util::RapierScene::new_from_scene(&scene_data));
     let pipeline = Arc::new(sjrt::PathTracerEx::default());
     let mut buffer = Image(image::DynamicImage::new_rgba8(640, 480));
