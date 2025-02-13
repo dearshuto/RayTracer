@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use image::GenericImage;
 use sjrt::Vector3f;
 
@@ -19,7 +21,8 @@ impl sjrt::IColorBuffer for &mut Image {
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let scene_data = sjrt::scene::Scene {
         sky: sjrt::scene::Sky {
             lower_color: sjrt::Vector3f::zero(),
@@ -36,10 +39,12 @@ fn main() {
             emission: Vector3f::new(0.1, 0.1, 0.1),
         }],
     };
-    let scene = sjrt::util::RapierScene::new_from_scene(&scene_data);
-    let pipeline = sjrt::PathTracerEx::default();
+    let scene = Arc::new(sjrt::util::RapierScene::new_from_scene(&scene_data));
+    let pipeline = Arc::new(sjrt::PathTracerEx::default());
     let mut buffer = Image(image::DynamicImage::new_rgba8(640, 480));
-    sjrt::Executor::default().execute(&mut buffer, scene, pipeline);
+    sjrt::Executor::default()
+        .execute_async(&mut buffer, scene, pipeline)
+        .await;
 
     buffer.0.save("executor.png").unwrap();
 }
