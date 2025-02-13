@@ -25,6 +25,8 @@ where
 pub struct EntryParams {
     pub x: u32,
     pub y: u32,
+    pub from: nalgebra::Vector3<f32>,
+    pub to: nalgebra::Vector3<f32>,
 }
 
 pub struct RayParams<T> {
@@ -122,9 +124,9 @@ impl Executor {
     {
         // 初期レイの生成
         let camera = crate::Camera::builder()
-            .with_position(&nalgebra::Vector3::new(0.0, 0.0, -10.0))
-            .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
-            .with_field_of_view(std::f32::consts::PI / 6.0)
+            .with_position(&nalgebra::Vector3::new(0.0, 7.0, 20.0))
+            .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
+            .with_field_of_view(std::f32::consts::PI / 4.0)
             .build();
         let mut rays = camera.calculate_ray_direction_range(640, 480, 0..640, 0..480);
 
@@ -186,16 +188,15 @@ impl Executor {
         let y = ray.y;
         let direction = ray.directions[0];
 
-        // 初期値生成
-        let payload = ray_tracing_pipeline.entry(&EntryParams { x, y });
-
         // 初期レイ
+        let from = nalgebra::Vector3::new(0.0, 7.0, 20.0);
+        let to = from + 1000.0 * direction;
+
+        // 初期値生成
+        let payload = ray_tracing_pipeline.entry(&EntryParams { x, y, from, to });
+
         // TODO: 外部から注入できるようにする
-        let mut ray_params = RayParams {
-            from: nalgebra::Vector3::new(0.0, 0.0, -10.0),
-            to: 1000.0 * direction,
-            payload,
-        };
+        let mut ray_params = RayParams { from, to, payload };
 
         loop {
             // 衝突判定

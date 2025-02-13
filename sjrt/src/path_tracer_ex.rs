@@ -33,17 +33,23 @@ pub struct Payload<T>
 where
     T: IKernel,
 {
+    // 最初にレイを飛ばしたときの始点と終点
+    from: nalgebra::Vector3<f32>,
+    to: nalgebra::Vector3<f32>,
+
+    // 蓄積した色
+    value: nalgebra::Vector3<f32>,
+
     current_depth: u32,
     current_sampling: u32,
-    values: Vec<(
-        nalgebra::Vector3<f32>, /*albedo*/
-        nalgebra::Vector3<f32>, /*emission*/
-    )>,
 
     latest_hit_position: nalgebra::Vector3<f32>,
     latest_hit_normal: nalgebra::Vector3<f32>,
 
     kernel: T,
+
+    // (emission, albedo)
+    hit_history: Vec<(nalgebra::Vector3<f32>, nalgebra::Vector3<f32>)>,
 }
 
 pub struct PathTracerEx<T, TKernel>
@@ -51,6 +57,7 @@ where
     TKernel: IKernel,
 {
     depth: u32,
+    sampling_count: u32,
     kernel: TKernel,
     _marker: std::marker::PhantomData<T>,
 }
@@ -69,7 +76,8 @@ where
 {
     pub fn new(kernel: TKernel) -> Self {
         Self {
-            depth: 0, // TODO
+            depth: 8,            // TODO
+            sampling_count: 256, // TODO
             kernel,
             _marker: std::marker::PhantomData,
         }
@@ -83,14 +91,17 @@ where
     type PayloadType = Payload<TKernel>;
     type HitParams = T;
 
-    fn entry(&self, _entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
         Payload {
+            from: entry_params.from,
+            to: entry_params.to,
+            value: nalgebra::Vector3::zeros(),
             current_depth: 0,
             current_sampling: 0,
-            values: Vec::default(),
             latest_hit_normal: nalgebra::Vector3::zeros(),
             latest_hit_position: nalgebra::Vector3::zeros(),
             kernel: self.kernel.clone(),
+            hit_history: Vec::default(),
         }
     }
 
@@ -111,73 +122,95 @@ where
         let position = hit_params.position();
         let new_depth = payload.current_depth + 1;
 
-        let albedo = hit_params.albedo();
-        let emission = hit_params.emission();
-        let mut values = payload.values.clone();
-        values.push((albedo, emission));
+        let mut new_payload = payload
+            .with_current_depth(new_depth)
+            .with_latest_hit_position(position)
+            .with_latest_hit_normal(normal);
 
-        HitAction::Payload(
-            payload
-                .with_current_depth(new_depth)
-                .with_latest_hit_position(position)
-                .with_latest_hit_normal(normal)
-                .with_values(values),
-        )
+        // ヒットした点の情報を履歴として保持
+        new_payload
+            .hit_history
+            .push((hit_params.emission(), hit_params.albedo()));
+
+        HitAction::Payload(new_payload)
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
         // ミスしたらトレースを完了させたいので反射回数を発散させる
         let next_depth = u32::MAX;
 
-        // どこにもヒットしなかったら背景色を返す
-        if payload.current_depth == 0 {
-            let mut new_values = payload.values.clone();
-            new_values.push((
-                nalgebra::Vector3::zeros(),
-                nalgebra::Vector3::new(0.1, 0.2, 0.3),
-            ));
+        // どこにもヒットしなかったので背景色を返す
+        let mut new_payload = payload.with_current_depth(next_depth);
 
-            return payload
-                .with_current_depth(next_depth)
-                .with_values(new_values);
-        }
+        new_payload.hit_history.push((
+            nalgebra::Vector3::new(0.0, 0.0, 0.0),
+            nalgebra::Vector3::zeros(),
+        ));
 
-        // 何回か反射してからミスしたら色は更新しない
-        payload.with_current_depth(next_depth)
+        new_payload
     }
 
     fn trace(
         &self,
         ray_params: RayParams<Self::PayloadType>,
     ) -> crate::TraceAction<Self::PayloadType> {
-        let payload = ray_params.payload;
+        let mut payload = ray_params.payload;
 
-        // 反射回数が規定回数を超えていたら終了
+        // 反射回数が規定回数を超えていたら...
         if self.depth < payload.current_depth {
-            return crate::TraceAction::Finish(payload);
+            // 指定の回数のサンプリングが完了していたら終了
+            if self.sampling_count <= payload.current_sampling {
+                return crate::TraceAction::Finish(payload);
+            }
+
+            // 今回のサンプリングの結果を保持
+            let mut color = nalgebra::Vector3::zeros();
+            while let Some((emission, albedo)) = payload.hit_history.pop() {
+                color = albedo.component_mul(&color);
+                color += emission;
+            }
+
+            // 前回のサンプリング結果との平均をとっていく
+            let current_color = color / self.sampling_count as f32;
+            let new_color = payload.value + current_color;
+
+            // 今回のサンプリングで保持していた情報を削除して、
+            // 開始点に巻き戻してレイのトレースを続ける
+            let new_sampling_count = payload.current_sampling + 1;
+            return crate::TraceAction::Next(RayParams {
+                from: payload.from,
+                to: payload.to,
+                payload: payload
+                    .with_value(new_color)
+                    .with_current_depth(0)
+                    .with_current_sampling(new_sampling_count),
+            });
         }
 
         // 最初にヒットしたポイントの情報から次にレイを飛ばす方向を決める
         // とりあえず適当に乱数を生成して法線の向きに飛ばす
         let normal = payload.latest_hit_normal;
         let mut random_engine = payload.kernel.random_engine();
-        let ratio_x = random_engine.generate_range(0.0..1.0);
-        let ratio_y = random_engine.generate_range(0.0..1.0);
-        let ratio_z = random_engine.generate_range(0.0..1.0);
-        let new_to = 500.0
-            * nalgebra::Vector3::new(normal.x * ratio_x, normal.y * ratio_y, normal.z * ratio_z)
-                .normalize();
+        let new_direction = loop {
+            let ratio_x = random_engine.generate_range(-1.0..1.0);
+            let ratio_y = random_engine.generate_range(-1.0..1.0);
+            let ratio_z = random_engine.generate_range(-1.0..1.0);
+            let new_normal = nalgebra::Vector3::new(ratio_x, ratio_y, ratio_z).normalize();
+            if new_normal.dot(&normal) <= 0.0 {
+                continue;
+            }
 
-        let ray_params = RayParams {
-            from: payload.latest_hit_position,
-            to: new_to,
-            payload,
+            break new_normal;
         };
+
+        let from = payload.latest_hit_position + new_direction * 0.001;
+        let to = 500.0 * new_direction + from;
+        let ray_params = RayParams { from, to, payload };
         crate::TraceAction::Next(ray_params)
     }
 
     fn write(&self, payload: Self::PayloadType) -> crate::executor::Color {
-        let normal = payload.latest_hit_normal;
-        crate::executor::Color::R32G32B32A32_Unorm([normal.x, normal.y, normal.z, 1.0])
+        let color = payload.value;
+        crate::executor::Color::R32G32B32A32_Unorm([color.x, color.y, color.z, 1.0])
     }
 }
