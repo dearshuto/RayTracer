@@ -110,14 +110,12 @@ where
         let position = hit_params.position();
         let new_depth = payload.current_depth + 1;
 
-        let albedo = hit_params.albedo();
-        let emission = hit_params.emission();
-
         let mut new_payload = payload
             .with_current_depth(new_depth)
             .with_latest_hit_position(position)
             .with_latest_hit_normal(normal);
 
+        // ヒットした点の情報を履歴として保持
         new_payload
             .hit_history
             .push((hit_params.emission(), hit_params.albedo()));
@@ -129,21 +127,15 @@ where
         // ミスしたらトレースを完了させたいので反射回数を発散させる
         let next_depth = u32::MAX;
 
-        // どこにもヒットしなかったら背景色を返す
-        if payload.current_depth == 0 {
-            let mut new_values = payload.values.clone();
-            new_values.push((
-                nalgebra::Vector3::zeros(),
-                nalgebra::Vector3::new(0.1, 0.2, 0.3),
-            ));
+        // どこにもヒットしなかったので背景色を返す
+        let mut new_payload = payload.with_current_depth(next_depth);
 
-            return payload
-                .with_current_depth(next_depth)
-                .with_values(new_values);
-        }
+        new_payload.hit_history.push((
+            nalgebra::Vector3::new(0.1, 0.2, 0.3),
+            nalgebra::Vector3::zeros(),
+        ));
 
-        // 何回か反射してからミスしたら色は更新しない
-        payload.with_current_depth(next_depth)
+        new_payload
     }
 
     fn trace(
