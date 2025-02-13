@@ -14,7 +14,7 @@ impl DefaultSamplingEstimation {
         Self {}
     }
 
-    pub fn estimate<TFloat, TVector3, TVectorComponent3, TScene>(
+    pub fn estimate<TFloat, TVector3, TScene>(
         &self,
         position: &TVector3,
         normal: &TVector3,
@@ -31,7 +31,6 @@ impl DefaultSamplingEstimation {
             + IInnerProduct<TFloat>
             + Add<TVector3, Output = TVector3>
             + Copy,
-        TVectorComponent3: IVectorComponent3<TFloat>,
         TScene: IScene,
     {
         let random_engine = RandomEngineAdapter::new();
@@ -123,8 +122,6 @@ where
 mod tests {
     use std::ops::Range;
 
-    use crate::Vector3f;
-
     use super::*;
 
     struct RandomEngineMock;
@@ -138,15 +135,15 @@ mod tests {
     impl IScene for SceneMock {
         fn cast_ray(
             &self,
-            _from: &crate::Vector3f,
-            _to: &crate::Vector3f,
+            _from: &nalgebra::Vector3<f32>,
+            _to: &nalgebra::Vector3<f32>,
         ) -> Option<crate::MaterialInfo> {
             None
         }
 
         fn enumerate_related_lights(
             &self,
-            _position: &crate::Vector3f,
+            _position: &nalgebra::Vector3<f32>,
         ) -> crate::EnumerateLightResult {
             crate::EnumerateLightResult {
                 centers: Default::default(),
@@ -155,10 +152,10 @@ mod tests {
 
         fn find_background_color(
             &self,
-            _position: &crate::Vector3f,
-            _direction: &crate::Vector3f,
-        ) -> crate::Vector3f {
-            Vector3f::zero()
+            _position: &nalgebra::Vector3<f32>,
+            _direction: &nalgebra::Vector3<f32>,
+        ) -> nalgebra::Vector3<f32> {
+            nalgebra::Vector3::zeros()
         }
     }
 
@@ -166,8 +163,8 @@ mod tests {
     fn new_f32() {
         let random_engine = RandomEngineMock {};
         let scene = SceneMock {};
-        let position = Vector3f::zero();
-        let normal = Vector3f::new(0.0, 1.0, 0.0);
+        let position = nalgebra::Vector3::zeros();
+        let normal = nalgebra::Vector3::new(0.0, 1.0, 0.0);
         let mut estimation = DefaultSamplingEstimationInternal::new(random_engine);
         let _ = estimation.estimate(&position, &normal, &scene);
     }

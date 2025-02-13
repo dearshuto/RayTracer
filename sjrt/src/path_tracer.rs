@@ -2,7 +2,7 @@ use crate::{
     brdf::{Lambert, PerfectSpecularReflection},
     traits::IRandomEngine,
     DefaultSamplingEstimation, IBidirectionalReflectanceDistributionFunction, IRenderer, IScene,
-    NextEventEstimation, Vector3f,
+    NextEventEstimation,
 };
 use rand::Rng;
 
@@ -24,10 +24,10 @@ impl PathTracer {
     pub fn cast_ray<TScene: IScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
         depth: u32,
-    ) -> (Vector3f, Option<Vector3f>) // (色、位置)
+    ) -> (nalgebra::Vector3<f32>, Option<nalgebra::Vector3<f32>>) // (色、位置)
     {
         let mut random_engine = RandomEngine::new();
         self.cast_ray_with_random_engine(scene, position, direction, depth, &mut random_engine)
@@ -36,11 +36,11 @@ impl PathTracer {
     pub fn cast_ray_with_random_engine<TScene: IScene, TRandomEngine: IRandomEngine<f32>>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
         depth: u32,
         random_engine: &mut TRandomEngine,
-    ) -> (Vector3f, Option<Vector3f>) // (色、位置)
+    ) -> (nalgebra::Vector3<f32>, Option<nalgebra::Vector3<f32>>) // (色、位置)
     {
         if self.depth_max < depth as u16 {
             let sky_color = scene.find_background_color(position, direction);
@@ -48,7 +48,7 @@ impl PathTracer {
         }
 
         let normalized_direction = direction.normalize();
-        let to = Vector3f::new(
+        let to = nalgebra::Vector3::new(
             position.x + 100.0 * normalized_direction.x,
             position.y + 100.0 * normalized_direction.y,
             position.z + 100.0 * normalized_direction.z,
@@ -57,7 +57,7 @@ impl PathTracer {
             let _mat_normal = &material_info.normal;
             let mat_position = &material_info.position;
             if 0.0 < material_info.property.emission {
-                let emission = Vector3f::new(
+                let emission = nalgebra::Vector3::new(
                     material_info.property.emission,
                     material_info.property.emission,
                     material_info.property.emission,
@@ -71,17 +71,18 @@ impl PathTracer {
                         scene,
                     )
                 } else {
-                    DefaultSamplingEstimation::new().estimate::<f32, Vector3f, Vector3f, TScene>(
-                        &material_info.position,
-                        &material_info.normal,
-                        scene,
-                    )
+                    DefaultSamplingEstimation::new()
+                        .estimate::<f32, nalgebra::Vector3<f32>, TScene>(
+                            &material_info.position,
+                            &material_info.normal,
+                            scene,
+                        )
                 };
 
                 let (mut red, mut green, mut blue) = (0.0, 0.0, 0.0);
                 for result in &direction_candidates {
                     let direction_candidate = result.direction;
-                    if !direction_candidate.is_valid() {
+                    if direction_candidate.is_empty() {
                         continue;
                     }
 
@@ -124,7 +125,7 @@ impl PathTracer {
                 }
 
                 (
-                    Vector3f::new(red, green, blue),
+                    nalgebra::Vector3::new(red, green, blue),
                     Some(material_info.position),
                 )
             }
@@ -139,8 +140,8 @@ impl<T: IRandomEngine<f32>> IRenderer<T> for PathTracer {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
         mut additional_params: T,
     ) -> (f32, f32, f32) {
         let sampling_count = self.sampling_count;
@@ -170,8 +171,8 @@ impl IRenderer<()> for PathTracer {
     fn render<TScene: IScene>(
         &self,
         scene: &TScene,
-        position: &Vector3f,
-        direction: &Vector3f,
+        position: &nalgebra::Vector3<f32>,
+        direction: &nalgebra::Vector3<f32>,
         _additional_params: (),
     ) -> (f32, f32, f32) {
         let sampling_count = self.sampling_count;

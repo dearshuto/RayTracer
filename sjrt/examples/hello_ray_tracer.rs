@@ -1,8 +1,5 @@
 use clap::Parser;
-use sjrt::{
-    scene::{primitive::SphereData, Material},
-    Vector3f,
-};
+use sjrt::scene::{primitive::SphereData, Material};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -15,25 +12,25 @@ pub fn main() {
     let args = Args::parse();
     let scene_data = sjrt::scene::Scene {
         sky: sjrt::scene::Sky {
-            lower_color: sjrt::Vector3f::zero(),
-            upper_color: sjrt::Vector3f::new(0.2, 0.2, 0.6),
+            lower_color: nalgebra::Vector3::zeros(),
+            upper_color: nalgebra::Vector3::new(0.2, 0.2, 0.6),
         },
         primitives: vec![
             sjrt::scene::primitive::Primitive::Sphere(SphereData { radius: 0.5f32 }),
             sjrt::scene::primitive::Primitive::Sphere(SphereData { radius: 0.5f32 }),
         ],
         transforms: vec![
-            sjrt::scene::Transform::new_with_translation(&Vector3f::new(0.0, 0.0, 0.0)),
-            sjrt::scene::Transform::new_with_translation(&Vector3f::new(0.0, 1.0, 0.0)),
+            sjrt::scene::Transform::new_with_translation(&nalgebra::Vector3::new(0.0, 0.0, 0.0)),
+            sjrt::scene::Transform::new_with_translation(&nalgebra::Vector3::new(0.0, 1.0, 0.0)),
         ],
         materials: vec![
             Material {
-                albedo: Vector3f::new(0.1, 0.2, 1.0),
-                emission: Vector3f::new(0.1, 0.1, 0.1),
+                albedo: nalgebra::Vector3::new(0.1, 0.2, 1.0),
+                emission: nalgebra::Vector3::new(0.1, 0.1, 0.1),
             },
             Material {
-                albedo: Vector3f::new(1.0, 0.2, 0.3),
-                emission: Vector3f::new(0.7, 0.7, 0.7),
+                albedo: nalgebra::Vector3::new(1.0, 0.2, 0.3),
+                emission: nalgebra::Vector3::new(0.7, 0.7, 0.7),
             },
         ],
     };

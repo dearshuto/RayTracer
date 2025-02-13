@@ -1,19 +1,17 @@
 use std::ops::Range;
 
-use crate::Vector3f;
-
 pub struct Builder {
     field_of_view: f32,
-    position: Vector3f,
-    look_at: Vector3f,
+    position: nalgebra::Vector3<f32>,
+    look_at: nalgebra::Vector3<f32>,
 }
 
 impl Builder {
     fn new() -> Self {
         Self {
             field_of_view: std::f32::consts::PI / 4.0,
-            position: Vector3f::zero(),
-            look_at: Vector3f::new(0.0, 0.0, -1.0),
+            position: nalgebra::Vector3::zeros(),
+            look_at: nalgebra::Vector3::new(0.0, 0.0, -1.0),
         }
     }
 
@@ -30,9 +28,9 @@ impl Builder {
         let top_center = direction + up_distance * up_vector;
 
         Camera {
-            center_top: Vector3f::new(top_center.x, top_center.y, top_center.z),
-            right_vector: Vector3f::new(right_vector.x, right_vector.y, right_vector.z),
-            up_vector: Vector3f::new(up_vector.x, up_vector.y, up_vector.z),
+            center_top: nalgebra::Vector3::new(top_center.x, top_center.y, top_center.z),
+            right_vector: nalgebra::Vector3::new(right_vector.x, right_vector.y, right_vector.z),
+            up_vector: nalgebra::Vector3::new(up_vector.x, up_vector.y, up_vector.z),
             half_height: up_distance,
             position: self.position,
         }
@@ -43,23 +41,23 @@ impl Builder {
         self
     }
 
-    pub fn with_position(mut self, position: &Vector3f) -> Self {
+    pub fn with_position(mut self, position: &nalgebra::Vector3<f32>) -> Self {
         self.position = *position;
         self
     }
 
-    pub fn with_look_at(mut self, look_at: &Vector3f) -> Self {
+    pub fn with_look_at(mut self, look_at: &nalgebra::Vector3<f32>) -> Self {
         self.look_at = *look_at;
         self
     }
 }
 
 pub struct Camera {
-    center_top: Vector3f,
-    right_vector: Vector3f,
-    up_vector: Vector3f,
+    center_top: nalgebra::Vector3<f32>,
+    right_vector: nalgebra::Vector3<f32>,
+    up_vector: nalgebra::Vector3<f32>,
     half_height: f32,
-    position: Vector3f,
+    position: nalgebra::Vector3<f32>,
 }
 
 impl Camera {
@@ -67,7 +65,7 @@ impl Camera {
         Builder::new()
     }
 
-    pub fn position(&self) -> &Vector3f {
+    pub fn position(&self) -> &nalgebra::Vector3<f32> {
         &self.position
     }
 
@@ -121,7 +119,7 @@ impl Camera {
 pub struct RayInfo {
     pub x: u32,
     pub y: u32,
-    pub directions: Vec<Vector3f>,
+    pub directions: Vec<nalgebra::Vector3<f32>>,
 }
 
 #[cfg(test)]
@@ -138,21 +136,21 @@ mod tests {
 
         assert_eq!(
             rays[0].directions[0],
-            Vector3f::new(-1.0, 1.0, -1.0).normalize()
+            nalgebra::Vector3::new(-1.0, 1.0, -1.0).normalize()
         );
 
         assert_eq!(
             rays[1].directions[0],
-            Vector3f::new(-1.0 + 0.2, 1.0, -1.0).normalize()
+            nalgebra::Vector3::new(-1.0 + 0.2, 1.0, -1.0).normalize()
         );
 
         assert_eq!(
             rays[10].directions[0],
-            Vector3f::new(-1.0, 1.0 - 0.2, -1.0).normalize()
+            nalgebra::Vector3::new(-1.0, 1.0 - 0.2, -1.0).normalize()
         );
         assert_eq!(
             rays[11].directions[0],
-            Vector3f::new(-1.0 + 0.2, 1.0 - 0.2, -1.0).normalize()
+            nalgebra::Vector3::new(-1.0 + 0.2, 1.0 - 0.2, -1.0).normalize()
         );
     }
 
@@ -160,15 +158,15 @@ mod tests {
     fn rotate_y() {
         // 原点から画角 45 度で (-1.0, 0.0, 0.0) を見ている
         let camera = Camera::builder()
-            .with_position(&Vector3f::zero())
-            .with_look_at(&Vector3f::new(-1.0, 0.0, 0.0))
+            .with_position(&nalgebra::Vector3::zeros())
+            .with_look_at(&nalgebra::Vector3::new(-1.0, 0.0, 0.0))
             .build();
         let rays = camera.calculate_ray_direction_range(10, 10, 0..10, 0..10);
         assert_eq!(rays.len(), 100);
 
         assert_eq!(
             rays[0].directions[0],
-            Vector3f::new(-1.0, 1.0, 1.0).normalize()
+            nalgebra::Vector3::new(-1.0, 1.0, 1.0).normalize()
         );
     }
 }

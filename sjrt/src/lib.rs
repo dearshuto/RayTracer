@@ -34,9 +34,6 @@ pub use path_tracer::PathTracer;
 mod property;
 pub use property::Property;
 
-mod vector;
-pub use vector::Vector3f;
-
 pub mod scene;
 
 pub mod util;

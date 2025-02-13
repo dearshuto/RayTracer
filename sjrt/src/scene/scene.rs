@@ -1,4 +1,4 @@
-use crate::{Colors, Vector3f};
+use crate::Colors;
 
 use super::primitive::{Primitive, TriMeshData};
 
@@ -44,7 +44,7 @@ impl Scene {
             transforms.push(std::default::Default::default());
             materials.push(Material {
                 albedo: Colors::white(),
-                emission: Vector3f::new(30000.0, 30000.0, 30000.0),
+                emission: nalgebra::Vector3::new(30000.0, 30000.0, 30000.0),
             });
         }
 
@@ -137,7 +137,7 @@ impl Scene {
             transforms.push(std::default::Default::default());
             materials.push(Material {
                 albedo: Colors::white(),
-                emission: Vector3f::zero(),
+                emission: nalgebra::Vector3::zeros(),
             });
         }
 
@@ -161,14 +161,14 @@ impl Scene {
             transforms.push(std::default::Default::default());
             materials.push(Material {
                 albedo: Colors::white(),
-                emission: Vector3f::zero(),
+                emission: nalgebra::Vector3::zeros(),
             });
         }
 
         Self {
             sky: Sky {
-                lower_color: Vector3f::zero(),
-                upper_color: Vector3f::zero(),
+                lower_color: nalgebra::Vector3::zeros(),
+                upper_color: nalgebra::Vector3::zeros(),
             },
             primitives,
             transforms,
@@ -178,22 +178,22 @@ impl Scene {
 }
 
 pub struct Sky {
-    pub lower_color: Vector3f,
-    pub upper_color: Vector3f,
+    pub lower_color: nalgebra::Vector3<f32>,
+    pub upper_color: nalgebra::Vector3<f32>,
 }
 
 pub struct Transform {
-    pub translation: Vector3f,
-    pub rotation: Vector3f,
-    pub scale: Vector3f,
+    pub translation: nalgebra::Vector3<f32>,
+    pub rotation: nalgebra::Vector3<f32>,
+    pub scale: nalgebra::Vector3<f32>,
 }
 
 impl Transform {
-    pub fn new_with_translation(translation: &Vector3f) -> Self {
+    pub fn new_with_translation(translation: &nalgebra::Vector3<f32>) -> Self {
         Self {
             translation: *translation,
-            rotation: Vector3f::zero(),
-            scale: Vector3f::zero(),
+            rotation: nalgebra::Vector3::zeros(),
+            scale: nalgebra::Vector3::zeros(),
         }
     }
 }
@@ -201,14 +201,14 @@ impl Transform {
 impl Default for Transform {
     fn default() -> Self {
         Self {
-            translation: Vector3f::zero(),
-            rotation: Vector3f::zero(),
-            scale: Vector3f::new(1.0, 1.0, 1.0),
+            translation: nalgebra::Vector3::zeros(),
+            rotation: nalgebra::Vector3::zeros(),
+            scale: nalgebra::Vector3::new(1.0, 1.0, 1.0),
         }
     }
 }
 
 pub struct Material {
-    pub albedo: Vector3f,
-    pub emission: Vector3f,
+    pub albedo: nalgebra::Vector3<f32>,
+    pub emission: nalgebra::Vector3<f32>,
 }

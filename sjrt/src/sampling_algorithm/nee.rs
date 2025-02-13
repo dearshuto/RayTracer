@@ -2,7 +2,7 @@ use std::ops::{Add, Mul, Sub};
 
 use crate::sampling_algorithm::SamplingResult;
 use crate::traits::{IInnerProduct, INormalized, IVectorComponent3};
-use crate::{IScene, Vector3f};
+use crate::IScene;
 use rand::prelude::*;
 
 pub trait IRelatedLightEnumerator<TFloat, TVector3>
@@ -73,10 +73,10 @@ impl NextEventEstimation {
 
     pub fn estimate<TScene: IScene>(
         &self,
-        position: &Vector3f,
-        normal: &Vector3f,
+        position: &nalgebra::Vector3<f32>,
+        normal: &nalgebra::Vector3<f32>,
         scene: &TScene,
-    ) -> Vec<SamplingResult<f32, Vector3f>> {
+    ) -> Vec<SamplingResult<f32, nalgebra::Vector3<f32>>> {
         let result = scene.enumerate_related_lights(position);
         let mut direction_candidate = result
             .centers
@@ -91,7 +91,7 @@ impl NextEventEstimation {
         let x: f32 = rng.gen_range(-1.0..1.0);
         let y: f32 = rng.gen_range(-1.0..1.0);
         let z: f32 = rng.gen_range(-1.0..1.0);
-        let random_direction = Vector3f::new(x, y, z).normalize();
+        let random_direction = nalgebra::Vector3::new(x, y, z).normalize();
 
         let result = if 0.0 < random_direction.dot(normal) {
             random_direction
