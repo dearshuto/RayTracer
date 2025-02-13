@@ -35,15 +35,14 @@ where
 {
     current_depth: u32,
     current_sampling: u32,
-    values: Vec<(
-        nalgebra::Vector3<f32>, /*albedo*/
-        nalgebra::Vector3<f32>, /*emission*/
-    )>,
 
     latest_hit_position: nalgebra::Vector3<f32>,
     latest_hit_normal: nalgebra::Vector3<f32>,
 
     kernel: T,
+
+    // (emission, albedo)
+    hit_history: Vec<(nalgebra::Vector3<f32>, nalgebra::Vector3<f32>)>,
 }
 
 pub struct PathTracerEx<T, TKernel>
@@ -87,10 +86,10 @@ where
         Payload {
             current_depth: 0,
             current_sampling: 0,
-            values: Vec::default(),
             latest_hit_normal: nalgebra::Vector3::zeros(),
             latest_hit_position: nalgebra::Vector3::zeros(),
             kernel: self.kernel.clone(),
+            hit_history: Vec::default(),
         }
     }
 
@@ -113,16 +112,17 @@ where
 
         let albedo = hit_params.albedo();
         let emission = hit_params.emission();
-        let mut values = payload.values.clone();
-        values.push((albedo, emission));
 
-        HitAction::Payload(
-            payload
-                .with_current_depth(new_depth)
-                .with_latest_hit_position(position)
-                .with_latest_hit_normal(normal)
-                .with_values(values),
-        )
+        let mut new_payload = payload
+            .with_current_depth(new_depth)
+            .with_latest_hit_position(position)
+            .with_latest_hit_normal(normal);
+
+        new_payload
+            .hit_history
+            .push((hit_params.emission(), hit_params.albedo()));
+
+        HitAction::Payload(new_payload)
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
