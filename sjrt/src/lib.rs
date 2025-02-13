@@ -1,4 +1,5 @@
 mod executor;
+mod normal_tracer;
 mod path_tracer_ex;
 mod sampling_algorithm;
 mod system;
@@ -8,6 +9,7 @@ pub use executor::{
     Color, EntryParams, ExecuteParams, Executor, HitAction, IColorBuffer, IRayTracingPipeline,
     ISceneStructure, RayParams, TraceAction,
 };
+pub use normal_tracer::NormalTracer;
 pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::ParallelizeSystem;
