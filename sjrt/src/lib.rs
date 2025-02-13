@@ -6,9 +6,9 @@ mod traits;
 
 pub use executor::{
     Color, EntryParams, ExecuteParams, Executor, HitAction, IColorBuffer, IRayTracingPipeline,
-    RayParams, TraceAction,
+    ISceneStructure, RayParams, TraceAction,
 };
-pub use path_tracer_ex::PathTracerEx;
+pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::{ParallelizeSystem, System};
 pub use traits::EnumerateLightResult;
