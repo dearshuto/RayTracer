@@ -64,6 +64,13 @@ where
     fn set_z(&mut self, z: TFloat);
 }
 
+pub trait IInnerProduct<T>
+where
+    T: num::Float,
+{
+    fn dot(&self, other: &Self) -> T;
+}
+
 pub trait IRandomEngine<TFloat>
 where
     TFloat: num::Float,
