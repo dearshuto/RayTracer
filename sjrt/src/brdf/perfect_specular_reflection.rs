@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use crate::{traits::IVector3, IBidirectionalReflectanceDistributionFunction};
+use crate::{traits::IInnerProduct, IBidirectionalReflectanceDistributionFunction};
 
 #[derive(Default)]
 pub struct PerfectSpecularReflection {}
@@ -19,7 +19,8 @@ where
         + Mul<TVector, Output = TVector>
         + Mul<f32, Output = TFloat>,
 
-    TVector: IVector3<TFloat> + Add<Output = TVector> + Mul<f32, Output = TVector> + Copy + Clone,
+    TVector:
+        IInnerProduct<TFloat> + Add<Output = TVector> + Mul<f32, Output = TVector> + Copy + Clone,
 {
     fn calculate(
         &self,

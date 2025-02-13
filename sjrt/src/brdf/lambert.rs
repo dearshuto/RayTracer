@@ -1,6 +1,6 @@
 use std::ops::Div;
 
-use crate::{traits::IVector3, IBidirectionalReflectanceDistributionFunction};
+use crate::{traits::IInnerProduct, IBidirectionalReflectanceDistributionFunction};
 
 #[derive(Default)]
 pub struct Lambert {}
@@ -14,7 +14,7 @@ impl Lambert {
 impl<TFloat, TVector> IBidirectionalReflectanceDistributionFunction<TFloat, TVector> for Lambert
 where
     TFloat: num::Float + Div<f32, Output = TFloat>,
-    TVector: IVector3<TFloat>,
+    TVector: IInnerProduct<TFloat>,
 {
     fn calculate(
         &self,
