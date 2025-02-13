@@ -32,7 +32,7 @@ pub struct RayParams<T> {
 }
 
 pub trait ISceneStructure<T> {
-    fn cast(&mut self, from: &Vector3f, to: &Vector3f) -> Option<T>;
+    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<T>;
 }
 
 pub trait IRayTracingPipeline {
@@ -74,7 +74,7 @@ impl Executor {
     pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
-        mut scene: TScene,
+        scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer,

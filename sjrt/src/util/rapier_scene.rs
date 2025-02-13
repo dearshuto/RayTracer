@@ -168,7 +168,7 @@ where
 }
 
 impl ISceneStructure<RayIntersection> for RapierScene {
-    fn cast(&mut self, from: &Vector3f, to: &Vector3f) -> Option<RayIntersection> {
+    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<RayIntersection> {
         let line_segment = vector![to.x - from.x, to.y - from.y, to.z - from.z];
         let max_toi = line_segment.norm();
         let direction = line_segment / max_toi;
@@ -193,7 +193,7 @@ impl ISceneStructure<RayIntersection> for RapierScene {
 }
 
 impl ISceneStructure<HitParams> for RapierScene {
-    fn cast(&mut self, from: &Vector3f, to: &Vector3f) -> Option<HitParams> {
+    fn cast(&self, from: &Vector3f, to: &Vector3f) -> Option<HitParams> {
         let Some(material_info) = self.cast_ray(from, to) else {
             return None;
         };
