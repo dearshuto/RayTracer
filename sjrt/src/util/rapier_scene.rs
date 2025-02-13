@@ -3,7 +3,7 @@ use crate::{
     path_tracer_ex::IHitParams,
     sampling_algorithm::IRelatedLightEnumerator,
     scene::Scene,
-    traits::{EnumerateLightResult, IVector3, IVectorComponent3},
+    traits::{EnumerateLightResult, IVectorComponent3},
     IScene, MaterialInfo, Property, Vector3f,
 };
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
@@ -148,7 +148,7 @@ impl IScene for RapierScene {
 impl<TFloat, TVector3> IRelatedLightEnumerator<TFloat, TVector3> for RapierScene
 where
     TFloat: num::Float + From<f32>,
-    TVector3: IVector3<TFloat> + IVectorComponent3<TFloat>,
+    TVector3: IVectorComponent3<TFloat>,
 {
     fn enumerate(&self, _position: &TVector3) -> impl Iterator<Item = TVector3> {
         let mut results = Vec::new();
