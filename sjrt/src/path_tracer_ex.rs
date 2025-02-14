@@ -38,7 +38,7 @@ where
     to: nalgebra::Vector3<f32>,
 
     // 蓄積した色
-    value: Option<nalgebra::Vector3<f32>>,
+    value: nalgebra::Vector3<f32>,
 
     current_depth: u32,
     current_sampling: u32,
@@ -76,8 +76,8 @@ where
 {
     pub fn new(kernel: TKernel) -> Self {
         Self {
-            depth: 2,            // TODO
-            sampling_count: 512, // TODO
+            depth: 8,            // TODO
+            sampling_count: 256, // TODO
             kernel,
             _marker: std::marker::PhantomData,
         }
@@ -95,7 +95,7 @@ where
         Payload {
             from: entry_params.from,
             to: entry_params.to,
-            value: None,
+            value: nalgebra::Vector3::zeros(),
             current_depth: 0,
             current_sampling: 0,
             latest_hit_normal: nalgebra::Vector3::zeros(),
@@ -171,8 +171,8 @@ where
             }
 
             // 前回のサンプリング結果との平均をとっていく
-            let current_color = payload.value.unwrap_or(color);
-            let new_color = (current_color + color) / 2.0;
+            let current_color = color / self.sampling_count as f32;
+            let new_color = payload.value + current_color;
 
             // 今回のサンプリングで保持していた情報を削除して、
             // 開始点に巻き戻してレイのトレースを続ける
@@ -181,7 +181,7 @@ where
                 from: payload.from,
                 to: payload.to,
                 payload: payload
-                    .with_value(Some(new_color))
+                    .with_value(new_color)
                     .with_current_depth(0)
                     .with_current_sampling(new_sampling_count),
             });
@@ -210,10 +210,7 @@ where
     }
 
     fn write(&self, payload: Self::PayloadType) -> crate::executor::Color {
-        let Some(color) = payload.value else {
-            return crate::executor::Color::R8G8B8A8_Uint([0; 4]);
-        };
-
+        let color = payload.value;
         crate::executor::Color::R32G32B32A32_Unorm([color.x, color.y, color.z, 1.0])
     }
 }

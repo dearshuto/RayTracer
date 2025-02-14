@@ -17,12 +17,12 @@ impl Scene {
         };
         let primitives = vec![
             // 照明
-            Primitive::Sphere(SphereData { radius: 10.5 }),
+            Primitive::Sphere(SphereData { radius: 2.0 }),
             // ボックス
             Primitive::Box(BoxData {
-                width: 2.0,
-                height: 2.0,
-                depth: 2.0,
+                width: 1.25,
+                height: 1.25,
+                depth: 1.25,
             }),
             // 床
             Primitive::Box(BoxData {
@@ -34,13 +34,13 @@ impl Scene {
         let transforms = vec![
             // 照明
             Transform {
-                translation: nalgebra::Vector3::new(0.0, 20.0, 0.0),
+                translation: nalgebra::Vector3::new(0.0, 9.0, 0.0),
                 rotation: nalgebra::Vector3::zeros(),
                 scale: nalgebra::Vector3::new(3.0, 1.0, 3.0),
             },
             // ボックス
             Transform {
-                translation: nalgebra::Vector3::new(0.0, 5.0, 0.0),
+                translation: nalgebra::Vector3::new(0.0, 3.0, 0.0),
                 rotation: nalgebra::Vector3::zeros(),
                 scale: nalgebra::Vector3::new(1.0, 1.0, 1.0),
             },
