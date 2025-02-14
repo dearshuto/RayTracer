@@ -1,6 +1,6 @@
 use crate::Colors;
 
-use super::primitive::{Primitive, TriMeshData};
+use super::primitive::{BoxData, Primitive, SphereData, TriMeshData};
 
 pub struct Scene {
     pub sky: Sky,
@@ -10,6 +10,73 @@ pub struct Scene {
 }
 
 impl Scene {
+    pub fn box_point_light() -> Self {
+        let sky = Sky {
+            lower_color: nalgebra::Vector3::new(0.0, 0.0, 0.0),
+            upper_color: nalgebra::Vector3::new(0.1, 0.2, 0.3),
+        };
+        let primitives = vec![
+            // 照明
+            Primitive::Sphere(SphereData { radius: 10.5 }),
+            // ボックス
+            Primitive::Box(BoxData {
+                width: 2.0,
+                height: 2.0,
+                depth: 2.0,
+            }),
+            // 床
+            Primitive::Box(BoxData {
+                width: 15.0,
+                height: 0.5,
+                depth: 15.0,
+            }),
+        ];
+        let transforms = vec![
+            // 照明
+            Transform {
+                translation: nalgebra::Vector3::new(0.0, 20.0, 0.0),
+                rotation: nalgebra::Vector3::zeros(),
+                scale: nalgebra::Vector3::new(3.0, 1.0, 3.0),
+            },
+            // ボックス
+            Transform {
+                translation: nalgebra::Vector3::new(0.0, 5.0, 0.0),
+                rotation: nalgebra::Vector3::zeros(),
+                scale: nalgebra::Vector3::new(1.0, 1.0, 1.0),
+            },
+            // 床
+            Transform {
+                translation: nalgebra::Vector3::zeros(),
+                rotation: nalgebra::Vector3::zeros(),
+                scale: nalgebra::Vector3::new(1.0, 1.0, 1.0),
+            },
+        ];
+        let materials = vec![
+            // 照明
+            Material {
+                albedo: Colors::white(),
+                emission: Colors::white(),
+            },
+            // ボックス
+            Material {
+                albedo: Colors::white(),
+                emission: Colors::black(),
+            },
+            // 床
+            Material {
+                albedo: Colors::white(),
+                emission: Colors::black(),
+            },
+        ];
+
+        Self {
+            sky,
+            primitives,
+            transforms,
+            materials,
+        }
+    }
+
     pub fn create_cornell_box() -> Self {
         let mut primitives = Vec::new();
         let mut transforms = Vec::new();

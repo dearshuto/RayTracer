@@ -76,8 +76,8 @@ where
 {
     pub fn new(kernel: TKernel) -> Self {
         Self {
-            depth: 0,          // TODO
-            sampling_count: 1, // TODO
+            depth: 2,            // TODO
+            sampling_count: 512, // TODO
             kernel,
             _marker: std::marker::PhantomData,
         }
@@ -143,7 +143,7 @@ where
         let mut new_payload = payload.with_current_depth(next_depth);
 
         new_payload.hit_history.push((
-            nalgebra::Vector3::new(0.1, 0.2, 0.3),
+            nalgebra::Vector3::new(0.0, 0.0, 0.0),
             nalgebra::Vector3::zeros(),
         ));
 
@@ -191,18 +191,21 @@ where
         // とりあえず適当に乱数を生成して法線の向きに飛ばす
         let normal = payload.latest_hit_normal;
         let mut random_engine = payload.kernel.random_engine();
-        let ratio_x = random_engine.generate_range(0.0..1.0);
-        let ratio_y = random_engine.generate_range(0.0..1.0);
-        let ratio_z = random_engine.generate_range(0.0..1.0);
-        let new_to = 500.0
-            * nalgebra::Vector3::new(normal.x * ratio_x, normal.y * ratio_y, normal.z * ratio_z)
-                .normalize();
+        let new_direction = loop {
+            let ratio_x = random_engine.generate_range(-1.0..1.0);
+            let ratio_y = random_engine.generate_range(-1.0..1.0);
+            let ratio_z = random_engine.generate_range(-1.0..1.0);
+            let new_normal = nalgebra::Vector3::new(ratio_x, ratio_y, ratio_z).normalize();
+            if new_normal.dot(&normal) <= 0.0 {
+                continue;
+            }
 
-        let ray_params = RayParams {
-            from: payload.latest_hit_position,
-            to: new_to,
-            payload,
+            break new_normal;
         };
+
+        let from = payload.latest_hit_position + new_direction * 0.001;
+        let to = 500.0 * new_direction + from;
+        let ray_params = RayParams { from, to, payload };
         crate::TraceAction::Next(ray_params)
     }
 
