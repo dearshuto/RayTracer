@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use crate::{
     traits::IRandomEngine, util::HitParams, EntryParams, HitAction, IRayTracingPipeline, RayParams,
 };
@@ -19,12 +21,15 @@ pub trait IKernel {
 }
 
 #[derive(Clone)]
-pub struct DefaultKernel;
+pub struct DefaultKernel {
+    random_engine: Arc<Mutex<crate::util::RandomEngine>>,
+}
+
 impl IKernel for DefaultKernel {
-    type RondomEngine = crate::util::RandomEngine;
+    type RondomEngine = Arc<Mutex<crate::util::RandomEngine>>;
 
     fn random_engine(&self) -> Self::RondomEngine {
-        crate::util::RandomEngine::new()
+        Arc::clone(&self.random_engine)
     }
 }
 
@@ -64,7 +69,9 @@ where
 
 impl Default for PathTracerEx<HitParams, DefaultKernel> {
     fn default() -> Self {
-        let kernel = DefaultKernel {};
+        let kernel = DefaultKernel {
+            random_engine: Arc::new(Mutex::new(crate::util::RandomEngine::new())),
+        };
         Self::new(kernel)
     }
 }
@@ -76,8 +83,8 @@ where
 {
     pub fn new(kernel: TKernel) -> Self {
         Self {
-            depth: 8,            // TODO
-            sampling_count: 256, // TODO
+            depth: 4,           // TODO
+            sampling_count: 56, // TODO
             kernel,
             _marker: std::marker::PhantomData,
         }

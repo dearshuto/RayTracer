@@ -86,9 +86,9 @@ impl Executor {
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
         let camera = crate::Camera::builder()
-            .with_position(&nalgebra::Vector3::new(0.0, 0.0, -10.0))
-            .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
-            .with_field_of_view(std::f32::consts::PI / 6.0)
+            .with_position(&nalgebra::Vector3::new(0.0, 7.0, 20.0))
+            .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
+            .with_field_of_view(std::f32::consts::PI / 4.0)
             .build();
 
         let rays = camera.calculate_ray_direction_range(640, 480, 0..640, 0..480);
