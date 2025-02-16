@@ -51,10 +51,10 @@ impl NextEventEstimation {
             })
             .collect::<Vec<_>>();
 
-        let mut rng = rand::thread_rng();
-        let x: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
-        let y: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
-        let z: TFloat = ::core::convert::From::from(rng.gen_range(-1.0..1.0));
+        let mut rng = rand::rng();
+        let x: TFloat = ::core::convert::From::from(rng.random_range(-1.0..1.0));
+        let y: TFloat = ::core::convert::From::from(rng.random_range(-1.0..1.0));
+        let z: TFloat = ::core::convert::From::from(rng.random_range(-1.0..1.0));
         let random_direction = TVector3::new(x, y, z).normalized();
 
         let result = if TFloat::zero() < random_direction.dot(normal) {
@@ -87,10 +87,10 @@ impl NextEventEstimation {
             })
             .collect::<Vec<_>>();
 
-        let mut rng = rand::thread_rng();
-        let x: f32 = rng.gen_range(-1.0..1.0);
-        let y: f32 = rng.gen_range(-1.0..1.0);
-        let z: f32 = rng.gen_range(-1.0..1.0);
+        let mut rng = rand::rng();
+        let x: f32 = rng.random_range(-1.0..1.0);
+        let y: f32 = rng.random_range(-1.0..1.0);
+        let z: f32 = rng.random_range(-1.0..1.0);
         let random_direction = nalgebra::Vector3::new(x, y, z).normalize();
 
         let result = if 0.0 < random_direction.dot(normal) {

@@ -45,7 +45,7 @@ struct RandomEngineAdapter {
 
 impl RandomEngineAdapter {
     pub fn new() -> Self {
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
         Self { rng }
     }
 }
@@ -57,7 +57,7 @@ where
     fn generate_range(&mut self, range: Range<TFloat>) -> TFloat {
         let start: f32 = range.start.into();
         let end = range.end.into();
-        let value = self.rng.gen_range(start..end);
+        let value = self.rng.random_range(start..end);
         From::from(value)
     }
 }

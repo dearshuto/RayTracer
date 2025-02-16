@@ -13,7 +13,7 @@ futures = "0.3.19"
 image = "0.25"
 num = "*"
 nalgebra = "0.33"
-rand = "0.8.4"
+rand = "0.9.0"
 
 serde = { version = "1.0", features = ["derive"] }
 serde-xml-rs = "*"
