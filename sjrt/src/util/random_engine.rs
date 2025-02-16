@@ -8,13 +8,13 @@ pub struct RandomEngine {
 
 impl RandomEngine {
     pub fn new() -> Self {
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
         Self { rng }
     }
 }
 
 impl IRandomEngine<f32> for RandomEngine {
     fn generate_range(&mut self, range: std::ops::Range<f32>) -> f32 {
-        self.rng.gen_range(range)
+        self.rng.random_range(range)
     }
 }
