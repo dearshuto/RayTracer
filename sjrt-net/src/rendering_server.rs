@@ -53,11 +53,9 @@ where
         println!("Depth: {}", depth_count_max);
         println!("NEE: false");
 
-        let renderer = sjrt::PathTracer::new(sampling_count, depth_count_max, is_nee_enabled);
+        let renderer = sjrt::PathTracer::default();
         let mut buffer = Buffer::new(width, height);
-        sjrt::ParallelizeSystem::new_with_thread(thread_count_x, thread_count_y)
-            .execute(self.scene.clone(), &mut buffer, Arc::new(renderer))
-            .await;
+        sjrt::Executor::execute_async(&mut buffer, self.scene.clone(), Arc::new(renderer)).await;
 
         let request = ImageView {
             width_start: 0,

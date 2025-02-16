@@ -10,7 +10,10 @@ pub use executor::{
     ISceneStructure, RayParams, TraceAction,
 };
 pub use normal_tracer::NormalTracer;
-pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};
+pub use path_tracer_ex::{DefaultKernel, IHitParams, IKernel, PathTracerEx};
+// パストレーサーのデフォルト実装を提供しておく
+// TODO: PathTracerEx はカスタマイズ用として使用するので命名を変更する
+pub type PathTracer = PathTracerEx<util::HitParams, DefaultKernel>;
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::ParallelizeSystem;
 pub use traits::EnumerateLightResult;
@@ -29,9 +32,6 @@ pub use camera::Camera;
 mod material_info;
 pub use material_info::Brdf;
 pub use material_info::MaterialInfo;
-
-mod path_tracer;
-pub use path_tracer::PathTracer;
 
 mod property;
 pub use property::Property;

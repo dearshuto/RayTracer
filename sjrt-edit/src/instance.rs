@@ -71,11 +71,7 @@ impl Instance {
             // TODO: ここでタスク作成
             let task_context = TaskContext {
                 scene: Arc::new(sjrt::util::RapierScene::new()),
-                renderer: Arc::new(sjrt::PathTracer::new(
-                    1, /*sampling_count*/
-                    8, /*depth_max*/
-                    false,
-                )),
+                renderer: Arc::new(sjrt::PathTracer::default()),
                 system: sjrt::ParallelizeSystem::new_with_thread(4, 4),
                 buffer: AccumulateBuffer {
                     width: render_request.width as i32,
@@ -108,7 +104,7 @@ impl Instance {
             let scene = task_context.scene.clone();
             let renderer = task_context.renderer.clone();
             let buffer = &mut task_context.buffer;
-            task_context.system.execute(scene, buffer, renderer).await;
+            sjrt::Executor::execute_async(&mut buffer, scene, renderer).await;
             task_context
         })
     }
