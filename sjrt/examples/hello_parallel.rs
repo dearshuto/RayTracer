@@ -63,8 +63,14 @@ async fn main() {
     let mut buffer = Image(DynamicImage::new_rgba8(640, 480));
 
     let ray_tracing_pipeline = sjrt::NormalTracer::default();
+    let rays = sjrt::Camera::builder()
+        .with_position(&nalgebra::Vector3::new(0.0, 7.0, 20.0))
+        .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
+        .with_field_of_view(std::f32::consts::PI / 4.0)
+        .build()
+        .calculate_ray_direction();
     sjrt::Executor::default()
-        .execute_async(&mut buffer, scene, ray_tracing_pipeline)
+        .execute_async(&mut buffer, rays.into_iter(), scene, ray_tracing_pipeline)
         .await;
 
     buffer.0.save("parallel.png").unwrap();

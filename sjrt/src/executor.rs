@@ -78,6 +78,7 @@ impl Executor {
     pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
+        rays: impl Iterator<Item = RayInfo>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
@@ -85,13 +86,6 @@ impl Executor {
         TRayTracingPipeline: IRayTracingPipeline,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
-        let camera = crate::Camera::builder()
-            .with_position(&nalgebra::Vector3::new(0.0, 0.0, -10.0))
-            .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
-            .with_field_of_view(std::f32::consts::PI / 6.0)
-            .build();
-
-        let rays = camera.calculate_ray_direction_range(640, 480, 0..640, 0..480);
         for ray in rays {
             let scene_adapter: SceneAdapter<'_, TScene, TRayTracingPipeline> = SceneAdapter {
                 scene: &scene,
@@ -113,6 +107,7 @@ impl Executor {
     pub async fn execute_async<TColorBuffer, TPayload, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
+        rays: impl Iterator<Item = RayInfo>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
@@ -122,13 +117,8 @@ impl Executor {
             'static + IRayTracingPipeline<PayloadType = TPayload> + Clone + Sync + Send,
         TScene: 'static + ISceneStructure<TRayTracingPipeline::HitParams> + Clone + Sync + Send,
     {
-        // 初期レイの生成
-        let camera = crate::Camera::builder()
-            .with_position(&nalgebra::Vector3::new(0.0, 7.0, 20.0))
-            .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
-            .with_field_of_view(std::f32::consts::PI / 4.0)
-            .build();
-        let mut rays = camera.calculate_ray_direction_range(640, 480, 0..640, 0..480);
+        // 初期レイのメモ化
+        let mut rays: Vec<_> = rays.collect();
 
         // 初期レイを分割してそれぞれにレンダリングタスクを割り当てていく
         let mut tasks = Vec::default();
