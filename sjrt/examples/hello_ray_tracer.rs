@@ -37,8 +37,14 @@ pub fn main() {
     let scene = sjrt::util::RapierScene::new_from_scene(&scene_data);
     let renderer = sjrt::PathTracerEx::default();
     let mut buffer = sjrt::util::ImageBuffer::new(640, 480);
+    let rays = sjrt::Camera::builder()
+        .with_position(&nalgebra::Vector3::new(0.0, 0.0, -10.0))
+        .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
+        .with_field_of_view(std::f32::consts::PI / 6.0)
+        .build()
+        .calculate_ray_direction();
 
-    sjrt::Executor::default().execute(&mut buffer, scene, renderer);
+    sjrt::Executor::default().execute(&mut buffer, rays.into_iter(), scene, renderer);
 
     buffer.save("example.png");
 }
