@@ -1,4 +1,4 @@
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 #[allow(unused)]
 #[derive(Deserialize, Debug, Default)]

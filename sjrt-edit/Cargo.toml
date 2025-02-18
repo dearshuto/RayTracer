@@ -7,6 +7,6 @@ edition = "2021"
 sjrt = { path = "../sjrt" }
 sjrt-res = { path = "../sjrt-res" }
 
-image = "0.25.0"
+image = { workspace = true }
 tokio = { version = "1" }
 uuid = { version = "1", features = ["v4"] }

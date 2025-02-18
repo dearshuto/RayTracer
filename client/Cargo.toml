@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 sjrt = { path = "../sjrt" }
 sjrt-net = { path = "../sjrt-net" }
-clap = { version = "3.0.12", features = ["derive"] }
+clap = { workspace = true }
 tokio = { version = "1.15.0", features = ["full"] }
