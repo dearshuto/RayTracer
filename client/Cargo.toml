@@ -10,3 +10,4 @@ sjrt = { path = "../sjrt" }
 sjrt-net = { path = "../sjrt-net" }
 clap = { workspace = true }
 tokio = { version = "1.15.0", features = ["full"] }
+nalgebra = "0.33"

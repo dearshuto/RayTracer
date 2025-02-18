@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use clap::Parser;
 use sjrt::IBuffer;
 
@@ -45,8 +47,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let mut buffer = sjrt::util::ImageBuffer::new(args.width, args.height);
-    let path_tracer =
-        sjrt::PathTracer::new(args.sampling_count, args.depth_max, args.is_nee_enabled);
     let scene = if args.scene_file.exists() {
         let scene = sjrt::scene::Loader::load_from_file(&args.scene_file);
         sjrt::util::RapierScene::new_from_scene(&scene)
@@ -90,14 +90,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     } else {
+        let width = args.width as u32;
+        let height = args.height as u32;
+        let renderer = sjrt::PathTracerEx::default()
+            .with_depth(args.depth_max)
+            .with_sampling_count(args.sampling_count);
+        let rays = sjrt::Camera::builder()
+            .with_field_of_view(std::f32::consts::PI / 5.5)
+            .with_position(&nalgebra::Vector3::new(4.8, 4.73, -8.0))
+            .with_look_at(&nalgebra::Vector3::new(4.8, 4.73, 0.0))
+            .build()
+            .calculate_ray_direction_range(width, height, 0..width, 0..height);
+
         let start = std::time::Instant::now();
-        sjrt::ParallelizeSystem::new_with_thread(args.thread_count_x, args.thread_count_y)
-            .execute(
-                std::sync::Arc::new(scene),
-                &mut buffer,
-                std::sync::Arc::new(path_tracer),
-            )
-            .await;
+
+        // スレッド数が指定されたら並列実行
+        if args.thread_count_x == 1 && args.thread_count_y == 1 {
+            sjrt::Executor::default().execute(&mut buffer, rays.into_iter(), scene, renderer);
+        } else {
+            sjrt::Executor::default()
+                .execute_async(
+                    &mut buffer,
+                    rays.into_iter(),
+                    Arc::new(scene),
+                    Arc::new(renderer),
+                )
+                .await;
+        }
+
         let end = start.elapsed();
 
         println!(
