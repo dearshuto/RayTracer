@@ -76,11 +76,21 @@ where
 {
     pub fn new(kernel: TKernel) -> Self {
         Self {
-            depth: 8,            // TODO
-            sampling_count: 256, // TODO
+            depth: 1,
+            sampling_count: 1,
             kernel,
             _marker: std::marker::PhantomData,
         }
+    }
+
+    pub fn with_depth(mut self, depth: u32) -> Self {
+        self.depth = depth;
+        self
+    }
+
+    pub fn with_sampling_count(mut self, count: u32) -> Self {
+        self.sampling_count = count;
+        self
     }
 }
 
