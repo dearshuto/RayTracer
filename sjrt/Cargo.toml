@@ -9,13 +9,13 @@ edition = "2021"
 sjrt-macro = { path = "../sjrt-macro" }
 
 tokio = { version = "1.15.0", features = ["full"] }
-futures = "0.3.19"
-image = "0.25"
-num = "*"
-nalgebra = "0.33"
+futures = { workspace = true }
+image = { workspace = true }
+num = { workspace = true }
+nalgebra = { workspace = true }
 rand = "0.9.0"
 
-serde = { version = "1.0", features = ["derive"] }
+serde = { workspace = true }
 serde-xml-rs = "*"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
@@ -25,4 +25,4 @@ rapier3d = { version = "0.22", features = ["simd-stable"] }
 rapier3d = { version = "0.22", features = [] }
 
 [dev-dependencies]
-clap = "*"
+clap = { workspace = true }
