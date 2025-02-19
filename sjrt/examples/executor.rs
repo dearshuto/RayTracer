@@ -4,7 +4,11 @@ use std::sync::Arc;
 async fn main() {
     let scene_data = sjrt::scene::Scene::box_point_light();
     let scene = Arc::new(sjrt::util::RapierScene::new_from_scene(&scene_data));
-    let pipeline = Arc::new(sjrt::PathTracerEx::default());
+    let pipeline = Arc::new(
+        sjrt::PathTracerEx::default()
+            .with_depth(4)
+            .with_sampling_count(64),
+    );
 
     let mut buffer = sjrt::util::ImageBuffer::new(640, 480);
     let rays = sjrt::Camera::builder()
