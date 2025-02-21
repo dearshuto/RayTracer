@@ -2,7 +2,7 @@ use std::ops::{Add, Mul, Sub};
 
 use crate::sampling_algorithm::SamplingResult;
 use crate::traits::{IInnerProduct, INormalized, IVectorComponent3};
-use crate::IScene;
+use crate::{IConstract, IScene};
 use rand::prelude::*;
 
 pub trait IRelatedLightEnumerator<TFloat, TVector3>
@@ -35,6 +35,7 @@ impl NextEventEstimation {
         TVector3: INormalized
             + IInnerProduct<TFloat>
             + IVectorComponent3<TFloat>
+            + IConstract<TFloat>
             + Add<TVector3, Output = TVector3>
             + Sub<TVector3, Output = TVector3>
             + Copy,

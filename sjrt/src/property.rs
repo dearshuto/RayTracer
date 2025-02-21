@@ -1,4 +1,4 @@
-use crate::{traits::IVectorComponent3, Brdf};
+use crate::{traits::IVectorComponent3, Brdf, IConstract};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Property<TFloat, TVectorComponent>
@@ -17,7 +17,7 @@ where
 impl<TFloat, TVectorComponent> Default for Property<TFloat, TVectorComponent>
 where
     TFloat: num::Float,
-    TVectorComponent: IVectorComponent3<TFloat>,
+    TVectorComponent: IVectorComponent3<TFloat> + IConstract<TFloat>,
 {
     fn default() -> Self {
         Self {
