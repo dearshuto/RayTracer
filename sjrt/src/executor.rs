@@ -22,11 +22,11 @@ where
     Payload(T),
 }
 
-pub struct EntryParams {
+pub struct EntryParams<TPoint> {
     pub x: u32,
     pub y: u32,
-    pub from: nalgebra::Vector3<f32>,
-    pub to: nalgebra::Vector3<f32>,
+    pub from: TPoint,
+    pub to: TPoint,
 }
 
 pub struct RayParams<T> {
@@ -35,15 +35,15 @@ pub struct RayParams<T> {
     pub payload: T,
 }
 
-pub trait ISceneStructure<T> {
-    fn cast(&self, from: &nalgebra::Vector3<f32>, to: &nalgebra::Vector3<f32>) -> Option<T>;
+pub trait ISceneStructure<TPoint, THitParams> {
+    fn cast(&self, from: &TPoint, to: &TPoint) -> Option<THitParams>;
 }
 
 pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType;
+    fn entry(&self, entry_params: &EntryParams<nalgebra::Vector3<f32>>) -> Self::PayloadType;
 
     fn react_closest_hit(
         &self,
@@ -65,7 +65,7 @@ pub trait IColorBuffer {
 pub struct ExecuteParams<TRayTracingPipeline, TScene>
 where
     TRayTracingPipeline: IRayTracingPipeline,
-    TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
+    TScene: ISceneStructure<nalgebra::Vector3<f32>, TRayTracingPipeline::HitParams>,
 {
     pub scene: TScene,
     pub ray_tracing_pipeline: TRayTracingPipeline,
@@ -78,16 +78,21 @@ impl Executor {
     pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
-        rays: impl Iterator<Item = RayInfo>,
+        rays: impl Iterator<Item = RayInfo<nalgebra::Vector3<f32>>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer,
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
+        TScene: ISceneStructure<nalgebra::Vector3<f32>, TRayTracingPipeline::HitParams>,
     {
         for ray in rays {
-            let scene_adapter: SceneAdapter<'_, TScene, TRayTracingPipeline> = SceneAdapter {
+            let scene_adapter: SceneAdapter<
+                '_,
+                nalgebra::Vector3<f32>,
+                TScene,
+                TRayTracingPipeline,
+            > = SceneAdapter {
                 scene: &scene,
                 _marker: std::marker::PhantomData::default(),
             };
@@ -107,7 +112,7 @@ impl Executor {
     pub async fn execute_async<TColorBuffer, TPayload, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
-        rays: impl Iterator<Item = RayInfo>,
+        rays: impl Iterator<Item = RayInfo<nalgebra::Vector3<f32>>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
@@ -115,7 +120,11 @@ impl Executor {
         TPayload: 'static + Send,
         TRayTracingPipeline:
             'static + IRayTracingPipeline<PayloadType = TPayload> + Clone + Sync + Send,
-        TScene: 'static + ISceneStructure<TRayTracingPipeline::HitParams> + Clone + Sync + Send,
+        TScene: 'static
+            + ISceneStructure<nalgebra::Vector3<f32>, TRayTracingPipeline::HitParams>
+            + Clone
+            + Sync
+            + Send,
     {
         // 初期レイのメモ化
         let mut rays: Vec<_> = rays.collect();
@@ -166,13 +175,13 @@ impl Executor {
     }
 
     fn execute_impl<TRayTracingPipeline, TScene>(
-        ray: RayInfo,
+        ray: RayInfo<nalgebra::Vector3<f32>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) -> TRayTracingPipeline::PayloadType
     where
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
+        TScene: ISceneStructure<nalgebra::Vector3<f32>, TRayTracingPipeline::HitParams>,
     {
         let x = ray.x;
         let y = ray.y;
@@ -221,26 +230,22 @@ impl Executor {
     }
 }
 
-struct SceneAdapter<'a, TScene, TPipeline>
+struct SceneAdapter<'a, TVector, TScene, TPipeline>
 where
-    TScene: ISceneStructure<TPipeline::HitParams>,
+    TScene: ISceneStructure<TVector, TPipeline::HitParams>,
     TPipeline: IRayTracingPipeline,
 {
     scene: &'a TScene,
-    _marker: std::marker::PhantomData<TPipeline>,
+    _marker: std::marker::PhantomData<(TVector, TPipeline)>,
 }
 
-impl<'a, TScene, TPipeline> ISceneStructure<TPipeline::HitParams>
-    for SceneAdapter<'a, TScene, TPipeline>
+impl<'a, TVector, TScene, TPipeline> ISceneStructure<TVector, TPipeline::HitParams>
+    for SceneAdapter<'a, TVector, TScene, TPipeline>
 where
-    TScene: ISceneStructure<TPipeline::HitParams>,
+    TScene: ISceneStructure<TVector, TPipeline::HitParams>,
     TPipeline: IRayTracingPipeline,
 {
-    fn cast(
-        &self,
-        from: &nalgebra::Vector3<f32>,
-        to: &nalgebra::Vector3<f32>,
-    ) -> Option<TPipeline::HitParams> {
+    fn cast(&self, from: &TVector, to: &TVector) -> Option<TPipeline::HitParams> {
         self.scene.cast(from, to)
     }
 }
@@ -259,7 +264,7 @@ where
     type PayloadType = TRayTracingPipeline::PayloadType;
     type HitParams = TRayTracingPipeline::HitParams;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams<nalgebra::Vector3<f32>>) -> Self::PayloadType {
         self.pipeline.entry(entry_params)
     }
 
@@ -285,15 +290,11 @@ where
 }
 
 // 任意の ISceneStructure を Arc でくるんだ型をパイプするための impl
-impl<T> ISceneStructure<HitParams> for Arc<T>
+impl<TVector, T> ISceneStructure<TVector, HitParams> for Arc<T>
 where
-    T: ISceneStructure<HitParams>,
+    T: ISceneStructure<TVector, HitParams>,
 {
-    fn cast(
-        &self,
-        from: &nalgebra::Vector3<f32>,
-        to: &nalgebra::Vector3<f32>,
-    ) -> Option<HitParams> {
+    fn cast(&self, from: &TVector, to: &TVector) -> Option<HitParams> {
         self.as_ref().cast(from, to)
     }
 }
@@ -306,7 +307,7 @@ where
     type PayloadType = T::PayloadType;
     type HitParams = T::HitParams;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams<nalgebra::Vector3<f32>>) -> Self::PayloadType {
         self.as_ref().entry(entry_params)
     }
 

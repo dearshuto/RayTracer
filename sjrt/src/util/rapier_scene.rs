@@ -181,7 +181,7 @@ where
     }
 }
 
-impl ISceneStructure<RayIntersection> for RapierScene {
+impl ISceneStructure<nalgebra::Vector3<f32>, RayIntersection> for RapierScene {
     fn cast(
         &self,
         from: &nalgebra::Vector3<f32>,
@@ -210,7 +210,7 @@ impl ISceneStructure<RayIntersection> for RapierScene {
     }
 }
 
-impl ISceneStructure<HitParams> for RapierScene {
+impl ISceneStructure<nalgebra::Vector3<f32>, HitParams> for RapierScene {
     fn cast(
         &self,
         from: &nalgebra::Vector3<f32>,

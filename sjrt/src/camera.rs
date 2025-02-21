@@ -69,7 +69,7 @@ impl Camera {
         &self.position
     }
 
-    pub fn calculate_ray_direction(&self) -> Vec<RayInfo> {
+    pub fn calculate_ray_direction(&self) -> Vec<RayInfo<nalgebra::Vector3<f32>>> {
         self.calculate_ray_direction_range(640, 480, 0..640, 0..480)
     }
 
@@ -79,7 +79,7 @@ impl Camera {
         height: u32,
         width_range: Range<u32>,
         height_range: Range<u32>,
-    ) -> Vec<RayInfo> {
+    ) -> Vec<RayInfo<nalgebra::Vector3<f32>>> {
         assert!(width_range.end <= width);
         assert!(height_range.end <= height);
 
@@ -116,10 +116,10 @@ impl Camera {
     }
 }
 
-pub struct RayInfo {
+pub struct RayInfo<T> {
     pub x: u32,
     pub y: u32,
-    pub directions: Vec<nalgebra::Vector3<f32>>,
+    pub directions: Vec<T>,
 }
 
 #[cfg(test)]

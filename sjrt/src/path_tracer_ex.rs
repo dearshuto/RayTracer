@@ -101,7 +101,7 @@ where
     type PayloadType = Payload<TKernel>;
     type HitParams = T;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams<nalgebra::Vector3<f32>>) -> Self::PayloadType {
         Payload {
             from: entry_params.from,
             to: entry_params.to,

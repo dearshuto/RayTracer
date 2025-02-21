@@ -13,7 +13,10 @@ impl IRayTracingPipeline for NormalTracer {
     type PayloadType = Payload;
     type HitParams = HitParams;
 
-    fn entry(&self, _entry_params: &crate::EntryParams) -> Self::PayloadType {
+    fn entry(
+        &self,
+        _entry_params: &crate::EntryParams<nalgebra::Vector3<f32>>,
+    ) -> Self::PayloadType {
         Payload {
             normal: nalgebra::Vector3::zeros(),
         }
