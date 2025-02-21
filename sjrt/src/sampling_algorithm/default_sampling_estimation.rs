@@ -3,7 +3,7 @@ use std::ops::{Add, Mul, Range};
 
 use crate::sampling_algorithm::SamplingResult;
 use crate::traits::{IInnerProduct, INormalized, IRandomEngine, IVectorComponent3};
-use crate::IScene;
+use crate::{IConstract, IScene};
 use rand::Rng;
 
 #[derive(Default)]
@@ -27,6 +27,7 @@ impl DefaultSamplingEstimation {
             + PartialOrd<TFloat>
             + Mul<TVector3, Output = TVector3>,
         TVector3: IVectorComponent3<TFloat>
+            + IConstract<TFloat>
             + INormalized
             + IInnerProduct<TFloat>
             + Add<TVector3, Output = TVector3>
@@ -92,6 +93,7 @@ where
     where
         TFloat: num::Float + From<f32> + PartialOrd<TFloat> + Mul<TVector3, Output = TVector3>,
         TVector3: IVectorComponent3<TFloat>
+            + IConstract<TFloat>
             + INormalized
             + IInnerProduct<TFloat>
             + Add<TVector3, Output = TVector3>

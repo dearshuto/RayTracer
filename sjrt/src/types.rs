@@ -1,4 +1,4 @@
-use crate::traits::IVectorComponent3;
+use crate::{traits::IVectorComponent3, IConstract};
 
 pub struct Colors<TFloat, TVectorComponent>
 where
@@ -10,7 +10,7 @@ where
 
 impl<TVectorComponent> Colors<f32, TVectorComponent>
 where
-    TVectorComponent: IVectorComponent3<f32>,
+    TVectorComponent: IVectorComponent3<f32> + IConstract<f32>,
 {
     pub fn white() -> TVectorComponent {
         TVectorComponent::new(1.0, 1.0, 1.0)

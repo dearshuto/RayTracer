@@ -44,8 +44,6 @@ pub trait IVectorComponent3<TFloat>
 where
     TFloat: num::Float,
 {
-    fn new(x: TFloat, y: TFloat, z: TFloat) -> Self;
-
     fn x(&self) -> TFloat;
 
     fn y(&self) -> TFloat;
@@ -59,6 +57,14 @@ where
     fn set_z(&mut self, z: TFloat);
 }
 
+pub trait IConstract<TFloat: num::Float> {
+    fn new(x: TFloat, y: TFloat, z: TFloat) -> Self;
+}
+
+pub trait INorm {
+    fn norm(&self) -> f32;
+}
+
 pub trait INormalized {
     fn normalized(&self) -> Self;
 }
@@ -68,6 +74,10 @@ where
     T: num::Float,
 {
     fn dot(&self, other: &Self) -> T;
+}
+
+pub trait IOuterProduct {
+    fn cross(&self, other: &Self) -> Self;
 }
 
 pub trait IRandomEngine<TFloat>
