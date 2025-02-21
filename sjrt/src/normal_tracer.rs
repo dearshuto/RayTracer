@@ -12,6 +12,7 @@ pub struct NormalTracer;
 impl IRayTracingPipeline for NormalTracer {
     type PayloadType = Payload;
     type HitParams = HitParams;
+    type Color = Color;
 
     fn entry(&self, _entry_params: &crate::EntryParams) -> Self::PayloadType {
         Payload {

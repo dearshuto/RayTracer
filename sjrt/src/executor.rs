@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Add, sync::Arc};
 
 use crate::{camera::RayInfo, util::HitParams};
 
@@ -42,6 +42,7 @@ pub trait ISceneStructure<T> {
 pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
+    type FluxType: Add<Output = Self::FluxType>;
 
     fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType;
 
@@ -55,7 +56,7 @@ pub trait IRayTracingPipeline {
 
     fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType>;
 
-    fn write(&self, payload: Self::PayloadType) -> Color;
+    fn write(&self, payload: Self::PayloadType) -> Self::FluxType;
 }
 
 pub trait IColorBuffer {
@@ -83,7 +84,7 @@ impl Executor {
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer,
-        TRayTracingPipeline: IRayTracingPipeline,
+        TRayTracingPipeline: IRayTracingPipeline<FluxType = Color>,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
     {
         for ray in rays {
@@ -113,8 +114,11 @@ impl Executor {
     ) where
         TColorBuffer: IColorBuffer,
         TPayload: 'static + Send,
-        TRayTracingPipeline:
-            'static + IRayTracingPipeline<PayloadType = TPayload> + Clone + Sync + Send,
+        TRayTracingPipeline: 'static
+            + IRayTracingPipeline<PayloadType = TPayload, FluxType = Color>
+            + Clone
+            + Sync
+            + Send,
         TScene: 'static + ISceneStructure<TRayTracingPipeline::HitParams> + Clone + Sync + Send,
     {
         // 初期レイのメモ化
@@ -258,6 +262,7 @@ where
 {
     type PayloadType = TRayTracingPipeline::PayloadType;
     type HitParams = TRayTracingPipeline::HitParams;
+    type FluxType = TRayTracingPipeline::FluxType;
 
     fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
         self.pipeline.entry(entry_params)
@@ -279,7 +284,7 @@ where
         self.pipeline.trace(ray_params)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> Color {
+    fn write(&self, payload: Self::PayloadType) -> Self::FluxType {
         self.pipeline.write(payload)
     }
 }
@@ -305,6 +310,7 @@ where
 {
     type PayloadType = T::PayloadType;
     type HitParams = T::HitParams;
+    type FluxType = T::FluxType;
 
     fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
         self.as_ref().entry(entry_params)
@@ -326,7 +332,7 @@ where
         self.as_ref().trace(ray_params)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> Color {
+    fn write(&self, payload: Self::PayloadType) -> Self::FluxType {
         self.as_ref().write(payload)
     }
 }
