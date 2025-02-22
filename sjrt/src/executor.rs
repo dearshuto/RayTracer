@@ -78,7 +78,7 @@ impl Executor {
     pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
-        rays: impl Iterator<Item = RayInfo>,
+        rays: impl Iterator<Item = RayInfo<nalgebra::Vector3<f32>>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
@@ -107,7 +107,7 @@ impl Executor {
     pub async fn execute_async<TColorBuffer, TPayload, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
-        rays: impl Iterator<Item = RayInfo>,
+        rays: impl Iterator<Item = RayInfo<nalgebra::Vector3<f32>>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
@@ -166,7 +166,7 @@ impl Executor {
     }
 
     fn execute_impl<TRayTracingPipeline, TScene>(
-        ray: RayInfo,
+        ray: RayInfo<nalgebra::Vector3<f32>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) -> TRayTracingPipeline::PayloadType
