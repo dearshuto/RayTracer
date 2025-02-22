@@ -5,8 +5,6 @@ type RenderingTask = tokio::task::JoinHandle<TaskContext>;
 
 struct TaskContext {
     scene: Arc<sjrt::util::RapierScene>,
-    renderer: Arc<sjrt::PathTracer>,
-    system: sjrt::ParallelizeSystem,
     buffer: AccumulateBuffer,
 }
 
@@ -71,12 +69,6 @@ impl Instance {
             // TODO: ここでタスク作成
             let task_context = TaskContext {
                 scene: Arc::new(sjrt::util::RapierScene::new()),
-                renderer: Arc::new(sjrt::PathTracer::new(
-                    1, /*sampling_count*/
-                    8, /*depth_max*/
-                    false,
-                )),
-                system: sjrt::ParallelizeSystem::new_with_thread(4, 4),
                 buffer: AccumulateBuffer {
                     width: render_request.width as i32,
                     height: render_request.height as i32,
@@ -106,9 +98,13 @@ impl Instance {
     fn spawn_task(mut task_context: TaskContext) -> RenderingTask {
         tokio::spawn(async move {
             let scene = task_context.scene.clone();
-            let renderer = task_context.renderer.clone();
+            let renderer = Arc::new(sjrt::PathTracerEx::default());
             let buffer = &mut task_context.buffer;
-            task_context.system.execute(scene, buffer, renderer).await;
+            let executor = sjrt::Executor::default();
+            let rays = sjrt::Camera::builder().build().calculate_ray_direction();
+            executor
+                .execute_async(buffer, rays.into_iter(), scene, renderer)
+                .await;
             task_context
         })
     }
@@ -138,5 +134,20 @@ impl IBuffer for AccumulateBuffer {
             current.0[2] + blue,
         ];
         image.put_pixel(x as u32, y as u32, image::Rgb::from(new_value));
+    }
+}
+
+impl sjrt::IColorBuffer for &mut AccumulateBuffer {
+    fn write(&mut self, x: u32, y: u32, color: sjrt::Color) {
+        let data = match color {
+            sjrt::Color::R8G8B8A8_Uint(data) => data,
+            sjrt::Color::R32G32B32A32_Unorm(data) => [
+                (data[0] * 255.0).clamp(0.0, 255.0) as u8,
+                (data[1] * 255.0).clamp(0.0, 255.0) as u8,
+                (data[2] * 255.0).clamp(0.0, 255.0) as u8,
+                (data[3] * 255.0).clamp(0.0, 255.0) as u8,
+            ],
+        };
+        self.set_color(x as i32, y as i32, data[0], data[1], data[2]);
     }
 }
