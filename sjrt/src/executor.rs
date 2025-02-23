@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{IHitParams, camera::RayInfo};
+use crate::camera::RayInfo;
 
 pub enum Color {
     #[allow(non_camel_case_types)]
@@ -293,7 +293,6 @@ where
 impl<T, THitParams, TVector> ISceneStructure<THitParams, TVector> for Arc<T>
 where
     T: ISceneStructure<THitParams, TVector>,
-    THitParams: IHitParams,
 {
     fn cast(&self, from: &TVector, to: &TVector) -> Option<THitParams> {
         self.as_ref().cast(from, to)
