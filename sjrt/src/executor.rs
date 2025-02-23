@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{camera::RayInfo, util::HitParams};
+use crate::{camera::RayInfo, IHitParams};
 
 pub enum Color {
     #[allow(non_camel_case_types)]
@@ -35,8 +35,8 @@ pub struct RayParams<T> {
     pub payload: T,
 }
 
-pub trait ISceneStructure<T> {
-    fn cast(&self, from: &nalgebra::Vector3<f32>, to: &nalgebra::Vector3<f32>) -> Option<T>;
+pub trait ISceneStructure<THitData, TPoint> {
+    fn cast(&self, from: &TPoint, to: &TPoint) -> Option<THitData>;
 }
 
 pub trait IRayTracingPipeline {
@@ -65,7 +65,7 @@ pub trait IColorBuffer {
 pub struct ExecuteParams<TRayTracingPipeline, TScene>
 where
     TRayTracingPipeline: IRayTracingPipeline,
-    TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
+    TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
 {
     pub scene: TScene,
     pub ray_tracing_pipeline: TRayTracingPipeline,
@@ -84,10 +84,10 @@ impl Executor {
     ) where
         TColorBuffer: IColorBuffer,
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
+        TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
     {
         for ray in rays {
-            let scene_adapter: SceneAdapter<'_, TScene, TRayTracingPipeline> = SceneAdapter {
+            let scene_adapter: SceneAdapter<'_, TScene, TRayTracingPipeline, _> = SceneAdapter {
                 scene: &scene,
                 _marker: std::marker::PhantomData::default(),
             };
@@ -115,7 +115,11 @@ impl Executor {
         TPayload: 'static + Send,
         TRayTracingPipeline:
             'static + IRayTracingPipeline<PayloadType = TPayload> + Clone + Sync + Send,
-        TScene: 'static + ISceneStructure<TRayTracingPipeline::HitParams> + Clone + Sync + Send,
+        TScene: 'static
+            + ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>
+            + Clone
+            + Sync
+            + Send,
     {
         // 初期レイのメモ化
         let mut rays: Vec<_> = rays.collect();
@@ -172,7 +176,7 @@ impl Executor {
     ) -> TRayTracingPipeline::PayloadType
     where
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams>,
+        TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
     {
         let x = ray.x;
         let y = ray.y;
@@ -221,26 +225,22 @@ impl Executor {
     }
 }
 
-struct SceneAdapter<'a, TScene, TPipeline>
+struct SceneAdapter<'a, TScene, TPipeline, TVector>
 where
-    TScene: ISceneStructure<TPipeline::HitParams>,
+    TScene: ISceneStructure<TPipeline::HitParams, TVector>,
     TPipeline: IRayTracingPipeline,
 {
     scene: &'a TScene,
-    _marker: std::marker::PhantomData<TPipeline>,
+    _marker: std::marker::PhantomData<(TPipeline, TVector)>,
 }
 
-impl<'a, TScene, TPipeline> ISceneStructure<TPipeline::HitParams>
-    for SceneAdapter<'a, TScene, TPipeline>
+impl<'a, TScene, TPipeline, TVectotr> ISceneStructure<TPipeline::HitParams, TVectotr>
+    for SceneAdapter<'a, TScene, TPipeline, TVectotr>
 where
-    TScene: ISceneStructure<TPipeline::HitParams>,
+    TScene: ISceneStructure<TPipeline::HitParams, TVectotr>,
     TPipeline: IRayTracingPipeline,
 {
-    fn cast(
-        &self,
-        from: &nalgebra::Vector3<f32>,
-        to: &nalgebra::Vector3<f32>,
-    ) -> Option<TPipeline::HitParams> {
+    fn cast(&self, from: &TVectotr, to: &TVectotr) -> Option<TPipeline::HitParams> {
         self.scene.cast(from, to)
     }
 }
@@ -285,15 +285,12 @@ where
 }
 
 // 任意の ISceneStructure を Arc でくるんだ型をパイプするための impl
-impl<T> ISceneStructure<HitParams> for Arc<T>
+impl<T, THitParams, TVector> ISceneStructure<THitParams, TVector> for Arc<T>
 where
-    T: ISceneStructure<HitParams>,
+    T: ISceneStructure<THitParams, TVector>,
+    THitParams: IHitParams,
 {
-    fn cast(
-        &self,
-        from: &nalgebra::Vector3<f32>,
-        to: &nalgebra::Vector3<f32>,
-    ) -> Option<HitParams> {
+    fn cast(&self, from: &TVector, to: &TVector) -> Option<THitParams> {
         self.as_ref().cast(from, to)
     }
 }
