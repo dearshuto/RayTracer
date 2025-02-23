@@ -48,7 +48,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut buffer = sjrt::util::ImageBuffer::new(args.width, args.height);
     let scene = if args.scene_file.exists() {
-        let scene = sjrt::scene::Loader::load_from_file(&args.scene_file);
+        let scene = sjrt_res::Loader::xml()
+            .deserialize(std::io::BufReader::new(
+                std::fs::File::open(args.scene_file).unwrap(),
+            ))
+            .unwrap();
         sjrt::util::RapierScene::new_from_scene(&scene)
     } else {
         sjrt::util::RapierScene::new()

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 sjrt = { path = "../sjrt" }
 sjrt-net = { path = "../sjrt-net" }
+sjrt-res = { path = "../sjrt-res" }
 clap = { workspace = true }
 tokio = { version = "1.15.0", features = ["full"] }
 nalgebra = "0.33"
