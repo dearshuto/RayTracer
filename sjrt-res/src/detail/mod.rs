@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use sjrt::scene::{primitive::Primitive, Material, Scene, Sky, Transform};
 
 #[allow(unused)]
 #[derive(Deserialize, Debug, Default)]
@@ -16,12 +17,64 @@ pub struct SceneData {
     pub boxes: Vec<BoxData>,
 }
 
+impl Into<Scene> for SceneData {
+    fn into(self) -> Scene {
+        let mut primitives = Vec::new();
+        let mut transforms = Vec::new();
+        let mut materials = Vec::new();
+
+        for sphere in self.spheres.into_iter() {
+            let sphere_data = sjrt::scene::primitive::SphereData {
+                radius: sphere.radius,
+            };
+            primitives.push(Primitive::Sphere(sphere_data));
+            transforms.push(sphere.transform.into());
+            materials.push(sphere.material.into());
+        }
+
+        for box_ in self.boxes.into_iter() {
+            let box_data = sjrt::scene::primitive::BoxData {
+                width: box_.width,
+                height: box_.height,
+                depth: box_.depth,
+            };
+            primitives.push(Primitive::Box(box_data));
+            transforms.push(box_.transform.into());
+            materials.push(box_.material.into());
+        }
+
+        Scene {
+            sky: self.sky.into(),
+            primitives,
+            transforms,
+            materials,
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(Deserialize, Debug, Default)]
 pub struct SkyData {
     pub lower_color: [f32; 3],
 
     pub upper_color: [f32; 3],
+}
+
+impl Into<Sky> for SkyData {
+    fn into(self) -> Sky {
+        Sky {
+            lower_color: nalgebra::Vector3::new(
+                self.lower_color[0],
+                self.lower_color[1],
+                self.lower_color[2],
+            ),
+            upper_color: nalgebra::Vector3::new(
+                self.upper_color[0],
+                self.upper_color[1],
+                self.upper_color[2],
+            ),
+        }
+    }
 }
 
 #[allow(unused)]
@@ -75,6 +128,20 @@ impl TransformData {
     }
 }
 
+impl Into<Transform> for TransformData {
+    fn into(self) -> Transform {
+        Transform {
+            translation: nalgebra::Vector3::new(
+                self.translation.x,
+                self.translation.y,
+                self.translation.z,
+            ),
+            rotation: nalgebra::Vector3::new(self.rotation.x, self.rotation.y, self.rotation.z),
+            scale: nalgebra::Vector3::new(self.scale.x, self.scale.y, self.scale.z),
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(Deserialize, Debug, Default)]
 pub struct MaterialData {
@@ -87,6 +154,15 @@ impl MaterialData {
         Self {
             albedo: Float3Data::one(),
             emission: Float3Data::zero(),
+        }
+    }
+}
+
+impl Into<Material> for MaterialData {
+    fn into(self) -> Material {
+        Material {
+            albedo: nalgebra::Vector3::new(self.albedo.x, self.albedo.y, self.albedo.z),
+            emission: nalgebra::Vector3::new(self.emission.x, self.emission.y, self.emission.z),
         }
     }
 }
