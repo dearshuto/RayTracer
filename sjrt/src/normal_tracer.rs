@@ -1,4 +1,4 @@
-use crate::{util::HitParams, Color, HitAction, IHitParams, IRayTracingPipeline, TraceAction};
+use crate::{Color, HitAction, IHitParams, IRayTracingPipeline, TraceAction, util::HitParams};
 
 #[derive(sjrt_macro::Immutable)]
 pub struct Payload {
@@ -12,8 +12,9 @@ pub struct NormalTracer;
 impl IRayTracingPipeline for NormalTracer {
     type PayloadType = Payload;
     type HitParams = HitParams;
+    type Point = nalgebra::Vector3<f32>;
 
-    fn entry(&self, _entry_params: &crate::EntryParams) -> Self::PayloadType {
+    fn entry(&self, _entry_params: &crate::EntryParams<Self::Point>) -> Self::PayloadType {
         Payload {
             normal: nalgebra::Vector3::zeros(),
         }

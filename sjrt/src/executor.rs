@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{camera::RayInfo, IHitParams};
+use crate::{IHitParams, camera::RayInfo};
 
 pub enum Color {
     #[allow(non_camel_case_types)]
@@ -22,11 +22,11 @@ where
     Payload(T),
 }
 
-pub struct EntryParams {
+pub struct EntryParams<T> {
     pub x: u32,
     pub y: u32,
-    pub from: nalgebra::Vector3<f32>,
-    pub to: nalgebra::Vector3<f32>,
+    pub from: T,
+    pub to: T,
 }
 
 pub struct RayParams<T> {
@@ -42,8 +42,9 @@ pub trait ISceneStructure<THitData, TPoint> {
 pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
+    type Point;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType;
+    fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType;
 
     fn react_closest_hit(
         &self,
@@ -83,7 +84,7 @@ impl Executor {
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer,
-        TRayTracingPipeline: IRayTracingPipeline,
+        TRayTracingPipeline: IRayTracingPipeline<Point = nalgebra::Vector3<f32>>,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
     {
         for ray in rays {
@@ -113,8 +114,11 @@ impl Executor {
     ) where
         TColorBuffer: IColorBuffer,
         TPayload: 'static + Send,
-        TRayTracingPipeline:
-            'static + IRayTracingPipeline<PayloadType = TPayload> + Clone + Sync + Send,
+        TRayTracingPipeline: 'static
+            + IRayTracingPipeline<PayloadType = TPayload, Point = nalgebra::Vector3<f32>>
+            + Clone
+            + Sync
+            + Send,
         TScene: 'static
             + ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>
             + Clone
@@ -175,7 +179,7 @@ impl Executor {
         ray_tracing_pipeline: TRayTracingPipeline,
     ) -> TRayTracingPipeline::PayloadType
     where
-        TRayTracingPipeline: IRayTracingPipeline,
+        TRayTracingPipeline: IRayTracingPipeline<Point = nalgebra::Vector3<f32>>,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
     {
         let x = ray.x;
@@ -258,8 +262,9 @@ where
 {
     type PayloadType = TRayTracingPipeline::PayloadType;
     type HitParams = TRayTracingPipeline::HitParams;
+    type Point = TRayTracingPipeline::Point;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType {
         self.pipeline.entry(entry_params)
     }
 
@@ -302,8 +307,9 @@ where
 {
     type PayloadType = T::PayloadType;
     type HitParams = T::HitParams;
+    type Point = T::Point;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType {
         self.as_ref().entry(entry_params)
     }
 

@@ -1,5 +1,5 @@
 use crate::{
-    traits::IRandomEngine, util::HitParams, EntryParams, HitAction, IRayTracingPipeline, RayParams,
+    EntryParams, HitAction, IRayTracingPipeline, RayParams, traits::IRandomEngine, util::HitParams,
 };
 
 pub trait IHitParams {
@@ -14,17 +14,25 @@ pub trait IHitParams {
 
 pub trait IKernel {
     type RondomEngine: IRandomEngine<f32>;
+    type Point;
 
     fn random_engine(&self) -> Self::RondomEngine;
+
+    fn new_point(&self, x: f32, y: f32, z: f32) -> Self::Point;
 }
 
 #[derive(Clone)]
 pub struct DefaultKernel;
 impl IKernel for DefaultKernel {
     type RondomEngine = crate::util::RandomEngine;
+    type Point = nalgebra::Vector3<f32>;
 
     fn random_engine(&self) -> Self::RondomEngine {
         crate::util::RandomEngine::new()
+    }
+
+    fn new_point(&self, x: f32, y: f32, z: f32) -> Self::Point {
+        nalgebra::Vector3::new(x, y, z)
     }
 }
 
@@ -34,8 +42,8 @@ where
     T: IKernel,
 {
     // 最初にレイを飛ばしたときの始点と終点
-    from: nalgebra::Vector3<f32>,
-    to: nalgebra::Vector3<f32>,
+    from: T::Point,
+    to: T::Point,
 
     // 蓄積した色
     value: nalgebra::Vector3<f32>,
@@ -43,8 +51,8 @@ where
     current_depth: u32,
     current_sampling: u32,
 
-    latest_hit_position: nalgebra::Vector3<f32>,
-    latest_hit_normal: nalgebra::Vector3<f32>,
+    latest_hit_position: T::Point,
+    latest_hit_normal: T::Point,
 
     kernel: T,
 
@@ -96,20 +104,21 @@ where
 
 impl<T: IHitParams, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
 where
-    TKernel: IKernel + Clone,
+    TKernel: IKernel<Point = nalgebra::Vector3<f32>> + Clone,
 {
     type PayloadType = Payload<TKernel>;
     type HitParams = T;
+    type Point = TKernel::Point;
 
-    fn entry(&self, entry_params: &EntryParams) -> Self::PayloadType {
+    fn entry(&self, entry_params: &EntryParams<TKernel::Point>) -> Self::PayloadType {
         Payload {
             from: entry_params.from,
             to: entry_params.to,
             value: nalgebra::Vector3::zeros(),
             current_depth: 0,
             current_sampling: 0,
-            latest_hit_normal: nalgebra::Vector3::zeros(),
-            latest_hit_position: nalgebra::Vector3::zeros(),
+            latest_hit_normal: self.kernel.new_point(0.0, 0.0, 0.0),
+            latest_hit_position: self.kernel.new_point(0.0, 0.0, 0.0),
             kernel: self.kernel.clone(),
             hit_history: Vec::default(),
         }
@@ -153,7 +162,7 @@ where
         let mut new_payload = payload.with_current_depth(next_depth);
 
         new_payload.hit_history.push((
-            nalgebra::Vector3::new(0.0, 0.0, 0.0),
+            self.kernel.new_point(0.0, 0.0, 0.0),
             nalgebra::Vector3::zeros(),
         ));
 
@@ -205,7 +214,7 @@ where
             let ratio_x = random_engine.generate_range(-1.0..1.0);
             let ratio_y = random_engine.generate_range(-1.0..1.0);
             let ratio_z = random_engine.generate_range(-1.0..1.0);
-            let new_normal = nalgebra::Vector3::new(ratio_x, ratio_y, ratio_z).normalize();
+            let new_normal = self.kernel.new_point(ratio_x, ratio_y, ratio_z).normalize();
             if new_normal.dot(&normal) <= 0.0 {
                 continue;
             }
