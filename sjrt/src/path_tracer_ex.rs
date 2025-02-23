@@ -2,19 +2,20 @@ use crate::{
     EntryParams, HitAction, IRayTracingPipeline, RayParams, traits::IRandomEngine, util::HitParams,
 };
 
-pub trait IHitParams {
-    fn normal(&self) -> nalgebra::Vector3<f32>;
+pub trait IHitParams<TPoint, TColor> {
+    fn normal(&self) -> TPoint;
 
-    fn position(&self) -> nalgebra::Vector3<f32>;
+    fn position(&self) -> TPoint;
 
-    fn emission(&self) -> nalgebra::Vector3<f32>;
+    fn emission(&self) -> TColor;
 
-    fn albedo(&self) -> nalgebra::Vector3<f32>;
+    fn albedo(&self) -> TColor;
 }
 
 pub trait IKernel {
     type RondomEngine: IRandomEngine<f32>;
     type Point;
+    type Color;
 
     fn random_engine(&self) -> Self::RondomEngine;
 
@@ -26,6 +27,7 @@ pub struct DefaultKernel;
 impl IKernel for DefaultKernel {
     type RondomEngine = crate::util::RandomEngine;
     type Point = nalgebra::Vector3<f32>;
+    type Color = nalgebra::Vector3<f32>;
 
     fn random_engine(&self) -> Self::RondomEngine {
         crate::util::RandomEngine::new()
@@ -57,7 +59,7 @@ where
     kernel: T,
 
     // (emission, albedo)
-    hit_history: Vec<(nalgebra::Vector3<f32>, nalgebra::Vector3<f32>)>,
+    hit_history: Vec<(T::Color, T::Color)>,
 }
 
 pub struct PathTracerEx<T, TKernel>
@@ -79,7 +81,7 @@ impl Default for PathTracerEx<HitParams, DefaultKernel> {
 
 impl<THitParams, TKernel> PathTracerEx<THitParams, TKernel>
 where
-    THitParams: IHitParams,
+    THitParams: IHitParams<TKernel::Point, TKernel::Color>,
     TKernel: IKernel,
 {
     pub fn new(kernel: TKernel) -> Self {
@@ -102,9 +104,10 @@ where
     }
 }
 
-impl<T: IHitParams, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
+impl<T, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
 where
-    TKernel: IKernel<Point = nalgebra::Vector3<f32>> + Clone,
+    T: IHitParams<TKernel::Point, TKernel::Color>,
+    TKernel: IKernel<Point = nalgebra::Vector3<f32>, Color = nalgebra::Vector3<f32>> + Clone,
 {
     type PayloadType = Payload<TKernel>;
     type HitParams = T;

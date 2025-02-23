@@ -1,10 +1,10 @@
 use crate::{
+    IConstract, IScene, MaterialInfo, Property,
     executor::ISceneStructure,
     path_tracer_ex::IHitParams,
     sampling_algorithm::IRelatedLightEnumerator,
     scene::Scene,
     traits::{EnumerateLightResult, IVectorComponent3},
-    IConstract, IScene, MaterialInfo, Property,
 };
 use rapier3d::{parry::partitioning::IndexedData, prelude::*};
 
@@ -240,7 +240,7 @@ pub struct HitParams {
     albedo: nalgebra::Vector3<f32>,
 }
 
-impl IHitParams for HitParams {
+impl IHitParams<nalgebra::Vector3<f32>, nalgebra::Vector3<f32>> for HitParams {
     fn normal(&self) -> nalgebra::Vector3<f32> {
         self.normal
     }
