@@ -1,4 +1,4 @@
-use crate::{IBuffer, IColorBuffer};
+use crate::{Color, IBuffer, IColorBuffer};
 
 pub struct ImageBuffer {
     _width: i32,
@@ -51,6 +51,8 @@ impl IBuffer for ImageBuffer {
 }
 
 impl IColorBuffer for &mut ImageBuffer {
+    type Color = Color;
+
     fn write(&mut self, x: u32, y: u32, color: crate::Color) {
         let data = match color {
             crate::Color::R8G8B8A8_Uint(data) => [data[0], data[1], data[2]],

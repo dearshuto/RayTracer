@@ -1,6 +1,6 @@
 use crate::{
-    traits::{IInnerProduct, INormalized, IVectorComponent3},
     IConstract, INorm, IOuterProduct,
+    traits::{IComponentMul, IInnerProduct, INormalized, IVectorComponent3},
 };
 
 impl<TFloat> IVectorComponent3<TFloat> for nalgebra::Vector3<TFloat>
@@ -38,6 +38,15 @@ where
 {
     fn new(x: T, y: T, z: T) -> Self {
         nalgebra::Vector3::new(x, y, z)
+    }
+}
+
+impl<T> IComponentMul for nalgebra::Vector3<T>
+where
+    T: nalgebra::Scalar + nalgebra::ClosedMulAssign,
+{
+    fn multiply(&self, rhs: &Self) -> Self {
+        self.component_mul(&rhs)
     }
 }
 

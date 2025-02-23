@@ -43,6 +43,7 @@ pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
     type Point;
+    type Color;
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType;
 
@@ -56,11 +57,13 @@ pub trait IRayTracingPipeline {
 
     fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType>;
 
-    fn write(&self, payload: Self::PayloadType) -> Color;
+    fn write(&self, payload: Self::PayloadType) -> Self::Color;
 }
 
 pub trait IColorBuffer {
-    fn write(&mut self, x: u32, y: u32, color: Color);
+    type Color;
+
+    fn write(&mut self, x: u32, y: u32, color: Self::Color);
 }
 
 pub struct ExecuteParams<TRayTracingPipeline, TScene>
@@ -83,8 +86,9 @@ impl Executor {
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
-        TColorBuffer: IColorBuffer,
-        TRayTracingPipeline: IRayTracingPipeline<Point = nalgebra::Vector3<f32>>,
+        TColorBuffer: IColorBuffer<Color = Color>,
+        TRayTracingPipeline:
+            IRayTracingPipeline<Point = nalgebra::Vector3<f32>, Color = nalgebra::Vector3<f32>>,
         TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
     {
         for ray in rays {
@@ -101,6 +105,12 @@ impl Executor {
 
             // 出力して終了
             let color = ray_tracing_pipeline.write(final_payload);
+            let color = Color::R32G32B32A32_Unorm([
+                color.data.as_slice()[0],
+                color.data.as_slice()[1],
+                color.data.as_slice()[2],
+                1.0,
+            ]);
             color_buffer.write(x, y, color);
         }
     }
@@ -112,10 +122,14 @@ impl Executor {
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
-        TColorBuffer: IColorBuffer,
+        TColorBuffer: IColorBuffer<Color = Color>,
         TPayload: 'static + Send,
         TRayTracingPipeline: 'static
-            + IRayTracingPipeline<PayloadType = TPayload, Point = nalgebra::Vector3<f32>>
+            + IRayTracingPipeline<
+                PayloadType = TPayload,
+                Point = nalgebra::Vector3<f32>,
+                Color = nalgebra::Vector3<f32>,
+            >
             + Clone
             + Sync
             + Send,
@@ -168,6 +182,12 @@ impl Executor {
         for payload_vec in payload_vecs {
             for (x, y, payload) in payload_vec.unwrap() {
                 let color = ray_tracing_pipeline.write(payload);
+                let color = Color::R32G32B32A32_Unorm([
+                    color.data.as_slice()[0],
+                    color.data.as_slice()[1],
+                    color.data.as_slice()[2],
+                    1.0,
+                ]);
                 color_buffer.write(x, y, color);
             }
         }
@@ -263,6 +283,7 @@ where
     type PayloadType = TRayTracingPipeline::PayloadType;
     type HitParams = TRayTracingPipeline::HitParams;
     type Point = TRayTracingPipeline::Point;
+    type Color = TRayTracingPipeline::Color;
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType {
         self.pipeline.entry(entry_params)
@@ -284,7 +305,7 @@ where
         self.pipeline.trace(ray_params)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> Color {
+    fn write(&self, payload: Self::PayloadType) -> Self::Color {
         self.pipeline.write(payload)
     }
 }
@@ -307,6 +328,7 @@ where
     type PayloadType = T::PayloadType;
     type HitParams = T::HitParams;
     type Point = T::Point;
+    type Color = T::Color;
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType {
         self.as_ref().entry(entry_params)
@@ -328,7 +350,7 @@ where
         self.as_ref().trace(ray_params)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> Color {
+    fn write(&self, payload: Self::PayloadType) -> Self::Color {
         self.as_ref().write(payload)
     }
 }

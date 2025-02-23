@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use image::{DynamicImage, GenericImage};
-use sjrt::scene::{primitive::SphereData, Material};
+use sjrt::scene::{Material, primitive::SphereData};
 
 struct Image(image::DynamicImage);
 
 impl sjrt::IColorBuffer for &mut Image {
+    type Color = sjrt::Color;
+
     fn write(&mut self, x: u32, y: u32, color: sjrt::Color) {
         let data = match color {
             sjrt::Color::R8G8B8A8_Uint(data) => data,

@@ -1,5 +1,9 @@
+use std::ops::{Add, Div};
+
 use crate::{
-    EntryParams, HitAction, IRayTracingPipeline, RayParams, traits::IRandomEngine, util::HitParams,
+    EntryParams, HitAction, IRayTracingPipeline, RayParams,
+    traits::{IComponentMul, IRandomEngine},
+    util::HitParams,
 };
 
 pub trait IHitParams<TPoint, TColor> {
@@ -48,7 +52,7 @@ where
     to: T::Point,
 
     // 蓄積した色
-    value: nalgebra::Vector3<f32>,
+    value: T::Color,
 
     current_depth: u32,
     current_sampling: u32,
@@ -104,20 +108,26 @@ where
     }
 }
 
-impl<T, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
+impl<T, TKernel, TColor> IRayTracingPipeline for PathTracerEx<T, TKernel>
 where
     T: IHitParams<TKernel::Point, TKernel::Color>,
-    TKernel: IKernel<Point = nalgebra::Vector3<f32>, Color = nalgebra::Vector3<f32>> + Clone,
+    TKernel: IKernel<Point = nalgebra::Vector3<f32>, Color = TColor> + Clone,
+    TColor: Clone
+        + num::Zero
+        + Add<TColor, Output = TColor>
+        + Div<f32, Output = TColor>
+        + IComponentMul,
 {
     type PayloadType = Payload<TKernel>;
     type HitParams = T;
     type Point = TKernel::Point;
+    type Color = TColor;
 
     fn entry(&self, entry_params: &EntryParams<TKernel::Point>) -> Self::PayloadType {
         Payload {
             from: entry_params.from,
             to: entry_params.to,
-            value: nalgebra::Vector3::zeros(),
+            value: TColor::zero(),
             current_depth: 0,
             current_sampling: 0,
             latest_hit_normal: self.kernel.new_point(0.0, 0.0, 0.0),
@@ -164,10 +174,9 @@ where
         // どこにもヒットしなかったので背景色を返す
         let mut new_payload = payload.with_current_depth(next_depth);
 
-        new_payload.hit_history.push((
-            self.kernel.new_point(0.0, 0.0, 0.0),
-            nalgebra::Vector3::zeros(),
-        ));
+        new_payload
+            .hit_history
+            .push((TColor::zero(), TColor::zero()));
 
         new_payload
     }
@@ -186,15 +195,15 @@ where
             }
 
             // 今回のサンプリングの結果を保持
-            let mut color = nalgebra::Vector3::zeros();
+            let mut color = TColor::zero();
             while let Some((emission, albedo)) = payload.hit_history.pop() {
-                color = albedo.component_mul(&color);
-                color += emission;
+                color = albedo.multiply(&color);
+                color = color + emission;
             }
 
             // 前回のサンプリング結果との平均をとっていく
             let current_color = color / self.sampling_count as f32;
-            let new_color = payload.value + current_color;
+            let new_color = current_color + payload.value.clone();
 
             // 今回のサンプリングで保持していた情報を削除して、
             // 開始点に巻き戻してレイのトレースを続ける
@@ -231,8 +240,7 @@ where
         crate::TraceAction::Next(ray_params)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> crate::executor::Color {
-        let color = payload.value;
-        crate::executor::Color::R32G32B32A32_Unorm([color.x, color.y, color.z, 1.0])
+    fn write(&self, payload: Self::PayloadType) -> Self::Color {
+        payload.value
     }
 }

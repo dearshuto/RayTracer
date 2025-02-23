@@ -1,4 +1,4 @@
-use crate::{Color, HitAction, IHitParams, IRayTracingPipeline, TraceAction, util::HitParams};
+use crate::{HitAction, IHitParams, IRayTracingPipeline, TraceAction, util::HitParams};
 
 #[derive(sjrt_macro::Immutable)]
 pub struct Payload {
@@ -13,6 +13,7 @@ impl IRayTracingPipeline for NormalTracer {
     type PayloadType = Payload;
     type HitParams = HitParams;
     type Point = nalgebra::Vector3<f32>;
+    type Color = nalgebra::Vector3<f32>;
 
     fn entry(&self, _entry_params: &crate::EntryParams<Self::Point>) -> Self::PayloadType {
         Payload {
@@ -46,10 +47,10 @@ impl IRayTracingPipeline for NormalTracer {
         TraceAction::Finish(ray_params.payload)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> crate::Color {
+    fn write(&self, payload: Self::PayloadType) -> Self::Color {
         let x = payload.normal.x.clamp(0.0, 1.0);
         let y = payload.normal.y.clamp(0.0, 1.0);
         let z = payload.normal.z.clamp(0.0, 1.0);
-        Color::R32G32B32A32_Unorm([x, y, z, 1.0])
+        nalgebra::Vector3::new(x, y, z)
     }
 }
