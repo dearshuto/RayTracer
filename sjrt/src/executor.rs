@@ -1,6 +1,9 @@
-use std::sync::Arc;
+use std::{
+    ops::{Add, Mul},
+    sync::Arc,
+};
 
-use crate::camera::RayInfo;
+use crate::{IConstract, IInnerProduct, camera::RayInfo, traits::INormalized};
 
 pub enum Color {
     #[allow(non_camel_case_types)]
@@ -9,14 +12,14 @@ pub enum Color {
     R32G32B32A32_Unorm([f32; 4]),
 }
 
-pub enum TraceAction<T> {
-    Next(RayParams<T>),
+pub enum TraceAction<T, TPoint> {
+    Next(RayParams<T, TPoint>),
     Finish(T),
 }
 
-pub enum HitAction<T, U>
+pub enum HitAction<T, U, TPoint>
 where
-    U: Iterator<Item = RayParams<T>>,
+    U: Iterator<Item = RayParams<T, TPoint>>,
 {
     RayGenerate(U),
     Payload(T),
@@ -29,9 +32,9 @@ pub struct EntryParams<T> {
     pub to: T,
 }
 
-pub struct RayParams<T> {
-    pub from: nalgebra::Vector3<f32>,
-    pub to: nalgebra::Vector3<f32>,
+pub struct RayParams<T, TPoint> {
+    pub from: TPoint,
+    pub to: TPoint,
     pub payload: T,
 }
 
@@ -42,8 +45,11 @@ pub trait ISceneStructure<THitData, TPoint> {
 pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
-    type Point;
-    type Color;
+    type Point: Clone
+        + IConstract<f32>
+        + Add<Self::Point, Output = Self::Point>
+        + Mul<f32, Output = Self::Point>;
+    type Color: Into<Color>;
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType;
 
@@ -51,11 +57,18 @@ pub trait IRayTracingPipeline {
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams<Self::PayloadType>>>;
+    ) -> HitAction<
+        Self::PayloadType,
+        impl Iterator<Item = RayParams<Self::PayloadType, Self::Point>>,
+        Self::Point,
+    >;
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
 
-    fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType>;
+    fn trace(
+        &self,
+        ray_params: RayParams<Self::PayloadType, Self::Point>,
+    ) -> TraceAction<Self::PayloadType, Self::Point>;
 
     fn write(&self, payload: Self::PayloadType) -> Self::Color;
 }
@@ -66,15 +79,6 @@ pub trait IColorBuffer {
     fn write(&mut self, x: u32, y: u32, color: Self::Color);
 }
 
-pub struct ExecuteParams<TRayTracingPipeline, TScene>
-where
-    TRayTracingPipeline: IRayTracingPipeline,
-    TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
-{
-    pub scene: TScene,
-    pub ray_tracing_pipeline: TRayTracingPipeline,
-}
-
 #[derive(Debug, Default)]
 pub struct Executor;
 
@@ -82,14 +86,13 @@ impl Executor {
     pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
         &self,
         mut color_buffer: TColorBuffer,
-        rays: impl Iterator<Item = RayInfo<nalgebra::Vector3<f32>>>,
+        rays: impl Iterator<Item = RayInfo<TRayTracingPipeline::Point>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer<Color = Color>,
-        TRayTracingPipeline:
-            IRayTracingPipeline<Point = nalgebra::Vector3<f32>, Color = nalgebra::Vector3<f32>>,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
+        TRayTracingPipeline: IRayTracingPipeline,
+        TScene: ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point>,
     {
         for ray in rays {
             let scene_adapter: SceneAdapter<'_, TScene, TRayTracingPipeline, _> = SceneAdapter {
@@ -105,39 +108,37 @@ impl Executor {
 
             // 出力して終了
             let color = ray_tracing_pipeline.write(final_payload);
-            let color = Color::R32G32B32A32_Unorm([
-                color.data.as_slice()[0],
-                color.data.as_slice()[1],
-                color.data.as_slice()[2],
-                1.0,
-            ]);
-            color_buffer.write(x, y, color);
+            color_buffer.write(x, y, color.into());
         }
     }
 
-    pub async fn execute_async<TColorBuffer, TPayload, TRayTracingPipeline, TScene>(
+    pub async fn execute_async<TColorBuffer, TPayload, TRayTracingPipeline, TScene, TPoint>(
         &self,
         mut color_buffer: TColorBuffer,
-        rays: impl Iterator<Item = RayInfo<nalgebra::Vector3<f32>>>,
+        rays: impl Iterator<Item = RayInfo<TRayTracingPipeline::Point>>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer<Color = Color>,
         TPayload: 'static + Send,
         TRayTracingPipeline: 'static
-            + IRayTracingPipeline<
-                PayloadType = TPayload,
-                Point = nalgebra::Vector3<f32>,
-                Color = nalgebra::Vector3<f32>,
-            >
+            + IRayTracingPipeline<PayloadType = TPayload, Point = TPoint>
             + Clone
             + Sync
             + Send,
         TScene: 'static
-            + ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>
+            + ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point>
             + Clone
             + Sync
             + Send,
+        TPoint: 'static
+            + Send
+            + Sync
+            + IConstract<f32>
+            + INormalized
+            + IInnerProduct<f32>
+            + Mul<f32, Output = TPoint>
+            + Add<TPoint, Output = TPoint>,
     {
         // 初期レイのメモ化
         let mut rays: Vec<_> = rays.collect();
@@ -182,36 +183,35 @@ impl Executor {
         for payload_vec in payload_vecs {
             for (x, y, payload) in payload_vec.unwrap() {
                 let color = ray_tracing_pipeline.write(payload);
-                let color = Color::R32G32B32A32_Unorm([
-                    color.data.as_slice()[0],
-                    color.data.as_slice()[1],
-                    color.data.as_slice()[2],
-                    1.0,
-                ]);
-                color_buffer.write(x, y, color);
+                color_buffer.write(x, y, color.into());
             }
         }
     }
 
     fn execute_impl<TRayTracingPipeline, TScene>(
-        ray: RayInfo<nalgebra::Vector3<f32>>,
+        ray: RayInfo<TRayTracingPipeline::Point>,
         scene: TScene,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) -> TRayTracingPipeline::PayloadType
     where
-        TRayTracingPipeline: IRayTracingPipeline<Point = nalgebra::Vector3<f32>>,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams, nalgebra::Vector3<f32>>,
+        TRayTracingPipeline: IRayTracingPipeline,
+        TScene: ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point>,
     {
         let x = ray.x;
         let y = ray.y;
-        let direction = ray.directions[0];
+        let direction = ray.directions[0].clone();
 
         // 初期レイ
-        let from = nalgebra::Vector3::new(0.0, 7.0, 20.0);
-        let to = from + 1000.0 * direction;
+        let from = TRayTracingPipeline::Point::new(0.0, 7.0, 20.0);
+        let to = from.clone() + direction * 1000.0;
 
         // 初期値生成
-        let payload = ray_tracing_pipeline.entry(&EntryParams { x, y, from, to });
+        let payload = ray_tracing_pipeline.entry(&EntryParams {
+            x,
+            y,
+            from: from.clone(),
+            to: to.clone(),
+        });
 
         // TODO: 外部から注入できるようにする
         let mut ray_params = RayParams { from, to, payload };
@@ -293,7 +293,11 @@ where
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams<Self::PayloadType>>> {
+    ) -> HitAction<
+        Self::PayloadType,
+        impl Iterator<Item = RayParams<Self::PayloadType, Self::Point>>,
+        Self::Point,
+    > {
         self.pipeline.react_closest_hit(payload, hit_params)
     }
 
@@ -301,7 +305,10 @@ where
         self.pipeline.react_hit_miss(payload)
     }
 
-    fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType> {
+    fn trace(
+        &self,
+        ray_params: RayParams<Self::PayloadType, Self::Point>,
+    ) -> TraceAction<Self::PayloadType, Self::Point> {
         self.pipeline.trace(ray_params)
     }
 
@@ -338,7 +345,11 @@ where
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<Self::PayloadType, impl Iterator<Item = RayParams<Self::PayloadType>>> {
+    ) -> HitAction<
+        Self::PayloadType,
+        impl Iterator<Item = RayParams<Self::PayloadType, Self::Point>>,
+        Self::Point,
+    > {
         self.as_ref().react_closest_hit(payload, hit_params)
     }
 
@@ -346,7 +357,10 @@ where
         self.as_ref().react_hit_miss(payload)
     }
 
-    fn trace(&self, ray_params: RayParams<Self::PayloadType>) -> TraceAction<Self::PayloadType> {
+    fn trace(
+        &self,
+        ray_params: RayParams<Self::PayloadType, Self::Point>,
+    ) -> TraceAction<Self::PayloadType, Self::Point> {
         self.as_ref().trace(ray_params)
     }
 

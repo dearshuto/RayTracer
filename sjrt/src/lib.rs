@@ -6,8 +6,8 @@ mod system;
 mod traits;
 
 pub use executor::{
-    Color, EntryParams, ExecuteParams, Executor, HitAction, IColorBuffer, IRayTracingPipeline,
-    ISceneStructure, RayParams, TraceAction,
+    Color, EntryParams, Executor, HitAction, IColorBuffer, IRayTracingPipeline, ISceneStructure,
+    RayParams, TraceAction,
 };
 pub use normal_tracer::NormalTracer;
 pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};

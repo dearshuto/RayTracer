@@ -1,7 +1,13 @@
 use crate::{
-    IConstract, INorm, IOuterProduct,
+    Color, IConstract, INorm, IOuterProduct,
     traits::{IComponentMul, IInnerProduct, INormalized, IVectorComponent3},
 };
+
+impl Into<Color> for nalgebra::Vector3<f32> {
+    fn into(self) -> Color {
+        Color::R32G32B32A32_Unorm([self.x, self.y, self.z, 1.0])
+    }
+}
 
 impl<TFloat> IVectorComponent3<TFloat> for nalgebra::Vector3<TFloat>
 where
