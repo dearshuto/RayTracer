@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use sjrt::IBuffer;
+use sjrt::{Color, IBuffer};
 type RenderingTask = tokio::task::JoinHandle<TaskContext>;
 
 struct TaskContext {
@@ -138,6 +138,8 @@ impl IBuffer for AccumulateBuffer {
 }
 
 impl sjrt::IColorBuffer for &mut AccumulateBuffer {
+    type Color = Color;
+
     fn write(&mut self, x: u32, y: u32, color: sjrt::Color) {
         let data = match color {
             sjrt::Color::R8G8B8A8_Uint(data) => data,

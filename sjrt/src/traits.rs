@@ -57,6 +57,10 @@ where
     fn set_z(&mut self, z: TFloat);
 }
 
+pub trait IComponentMul {
+    fn multiply(&self, rhs: &Self) -> Self;
+}
+
 pub trait IConstract<TFloat: num::Float> {
     fn new(x: TFloat, y: TFloat, z: TFloat) -> Self;
 }
