@@ -1,7 +1,7 @@
 use std::ops::{Add, Div, Mul};
 
 use crate::{
-    EntryParams, HitAction, IInnerProduct, IRayTracingPipeline, RayParams,
+    EntryParams, HitAction, IConstract, IInnerProduct, IRayTracingPipeline, RayParams,
     traits::{IComponentMul, INormalized, IRandomEngine},
     util::HitParams,
 };
@@ -21,13 +21,13 @@ pub trait IHitParams<TPoint, TColor> {
 pub trait IKernel {
     type RondomEngine: IRandomEngine<f32>;
     type Point: Clone
+        + IConstract<f32>
         + INormalized
         + IInnerProduct<f32>
         + Mul<f32, Output = Self::Point>
-        + Add<Self::Point, Output = Self::Point>
-        // これは互換性保持のための一時的な制約なので削除予定
-        + Into<nalgebra::Vector3<f32>>;
+        + Add<Self::Point, Output = Self::Point>;
     type Color: Clone
+        + Into<crate::Color>
         + num::Zero
         + Add<Self::Color, Output = Self::Color>
         + Div<f32, Output = Self::Color>
@@ -150,7 +150,8 @@ where
         hit_params: &Self::HitParams,
     ) -> crate::HitAction<
         Self::PayloadType,
-        impl Iterator<Item = crate::RayParams<Self::PayloadType>>,
+        impl Iterator<Item = crate::RayParams<Self::PayloadType, Self::Point>>,
+        Self::Point,
     > {
         if false {
             return HitAction::RayGenerate([].into_iter());
@@ -190,8 +191,8 @@ where
 
     fn trace(
         &self,
-        ray_params: RayParams<Self::PayloadType>,
-    ) -> crate::TraceAction<Self::PayloadType> {
+        ray_params: RayParams<Self::PayloadType, Self::Point>,
+    ) -> crate::TraceAction<Self::PayloadType, Self::Point> {
         let mut payload = ray_params.payload;
 
         // 反射回数が規定回数を超えていたら...
@@ -216,8 +217,8 @@ where
             // 開始点に巻き戻してレイのトレースを続ける
             let new_sampling_count = payload.current_sampling + 1;
             return crate::TraceAction::Next(RayParams {
-                from: payload.from.clone().into(),
-                to: payload.to.clone().into(),
+                from: payload.from.clone(),
+                to: payload.to.clone(),
                 payload: payload
                     .with_value(new_color)
                     .with_current_depth(0)
@@ -246,11 +247,7 @@ where
 
         let from = payload.latest_hit_position.clone() + new_direction.clone() * 0.001;
         let to = new_direction * 500.0 + from.clone();
-        let ray_params = RayParams {
-            from: from.into(),
-            to: to.into(),
-            payload,
-        };
+        let ray_params = RayParams { from, to, payload };
         crate::TraceAction::Next(ray_params)
     }
 

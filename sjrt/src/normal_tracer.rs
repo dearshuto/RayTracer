@@ -27,7 +27,8 @@ impl IRayTracingPipeline for NormalTracer {
         hit_params: &Self::HitParams,
     ) -> crate::HitAction<
         Self::PayloadType,
-        impl Iterator<Item = crate::RayParams<Self::PayloadType>>,
+        impl Iterator<Item = crate::RayParams<Self::PayloadType, Self::Point>>,
+        Self::Point,
     > {
         if false {
             return HitAction::RayGenerate([].into_iter());
@@ -42,8 +43,8 @@ impl IRayTracingPipeline for NormalTracer {
 
     fn trace(
         &self,
-        ray_params: crate::RayParams<Self::PayloadType>,
-    ) -> crate::TraceAction<Self::PayloadType> {
+        ray_params: crate::RayParams<Self::PayloadType, Self::Point>,
+    ) -> crate::TraceAction<Self::PayloadType, Self::Point> {
         TraceAction::Finish(ray_params.payload)
     }
 
