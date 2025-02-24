@@ -32,6 +32,7 @@ pub trait IKernel {
         + Add<Self::Color, Output = Self::Color>
         + Div<f32, Output = Self::Color>
         + IComponentMul;
+    type HitParams: IHitParams<Self::Point, Self::Color>;
 
     fn random_engine(&self) -> Self::RondomEngine;
 
@@ -44,6 +45,7 @@ impl IKernel for DefaultKernel {
     type RondomEngine = crate::util::RandomEngine;
     type Point = nalgebra::Vector3<f32>;
     type Color = nalgebra::Vector3<f32>;
+    type HitParams = HitParams;
 
     fn random_engine(&self) -> Self::RondomEngine {
         crate::util::RandomEngine::new()
@@ -78,26 +80,24 @@ where
     hit_history: Vec<(T::Color, T::Color)>,
 }
 
-pub struct PathTracerEx<T, TKernel>
+pub struct PathTracerEx<TKernel>
 where
     TKernel: IKernel,
 {
     depth: u32,
     sampling_count: u32,
     kernel: TKernel,
-    _marker: std::marker::PhantomData<T>,
 }
 
-impl Default for PathTracerEx<HitParams, DefaultKernel> {
+impl Default for PathTracerEx<DefaultKernel> {
     fn default() -> Self {
         let kernel = DefaultKernel {};
         Self::new(kernel)
     }
 }
 
-impl<THitParams, TKernel> PathTracerEx<THitParams, TKernel>
+impl<TKernel> PathTracerEx<TKernel>
 where
-    THitParams: IHitParams<TKernel::Point, TKernel::Color>,
     TKernel: IKernel,
 {
     pub fn new(kernel: TKernel) -> Self {
@@ -105,7 +105,6 @@ where
             depth: 1,
             sampling_count: 1,
             kernel,
-            _marker: std::marker::PhantomData,
         }
     }
 
@@ -120,13 +119,12 @@ where
     }
 }
 
-impl<T, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
+impl<TKernel> IRayTracingPipeline for PathTracerEx<TKernel>
 where
-    T: IHitParams<TKernel::Point, TKernel::Color>,
     TKernel: IKernel + Clone,
 {
     type PayloadType = Payload<TKernel>;
-    type HitParams = T;
+    type HitParams = TKernel::HitParams;
     type Point = TKernel::Point;
     type Color = TKernel::Color;
 
