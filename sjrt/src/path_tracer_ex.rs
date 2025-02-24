@@ -1,10 +1,12 @@
-use std::ops::{Add, Div};
+use std::ops::{Add, Div, Mul};
 
 use crate::{
-    EntryParams, HitAction, IRayTracingPipeline, RayParams,
-    traits::{IComponentMul, IRandomEngine},
+    EntryParams, HitAction, IInnerProduct, IRayTracingPipeline, RayParams,
+    traits::{IComponentMul, INormalized, IRandomEngine},
     util::HitParams,
 };
+
+use num::Zero;
 
 pub trait IHitParams<TPoint, TColor> {
     fn normal(&self) -> TPoint;
@@ -18,8 +20,18 @@ pub trait IHitParams<TPoint, TColor> {
 
 pub trait IKernel {
     type RondomEngine: IRandomEngine<f32>;
-    type Point;
-    type Color;
+    type Point: Clone
+        + INormalized
+        + IInnerProduct<f32>
+        + Mul<f32, Output = Self::Point>
+        + Add<Self::Point, Output = Self::Point>
+        // これは互換性保持のための一時的な制約なので削除予定
+        + Into<nalgebra::Vector3<f32>>;
+    type Color: Clone
+        + num::Zero
+        + Add<Self::Color, Output = Self::Color>
+        + Div<f32, Output = Self::Color>
+        + IComponentMul;
 
     fn random_engine(&self) -> Self::RondomEngine;
 
@@ -108,26 +120,21 @@ where
     }
 }
 
-impl<T, TKernel, TColor> IRayTracingPipeline for PathTracerEx<T, TKernel>
+impl<T, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
 where
     T: IHitParams<TKernel::Point, TKernel::Color>,
-    TKernel: IKernel<Point = nalgebra::Vector3<f32>, Color = TColor> + Clone,
-    TColor: Clone
-        + num::Zero
-        + Add<TColor, Output = TColor>
-        + Div<f32, Output = TColor>
-        + IComponentMul,
+    TKernel: IKernel + Clone,
 {
     type PayloadType = Payload<TKernel>;
     type HitParams = T;
     type Point = TKernel::Point;
-    type Color = TColor;
+    type Color = TKernel::Color;
 
     fn entry(&self, entry_params: &EntryParams<TKernel::Point>) -> Self::PayloadType {
         Payload {
-            from: entry_params.from,
-            to: entry_params.to,
-            value: TColor::zero(),
+            from: entry_params.from.clone(),
+            to: entry_params.to.clone(),
+            value: Self::Color::zero(),
             current_depth: 0,
             current_sampling: 0,
             latest_hit_normal: self.kernel.new_point(0.0, 0.0, 0.0),
@@ -176,7 +183,7 @@ where
 
         new_payload
             .hit_history
-            .push((TColor::zero(), TColor::zero()));
+            .push((Self::Color::zero(), Self::Color::zero()));
 
         new_payload
     }
@@ -195,7 +202,7 @@ where
             }
 
             // 今回のサンプリングの結果を保持
-            let mut color = TColor::zero();
+            let mut color = Self::Color::zero();
             while let Some((emission, albedo)) = payload.hit_history.pop() {
                 color = albedo.multiply(&color);
                 color = color + emission;
@@ -209,8 +216,8 @@ where
             // 開始点に巻き戻してレイのトレースを続ける
             let new_sampling_count = payload.current_sampling + 1;
             return crate::TraceAction::Next(RayParams {
-                from: payload.from,
-                to: payload.to,
+                from: payload.from.clone().into(),
+                to: payload.to.clone().into(),
                 payload: payload
                     .with_value(new_color)
                     .with_current_depth(0)
@@ -220,13 +227,16 @@ where
 
         // 最初にヒットしたポイントの情報から次にレイを飛ばす方向を決める
         // とりあえず適当に乱数を生成して法線の向きに飛ばす
-        let normal = payload.latest_hit_normal;
+        let normal = payload.latest_hit_normal.clone();
         let mut random_engine = payload.kernel.random_engine();
         let new_direction = loop {
             let ratio_x = random_engine.generate_range(-1.0..1.0);
             let ratio_y = random_engine.generate_range(-1.0..1.0);
             let ratio_z = random_engine.generate_range(-1.0..1.0);
-            let new_normal = self.kernel.new_point(ratio_x, ratio_y, ratio_z).normalize();
+            let new_normal = self
+                .kernel
+                .new_point(ratio_x, ratio_y, ratio_z)
+                .normalized();
             if new_normal.dot(&normal) <= 0.0 {
                 continue;
             }
@@ -234,9 +244,13 @@ where
             break new_normal;
         };
 
-        let from = payload.latest_hit_position + new_direction * 0.001;
-        let to = 500.0 * new_direction + from;
-        let ray_params = RayParams { from, to, payload };
+        let from = payload.latest_hit_position.clone() + new_direction.clone() * 0.001;
+        let to = new_direction * 500.0 + from.clone();
+        let ray_params = RayParams {
+            from: from.into(),
+            to: to.into(),
+            payload,
+        };
         crate::TraceAction::Next(ray_params)
     }
 
