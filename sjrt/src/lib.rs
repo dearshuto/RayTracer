@@ -1,6 +1,6 @@
 mod executor;
 mod normal_tracer;
-mod path_tracer_ex;
+mod path_tracer;
 mod sampling_algorithm;
 mod system;
 mod traits;
@@ -10,7 +10,7 @@ pub use executor::{
     RayParams, TraceAction,
 };
 pub use normal_tracer::NormalTracer;
-pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};
+pub use path_tracer::{IHitParams, IKernel, PathTracer, PathTracerEx};
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::ParallelizeSystem;
 pub use traits::EnumerateLightResult;
@@ -29,9 +29,6 @@ pub use camera::Camera;
 mod material_info;
 pub use material_info::Brdf;
 pub use material_info::MaterialInfo;
-
-mod path_tracer;
-pub use path_tracer::PathTracer;
 
 mod property;
 pub use property::Property;

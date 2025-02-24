@@ -1,7 +1,7 @@
 use crate::{
     IConstract, IScene, MaterialInfo, Property,
     executor::ISceneStructure,
-    path_tracer_ex::IHitParams,
+    path_tracer::IHitParams,
     sampling_algorithm::IRelatedLightEnumerator,
     scene::Scene,
     traits::{EnumerateLightResult, IVectorComponent3},
