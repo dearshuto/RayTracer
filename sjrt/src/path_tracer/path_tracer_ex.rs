@@ -10,7 +10,9 @@ use num::Zero;
 
 use super::DefaultKernel;
 
-pub trait IHitParams<TPoint, TColor> {
+pub trait IHitParams<TId, TPoint, TColor> {
+    fn id(&self) -> TId;
+
     fn normal(&self) -> TPoint;
 
     fn position(&self) -> TPoint;
@@ -21,6 +23,8 @@ pub trait IHitParams<TPoint, TColor> {
 }
 
 pub trait IKernel {
+    type MaterialId: Copy;
+    type ReflectionEstimationContext;
     type RondomEngine: IRandomEngine<f32>;
     type Point: Clone
         + IConstract<f32>
@@ -38,6 +42,16 @@ pub trait IKernel {
     fn random_engine(&self) -> Self::RondomEngine;
 
     fn new_point(&self, x: f32, y: f32, z: f32) -> Self::Point;
+
+    fn new_reflection_estimation_context(&self) -> Self::ReflectionEstimationContext;
+
+    fn estimate_next_reflection(
+        &self,
+        id: Self::MaterialId,
+        context: &mut Self::ReflectionEstimationContext,
+        in_direction: &Self::Point,
+        normal: &Self::Point,
+    ) -> Self::Point;
 }
 
 #[derive(sjrt_macro::Immutable)]
@@ -55,8 +69,11 @@ where
     current_depth: u32,
     current_sampling: u32,
 
+    latest_hit_material_id: Option<T::MaterialId>,
     latest_hit_position: T::Point,
     latest_hit_normal: T::Point,
+
+    next_reflection_context: T::ReflectionEstimationContext,
 
     kernel: T,
 
@@ -83,7 +100,7 @@ impl Default for PathTracerEx<HitParams, DefaultKernel> {
 
 impl<THitParams, TKernel> PathTracerEx<THitParams, TKernel>
 where
-    THitParams: IHitParams<TKernel::Point, TKernel::Color>,
+    THitParams: IHitParams<TKernel::MaterialId, TKernel::Point, TKernel::Color>,
     TKernel: IKernel,
 {
     pub fn new(kernel: TKernel) -> Self {
@@ -108,7 +125,7 @@ where
 
 impl<T, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
 where
-    T: IHitParams<TKernel::Point, TKernel::Color>,
+    T: IHitParams<TKernel::MaterialId, TKernel::Point, TKernel::Color>,
     TKernel: IKernel + Clone,
 {
     type PayloadType = Payload<TKernel>;
@@ -123,9 +140,11 @@ where
             value: Self::Color::zero(),
             current_depth: 0,
             current_sampling: 0,
+            latest_hit_material_id: None,
             latest_hit_normal: self.kernel.new_point(0.0, 0.0, 0.0),
             latest_hit_position: self.kernel.new_point(0.0, 0.0, 0.0),
             kernel: self.kernel.clone(),
+            next_reflection_context: self.kernel.new_reflection_estimation_context(),
             hit_history: Vec::default(),
         }
     }
@@ -149,6 +168,7 @@ where
         let new_depth = payload.current_depth + 1;
 
         let mut new_payload = payload
+            .with_latest_hit_material_id(Some(hit_params.id()))
             .with_current_depth(new_depth)
             .with_latest_hit_position(position)
             .with_latest_hit_normal(normal);
@@ -212,24 +232,13 @@ where
             });
         }
 
-        // 最初にヒットしたポイントの情報から次にレイを飛ばす方向を決める
-        // とりあえず適当に乱数を生成して法線の向きに飛ばす
-        let normal = payload.latest_hit_normal.clone();
-        let mut random_engine = payload.kernel.random_engine();
-        let new_direction = loop {
-            let ratio_x = random_engine.generate_range(-1.0..1.0);
-            let ratio_y = random_engine.generate_range(-1.0..1.0);
-            let ratio_z = random_engine.generate_range(-1.0..1.0);
-            let new_normal = self
-                .kernel
-                .new_point(ratio_x, ratio_y, ratio_z)
-                .normalized();
-            if new_normal.dot(&normal) <= 0.0 {
-                continue;
-            }
-
-            break new_normal;
-        };
+        let material_id = payload.latest_hit_material_id.unwrap();
+        let new_direction = self.kernel.estimate_next_reflection(
+            material_id,
+            &mut payload.next_reflection_context,
+            &payload.from,
+            &payload.to,
+        );
 
         let from = payload.latest_hit_position.clone() + new_direction.clone() * 0.001;
         let to = new_direction * 500.0 + from.clone();

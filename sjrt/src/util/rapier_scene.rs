@@ -240,7 +240,12 @@ pub struct HitParams {
     albedo: nalgebra::Vector3<f32>,
 }
 
-impl IHitParams<nalgebra::Vector3<f32>, nalgebra::Vector3<f32>> for HitParams {
+impl IHitParams<u32, nalgebra::Vector3<f32>, nalgebra::Vector3<f32>> for HitParams {
+    fn id(&self) -> u32 {
+        // TODO
+        0
+    }
+
     fn normal(&self) -> nalgebra::Vector3<f32> {
         self.normal
     }
