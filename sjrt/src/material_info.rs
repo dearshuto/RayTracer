@@ -25,3 +25,9 @@ impl MaterialInfo {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub enum MaterialId {
+    Lambert,
+    Glass,
+}

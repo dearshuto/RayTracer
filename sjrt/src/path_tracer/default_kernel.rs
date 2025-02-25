@@ -1,4 +1,4 @@
-use crate::traits::IRandomEngine;
+use crate::{material_info::MaterialId, traits::IRandomEngine};
 
 use super::IKernel;
 
@@ -6,8 +6,7 @@ use super::IKernel;
 pub struct DefaultKernel;
 
 impl IKernel for DefaultKernel {
-    // TODO
-    type MaterialId = u32;
+    type MaterialId = MaterialId;
     type ReflectionEstimationContext = crate::util::RandomEngine;
 
     type RondomEngine = crate::util::RandomEngine;
@@ -33,6 +32,13 @@ impl IKernel for DefaultKernel {
         #[allow(unused)] in_direction: &Self::Point,
         normal: &Self::Point,
     ) -> Self::Point {
+        let ratio = context.generate_range(0.0..1.0);
+        if ratio < 0.5 {
+            // Specular
+        } else {
+            // Diffuse
+        }
+
         loop {
             let ratio_x = context.generate_range(-1.0..1.0);
             let ratio_y = context.generate_range(-1.0..1.0);
