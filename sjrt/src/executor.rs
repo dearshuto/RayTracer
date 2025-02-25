@@ -120,7 +120,6 @@ impl Executor {
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer<Color = Color>,
-        TPayload: 'static + Send,
         TRayTracingPipeline: 'static
             + IRayTracingPipeline<PayloadType = TPayload, Point = TPoint>
             + Clone
@@ -156,7 +155,7 @@ impl Executor {
             let scene_local = scene.clone();
             let ray_tracing_pipeline_local = ray_tracing_pipeline.clone();
             let task = tokio::spawn(async move {
-                let payloads: Vec<_> = chunks
+                let result_tuples: Vec<_> = chunks
                     .into_iter()
                     .map(|ray_info| {
                         let x = ray_info.x;
@@ -167,23 +166,23 @@ impl Executor {
                             ray_tracing_pipeline_local.clone(),
                         );
 
-                        (x, y, payload)
+                        let color = ray_tracing_pipeline_local.write(payload);
+                        (x, y, color.into())
                     })
                     .collect();
-                payloads
+                result_tuples
             });
             tasks.push(task);
         }
 
         // 完了待ち
-        let payload_vecs = futures::future::join_all(tasks).await;
+        let result_vecs = futures::future::join_all(tasks).await;
 
         // 結果を出力
         // MEMO: 出力処理自体も並列化したほうがよいかも
-        for payload_vec in payload_vecs {
-            for (x, y, payload) in payload_vec.unwrap() {
-                let color = ray_tracing_pipeline.write(payload);
-                color_buffer.write(x, y, color.into());
+        for result_tuples in result_vecs {
+            for (x, y, color) in result_tuples.unwrap() {
+                color_buffer.write(x, y, color);
             }
         }
     }
