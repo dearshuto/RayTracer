@@ -3,7 +3,6 @@ use std::ops::{Add, Div, Mul};
 use crate::{
     EntryParams, HitAction, IConstract, IInnerProduct, IRayTracingPipeline, LineSegment, RayParams,
     traits::{IComponentMul, INormalized, IRandomEngine},
-    util::HitParams,
 };
 
 use num::Zero;
@@ -52,6 +51,7 @@ pub trait IKernel {
         + Add<Self::Color, Output = Self::Color>
         + Div<f32, Output = Self::Color>
         + IComponentMul;
+    type HitParams: IHitParams<Self::MaterialId, Self::Point, Self::Color>;
 
     fn new_plugin(&self) -> Self::Plugin;
 
@@ -99,7 +99,7 @@ where
     plugin_payload: <<T as IKernel>::Plugin as IPathTracerPlugin>::Payload,
 }
 
-pub struct PathTracerEx<T, TKernel>
+pub struct PathTracerEx<TKernel>
 where
     TKernel: IKernel,
 {
@@ -107,19 +107,17 @@ where
     sampling_count: u32,
     kernel: TKernel,
     plugin: TKernel::Plugin,
-    _marker: std::marker::PhantomData<T>,
 }
 
-impl Default for PathTracerEx<HitParams, DefaultKernel> {
+impl Default for PathTracerEx<DefaultKernel> {
     fn default() -> Self {
         let kernel = DefaultKernel {};
         Self::new(kernel)
     }
 }
 
-impl<THitParams, TKernel> PathTracerEx<THitParams, TKernel>
+impl<TKernel> PathTracerEx<TKernel>
 where
-    THitParams: IHitParams<TKernel::MaterialId, TKernel::Point, TKernel::Color>,
     TKernel: IKernel,
 {
     pub fn new(kernel: TKernel) -> Self {
@@ -128,7 +126,6 @@ where
             sampling_count: 1,
             plugin: kernel.new_plugin(),
             kernel,
-            _marker: std::marker::PhantomData,
         }
     }
 
@@ -143,18 +140,17 @@ where
     }
 }
 
-impl<T, TKernel> IRayTracingPipeline for PathTracerEx<T, TKernel>
+impl<TKernel> IRayTracingPipeline for PathTracerEx<TKernel>
 where
-    T: IHitParams<TKernel::MaterialId, TKernel::Point, TKernel::Color>,
     TKernel: IKernel + Clone,
 {
     type PayloadType = Payload<TKernel>;
-    type HitParams = T;
+    type HitParams = TKernel::HitParams;
     type Point = TKernel::Point;
     type Color = TKernel::Color;
 
     fn entry(&self, entry_params: &EntryParams<TKernel::Point>) -> Self::PayloadType {
-        Payload {
+        Payload::<TKernel> {
             from: entry_params.from.clone(),
             to: entry_params.to.clone(),
             value: Self::Color::zero(),
