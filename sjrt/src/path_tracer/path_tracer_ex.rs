@@ -1,7 +1,7 @@
 use std::ops::{Add, Div, Mul};
 
 use crate::{
-    EntryParams, HitAction, IConstract, IInnerProduct, IRayTracingPipeline, RayParams,
+    EntryParams, HitAction, IConstract, IInnerProduct, IRayTracingPipeline, LineSegment, RayParams,
     traits::{IComponentMul, INormalized, IRandomEngine},
     util::HitParams,
 };
@@ -9,6 +9,19 @@ use crate::{
 use num::Zero;
 
 use super::DefaultKernel;
+
+pub trait IPathTracerPlugin {
+    type Point;
+    type Payload;
+
+    fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::Payload;
+
+    fn cast_hit_ray(&self) -> impl Iterator<Item = LineSegment<Self::Point>> {
+        [].into_iter()
+    }
+
+    fn react_hit_recursive(&self, #[allow(unused)] payload: &mut Self::Payload) {}
+}
 
 pub trait IHitParams<TId, TPoint, TColor> {
     fn id(&self) -> TId;
@@ -23,6 +36,7 @@ pub trait IHitParams<TId, TPoint, TColor> {
 }
 
 pub trait IKernel {
+    type Plugin: IPathTracerPlugin<Point = Self::Point>;
     type MaterialId: Copy;
     type ReflectionEstimationContext;
     type RondomEngine: IRandomEngine<f32>;
@@ -38,6 +52,8 @@ pub trait IKernel {
         + Add<Self::Color, Output = Self::Color>
         + Div<f32, Output = Self::Color>
         + IComponentMul;
+
+    fn new_plugin(&self) -> Self::Plugin;
 
     fn random_engine(&self) -> Self::RondomEngine;
 
@@ -79,6 +95,8 @@ where
 
     // (emission, albedo)
     hit_history: Vec<(T::Color, T::Color)>,
+
+    plugin_payload: <<T as IKernel>::Plugin as IPathTracerPlugin>::Payload,
 }
 
 pub struct PathTracerEx<T, TKernel>
@@ -88,6 +106,7 @@ where
     depth: u32,
     sampling_count: u32,
     kernel: TKernel,
+    plugin: TKernel::Plugin,
     _marker: std::marker::PhantomData<T>,
 }
 
@@ -107,6 +126,7 @@ where
         Self {
             depth: 1,
             sampling_count: 1,
+            plugin: kernel.new_plugin(),
             kernel,
             _marker: std::marker::PhantomData,
         }
@@ -146,6 +166,7 @@ where
             kernel: self.kernel.clone(),
             next_reflection_context: self.kernel.new_reflection_estimation_context(),
             hit_history: Vec::default(),
+            plugin_payload: self.plugin.entry(entry_params),
         }
     }
 
@@ -155,13 +176,9 @@ where
         hit_params: &Self::HitParams,
     ) -> crate::HitAction<
         Self::PayloadType,
-        impl Iterator<Item = crate::RayParams<Self::PayloadType, Self::Point>>,
+        impl Iterator<Item = LineSegment<Self::Point>>,
         Self::Point,
     > {
-        if false {
-            return HitAction::RayGenerate([].into_iter());
-        }
-
         // 反射回数である深度を増やしつつヒット情報を保持してレイの生成に進む
         let normal = hit_params.normal();
         let position = hit_params.position();
@@ -173,12 +190,30 @@ where
             .with_latest_hit_position(position)
             .with_latest_hit_normal(normal);
 
+        // 衝突点から飛ばすレイ
+        // デフォルトのパストレでは衝突点からレイは飛ばさないので、すべてプラグイン任せ
+        let rays = self.plugin.cast_hit_ray();
+
         // ヒットした点の情報を履歴として保持
         new_payload
             .hit_history
             .push((hit_params.emission(), hit_params.albedo()));
 
-        HitAction::Payload(new_payload)
+        HitAction {
+            payload: new_payload,
+            rays,
+        }
+    }
+
+    fn react_closest_hit_recursive(
+        &self,
+        payload: &mut Self::PayloadType,
+        #[allow(unused)] hit_params: &Self::HitParams,
+    ) -> impl Iterator<Item = LineSegment<Self::Point>> {
+        // プラグイン呼び出し
+        self.plugin.react_hit_recursive(&mut payload.plugin_payload);
+
+        [].into_iter()
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {

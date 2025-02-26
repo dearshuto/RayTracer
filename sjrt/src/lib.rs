@@ -7,7 +7,7 @@ mod traits;
 
 pub use executor::{
     Color, EntryParams, Executor, HitAction, IColorBuffer, IRayTracingPipeline, ISceneStructure,
-    RayParams, TraceAction,
+    LineSegment, RayParams, TraceAction,
 };
 pub use normal_tracer::NormalTracer;
 pub use path_tracer::{IHitParams, IKernel, PathTracer, PathTracerEx};

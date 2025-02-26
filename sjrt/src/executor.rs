@@ -17,12 +17,17 @@ pub enum TraceAction<T, TPoint> {
     Finish(T),
 }
 
-pub enum HitAction<T, U, TPoint>
+pub struct LineSegment<TPoint> {
+    pub from: TPoint,
+    pub to: TPoint,
+}
+
+pub struct HitAction<T, U, TPoint>
 where
-    U: Iterator<Item = RayParams<T, TPoint>>,
+    U: Iterator<Item = LineSegment<TPoint>>,
 {
-    RayGenerate(U),
-    Payload(T),
+    pub payload: T,
+    pub rays: U,
 }
 
 pub struct EntryParams<T> {
@@ -57,11 +62,15 @@ pub trait IRayTracingPipeline {
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<
-        Self::PayloadType,
-        impl Iterator<Item = RayParams<Self::PayloadType, Self::Point>>,
-        Self::Point,
-    >;
+    ) -> HitAction<Self::PayloadType, impl Iterator<Item = LineSegment<Self::Point>>, Self::Point>;
+
+    fn react_closest_hit_recursive(
+        &self,
+        #[allow(unused)] payload: &mut Self::PayloadType,
+        #[allow(unused)] hit_params: &Self::HitParams,
+    ) -> impl Iterator<Item = LineSegment<Self::Point>> {
+        [].into_iter()
+    }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
 
@@ -223,13 +232,24 @@ impl Executor {
             let new_payload = match cast_result {
                 // 衝突した
                 Some(cast_result) => {
-                    match ray_tracing_pipeline.react_closest_hit(ray_params.payload, &cast_result) {
-                        HitAction::RayGenerate(_rays) => {
-                            todo!()
-                        }
-                        HitAction::Payload(payload) => payload,
+                    let params =
+                        ray_tracing_pipeline.react_closest_hit(ray_params.payload, &cast_result);
+                    let mut payload = params.payload;
+
+                    // 追加でレイの生成を要求されたら全て処理していく
+                    let mut extra_rays: Vec<_> = params.rays.collect();
+                    while let Some(ray) = extra_rays.pop() {
+                        let Some(hit_params) = scene.cast(&ray.from, &ray.to) else {
+                            continue;
+                        };
+                        let recursive_rays = ray_tracing_pipeline
+                            .react_closest_hit_recursive(&mut payload, &hit_params);
+                        extra_rays.append(&mut recursive_rays.collect());
                     }
+
+                    payload
                 }
+
                 // 衝突しなかった
                 None => ray_tracing_pipeline.react_hit_miss(ray_params.payload),
             };
@@ -292,11 +312,8 @@ where
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<
-        Self::PayloadType,
-        impl Iterator<Item = RayParams<Self::PayloadType, Self::Point>>,
-        Self::Point,
-    > {
+    ) -> HitAction<Self::PayloadType, impl Iterator<Item = LineSegment<Self::Point>>, Self::Point>
+    {
         self.pipeline.react_closest_hit(payload, hit_params)
     }
 
@@ -344,11 +361,8 @@ where
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> HitAction<
-        Self::PayloadType,
-        impl Iterator<Item = RayParams<Self::PayloadType, Self::Point>>,
-        Self::Point,
-    > {
+    ) -> HitAction<Self::PayloadType, impl Iterator<Item = LineSegment<Self::Point>>, Self::Point>
+    {
         self.as_ref().react_closest_hit(payload, hit_params)
     }
 
