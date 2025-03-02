@@ -16,7 +16,9 @@ pub use system::ParallelizeSystem;
 pub use traits::EnumerateLightResult;
 pub use traits::IBuffer;
 pub use traits::IRenderer;
-pub use traits::{IConstract, IInnerProduct, INorm, IOuterProduct, IScene};
+pub use traits::{
+    IConstract, IInnerProduct, INorm, IOuterProduct, IScene, IUniHemisphereUniformDistribution,
+};
 
 mod bidirectional_reflectance_distribution_function;
 pub use bidirectional_reflectance_distribution_function::IBidirectionalReflectanceDistributionFunction;
