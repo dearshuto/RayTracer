@@ -90,3 +90,11 @@ where
 {
     fn generate_range(&mut self, range: Range<TFloat>) -> TFloat;
 }
+
+/// 半径 1 の半球面上の点を一様にサンプリングしたベクトルを生成するトレイト
+pub trait IUniHemisphereUniformDistribution {
+    type FieldType: num::Float;
+    type Vector: IConstract<Self::FieldType>;
+
+    fn sample(&mut self) -> Self::Vector;
+}
