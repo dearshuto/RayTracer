@@ -1,4 +1,4 @@
-use crate::traits::IRandomEngine;
+use crate::{traits::IRandomEngine, util::HitParams};
 
 use super::{IKernel, path_tracer_ex::IPathTracerPlugin};
 
@@ -14,6 +14,7 @@ impl IKernel for DefaultKernel {
     type RondomEngine = crate::util::RandomEngine;
     type Point = nalgebra::Vector3<f32>;
     type Color = nalgebra::Vector3<f32>;
+    type HitParams = HitParams;
 
     fn new_plugin(&self) -> Self::Plugin {
         PassThroughPlugin {
