@@ -4,8 +4,10 @@ use std::sync::Arc;
 async fn main() {
     let scene_data = sjrt::scene::Scene::box_point_light();
     let scene = Arc::new(sjrt::util::RapierScene::new_from_scene(&scene_data));
+
+    let nee = sjrt::NextEventEstimationEx::default();
     let pipeline = Arc::new(
-        sjrt::PathTracerEx::default()
+        sjrt::PathTracerEx::default_with(nee)
             .with_depth(4)
             .with_sampling_count(64),
     );
