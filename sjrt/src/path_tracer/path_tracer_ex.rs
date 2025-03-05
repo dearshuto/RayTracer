@@ -1,7 +1,7 @@
 use std::ops::{Add, Div, Mul};
 
 use crate::{
-    EntryParams, HitAction, IConstract, IInnerProduct, IRayTracingPipeline, LineSegment, RayParams,
+    EntryParams, IConstract, IInnerProduct, IRayTracingPipeline, RayParams,
     traits::{IComponentMul, INormalized, IRandomEngine},
 };
 
@@ -14,12 +14,6 @@ pub trait IPathTracerPlugin {
     type Payload;
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::Payload;
-
-    fn cast_hit_ray(&self) -> impl Iterator<Item = LineSegment<Self::Point>> {
-        [].into_iter()
-    }
-
-    fn react_hit_recursive(&self, #[allow(unused)] payload: &mut Self::Payload) {}
 }
 
 pub trait IHitParams<TId, TPoint, TColor> {
@@ -78,7 +72,6 @@ where
     // 最初にレイを飛ばしたときの始点と終点
     from: T::Point,
     to: T::Point,
-
     // 蓄積した色
     value: T::Color,
 
@@ -170,11 +163,8 @@ where
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> crate::HitAction<
-        Self::PayloadType,
-        impl Iterator<Item = LineSegment<Self::Point>>,
-        Self::Point,
-    > {
+        _func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>, // 現状は未使用だがプラグインに渡す予定
+    ) -> Self::PayloadType {
         // 反射回数である深度を増やしつつヒット情報を保持してレイの生成に進む
         let normal = hit_params.normal();
         let position = hit_params.position();
@@ -186,30 +176,12 @@ where
             .with_latest_hit_position(position)
             .with_latest_hit_normal(normal);
 
-        // 衝突点から飛ばすレイ
-        // デフォルトのパストレでは衝突点からレイは飛ばさないので、すべてプラグイン任せ
-        let rays = self.plugin.cast_hit_ray();
-
         // ヒットした点の情報を履歴として保持
         new_payload
             .hit_history
             .push((hit_params.emission(), hit_params.albedo()));
 
-        HitAction {
-            payload: new_payload,
-            rays,
-        }
-    }
-
-    fn react_closest_hit_recursive(
-        &self,
-        payload: &mut Self::PayloadType,
-        #[allow(unused)] hit_params: &Self::HitParams,
-    ) -> impl Iterator<Item = LineSegment<Self::Point>> {
-        // プラグイン呼び出し
-        self.plugin.react_hit_recursive(&mut payload.plugin_payload);
-
-        [].into_iter()
+        new_payload
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {

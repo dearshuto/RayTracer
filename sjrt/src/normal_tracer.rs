@@ -1,6 +1,4 @@
-use crate::{
-    HitAction, IHitParams, IRayTracingPipeline, LineSegment, TraceAction, util::HitParams,
-};
+use crate::{IHitParams, IRayTracingPipeline, TraceAction, util::HitParams};
 
 #[derive(sjrt_macro::Immutable)]
 pub struct Payload {
@@ -27,15 +25,9 @@ impl IRayTracingPipeline for NormalTracer {
         &self,
         payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-    ) -> crate::HitAction<
-        Self::PayloadType,
-        impl Iterator<Item = LineSegment<Self::Point>>,
-        Self::Point,
-    > {
-        HitAction {
-            payload: payload.with_normal(hit_params.normal()),
-            rays: [].into_iter(),
-        }
+        _func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
+    ) -> Self::PayloadType {
+        payload.with_normal(hit_params.normal())
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
