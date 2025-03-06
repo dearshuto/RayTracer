@@ -1,4 +1,6 @@
-use crate::{traits::IRandomEngine, util::HitParams};
+use crate::util::HitParams;
+
+use crate::IUniHemisphereUniformDistribution;
 
 use super::IKernel;
 
@@ -8,7 +10,7 @@ pub struct DefaultKernel;
 impl IKernel for DefaultKernel {
     // TODO
     type MaterialId = u32;
-    type ReflectionEstimationContext = crate::util::RandomEngine;
+    type ReflectionEstimationContext = crate::util::UnitHemisphereUniformDistribution;
 
     type RondomEngine = crate::util::RandomEngine;
     type Point = nalgebra::Vector3<f32>;
@@ -24,7 +26,7 @@ impl IKernel for DefaultKernel {
     }
 
     fn new_reflection_estimation_context(&self) -> Self::ReflectionEstimationContext {
-        crate::util::RandomEngine::new()
+        crate::util::UnitHemisphereUniformDistribution::new()
     }
 
     fn estimate_next_reflection(
@@ -34,16 +36,18 @@ impl IKernel for DefaultKernel {
         #[allow(unused)] in_direction: &Self::Point,
         normal: &Self::Point,
     ) -> Self::Point {
-        loop {
-            let ratio_x = context.generate_range(-1.0..1.0);
-            let ratio_y = context.generate_range(-1.0..1.0);
-            let ratio_z = context.generate_range(-1.0..1.0);
-            let new_normal = nalgebra::Vector3::new(ratio_x, ratio_y, ratio_z).normalize();
-            if new_normal.dot(&normal) <= 0.0 {
-                continue;
-            }
+        // 反射する点のワールド空間と半球の方向を一致させるための回転を算出
+        // Z 軸が反射点の法線と一致するようにして計算している
+        let angle = normal.dot(&nalgebra::Vector3::z()).acos();
+        let axisangle = nalgebra::Vector3::z() * angle;
+        let rotation = nalgebra::UnitQuaternion::new(axisangle);
 
-            break new_normal;
-        }
+        // ローカル座標で半球面上の点をサンプリング
+        let direction = context.sample();
+
+        // サンプリングした頂点をワールド空間に変換
+        let world_direction = rotation * direction;
+
+        world_direction
     }
 }
