@@ -44,6 +44,8 @@ pub trait IHitParams<TId, TPoint, TColor> {
     fn emission(&self) -> TColor;
 
     fn albedo(&self) -> TColor;
+
+    fn specular(&self) -> f32;
 }
 
 pub trait IKernel {

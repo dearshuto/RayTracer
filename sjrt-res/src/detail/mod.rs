@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use sjrt::scene::{primitive::Primitive, Material, Scene, Sky, Transform};
+use sjrt::scene::{Material, Scene, Sky, Transform, primitive::Primitive};
 
 #[allow(unused)]
 #[derive(Deserialize, Debug, Default)]
@@ -163,6 +163,7 @@ impl Into<Material> for MaterialData {
         Material {
             albedo: nalgebra::Vector3::new(self.albedo.x, self.albedo.y, self.albedo.z),
             emission: nalgebra::Vector3::new(self.emission.x, self.emission.y, self.emission.z),
+            specular: 0.0,
         }
     }
 }

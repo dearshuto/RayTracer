@@ -64,7 +64,8 @@ impl RapierScene {
                     material.albedo.y,
                     material.albedo.z,
                 ),
-                ..std::default::Default::default()
+                specular: material.specular,
+                ..Default::default()
             };
             properties.push(property);
 
@@ -129,6 +130,7 @@ impl IScene for RapierScene {
                 normal,
                 nalgebra::Vector3::new(position[0], position[1], position[2]),
                 *property,
+                property.specular,
             );
             Some(material)
         } else {
@@ -229,6 +231,7 @@ impl ISceneStructure<HitParams, nalgebra::Vector3<f32>> for RapierScene {
                 material_info.property.emission,
             ),
             albedo: material_info.property.albedo,
+            specular: material_info.specular,
         })
     }
 }
@@ -238,6 +241,7 @@ pub struct HitParams {
     position: nalgebra::Vector3<f32>,
     emission: nalgebra::Vector3<f32>,
     albedo: nalgebra::Vector3<f32>,
+    specular: f32,
 }
 
 impl IHitParams<u32, nalgebra::Vector3<f32>, nalgebra::Vector3<f32>> for HitParams {
@@ -260,5 +264,9 @@ impl IHitParams<u32, nalgebra::Vector3<f32>, nalgebra::Vector3<f32>> for HitPara
 
     fn albedo(&self) -> nalgebra::Vector3<f32> {
         self.albedo
+    }
+
+    fn specular(&self) -> f32 {
+        self.specular
     }
 }

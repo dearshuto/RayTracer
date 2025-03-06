@@ -1,5 +1,5 @@
 use clap::Parser;
-use sjrt::scene::{primitive::SphereData, Material};
+use sjrt::scene::{Material, primitive::SphereData};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -27,10 +27,12 @@ pub fn main() {
             Material {
                 albedo: nalgebra::Vector3::new(0.1, 0.2, 1.0),
                 emission: nalgebra::Vector3::new(0.1, 0.1, 0.1),
+                specular: 0.0,
             },
             Material {
                 albedo: nalgebra::Vector3::new(1.0, 0.2, 0.3),
                 emission: nalgebra::Vector3::new(0.7, 0.7, 0.7),
+                specular: 0.0,
             },
         ],
     };

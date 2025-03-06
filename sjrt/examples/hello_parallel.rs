@@ -46,18 +46,22 @@ async fn main() {
             Material {
                 albedo: nalgebra::Vector3::new(0.1, 0.2, 1.0),
                 emission: nalgebra::Vector3::new(0.1, 0.1, 0.1),
+                specular: 0.0,
             },
             Material {
                 albedo: nalgebra::Vector3::new(1.0, 0.2, 0.3),
                 emission: nalgebra::Vector3::new(0.7, 0.7, 0.7),
+                specular: 0.0,
             },
             Material {
                 albedo: sjrt::Colors::white(),
                 emission: sjrt::Colors::white(),
+                specular: 0.0,
             },
             Material {
                 albedo: sjrt::Colors::white(),
                 emission: sjrt::Colors::white(),
+                specular: 0.0,
             },
         ],
     };

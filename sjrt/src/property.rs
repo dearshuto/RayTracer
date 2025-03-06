@@ -1,4 +1,4 @@
-use crate::{traits::IVectorComponent3, Brdf, IConstract};
+use crate::{Brdf, IConstract, traits::IVectorComponent3};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Property<TFloat, TVectorComponent>
@@ -12,6 +12,7 @@ where
     pub diffuse_brdf: Brdf,
     pub specular_brdf: Brdf,
     pub albedo: TVectorComponent,
+    pub specular: f32,
 }
 
 impl<TFloat, TVectorComponent> Default for Property<TFloat, TVectorComponent>
@@ -31,6 +32,7 @@ where
                 TFloat::from(1.0).unwrap(),
                 TFloat::from(1.0).unwrap(),
             ),
+            specular: 0.0,
         }
     }
 }

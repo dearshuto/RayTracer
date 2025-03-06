@@ -56,16 +56,19 @@ impl Scene {
             Material {
                 albedo: Colors::white(),
                 emission: Colors::white(),
+                specular: 0.0,
             },
             // ボックス
             Material {
                 albedo: Colors::white(),
                 emission: Colors::black(),
+                specular: 0.0,
             },
             // 床
             Material {
                 albedo: Colors::white(),
                 emission: Colors::black(),
+                specular: 0.0,
             },
         ];
 
@@ -95,6 +98,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::white(),
                 emission: Colors::black(),
+                specular: 0.0,
             });
         }
 
@@ -112,6 +116,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::white(),
                 emission: nalgebra::Vector3::new(30000.0, 30000.0, 30000.0),
+                specular: 0.0,
             });
         }
 
@@ -133,6 +138,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::white(),
                 emission: Colors::black(),
+                specular: 0.0,
             });
         }
 
@@ -149,6 +155,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::white(),
                 emission: Colors::black(),
+                specular: 0.0,
             });
         }
 
@@ -165,6 +172,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::green(),
                 emission: Colors::black(),
+                specular: 0.0,
             });
         }
 
@@ -181,6 +189,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::red(),
                 emission: Colors::black(),
+                specular: 0.0,
             });
         }
 
@@ -205,6 +214,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::white(),
                 emission: nalgebra::Vector3::zeros(),
+                specular: 0.0,
             });
         }
 
@@ -229,6 +239,7 @@ impl Scene {
             materials.push(Material {
                 albedo: Colors::white(),
                 emission: nalgebra::Vector3::zeros(),
+                specular: 0.0,
             });
         }
 
@@ -278,4 +289,8 @@ impl Default for Transform {
 pub struct Material {
     pub albedo: nalgebra::Vector3<f32>,
     pub emission: nalgebra::Vector3<f32>,
+
+    // 拡散反射と鏡面反射の比率
+    // 1.0 なら完全鏡面反射
+    pub specular: f32,
 }

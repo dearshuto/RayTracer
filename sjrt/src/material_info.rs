@@ -10,6 +10,7 @@ pub struct MaterialInfo {
     pub normal: nalgebra::Vector3<f32>,
     pub position: nalgebra::Vector3<f32>,
     pub property: Property<f32, nalgebra::Vector3<f32>>,
+    pub specular: f32,
 }
 
 impl MaterialInfo {
@@ -17,11 +18,13 @@ impl MaterialInfo {
         normal: nalgebra::Vector3<f32>,
         position: nalgebra::Vector3<f32>,
         property: Property<f32, nalgebra::Vector3<f32>>,
+        specular: f32,
     ) -> Self {
         Self {
             normal,
             position,
             property,
+            specular,
         }
     }
 }
