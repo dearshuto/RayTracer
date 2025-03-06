@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap();
         sjrt::util::RapierScene::new_from_scene(&scene)
     } else {
-        sjrt::util::RapierScene::new()
+        sjrt::util::RapierScene::new_from_scene(&sjrt::scene::Scene::box_point_light())
     };
 
     if args.port != -1 {
@@ -96,13 +96,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         let width = args.width as u32;
         let height = args.height as u32;
-        let renderer = sjrt::PathTracerEx::default()
+        let nee = sjrt::NextEventEstimationEx::default();
+        let renderer = sjrt::PathTracerEx::default_with(nee)
             .with_depth(args.depth_max as u32)
             .with_sampling_count(args.sampling_count as u32);
         let rays = sjrt::Camera::builder()
-            .with_field_of_view(std::f32::consts::PI / 5.5)
-            .with_position(&nalgebra::Vector3::new(4.8, 4.73, -8.0))
-            .with_look_at(&nalgebra::Vector3::new(4.8, 4.73, 0.0))
+            .with_position(&nalgebra::Vector3::new(0.0, 7.0, 20.0))
+            .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
+            .with_field_of_view(std::f32::consts::PI / 4.0)
             .build()
             .calculate_ray_direction_range(width, height, 0..width, 0..height);
 
