@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul};
+use std::ops::{Add, Div, Mul, Sub};
 
 use crate::{
     EntryParams, IConstract, IInnerProduct, IRayTracingPipeline, RayParams,
@@ -9,11 +9,29 @@ use num::Zero;
 
 use super::DefaultKernel;
 
+pub struct SamplingData<TColor> {
+    pub emission: TColor,
+    pub albedo: TColor,
+}
+
 pub trait IPathTracerPlugin {
+    type MaterialId;
     type Point;
+    type Color;
+    type HitParams: IHitParams<Self::MaterialId, Self::Point, Self::Color>;
     type Payload;
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::Payload;
+
+    fn react_closest_hit(
+        &self,
+        depth: u32,
+        payload: &Self::Payload,
+        hit_params: &Self::HitParams,
+        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
+    ) -> SamplingData<Self::Color>;
+
+    fn react_hit_miss(&self, payload: &Self::Payload) -> SamplingData<Self::Color>;
 }
 
 pub trait IHitParams<TId, TPoint, TColor> {
@@ -29,7 +47,6 @@ pub trait IHitParams<TId, TPoint, TColor> {
 }
 
 pub trait IKernel {
-    type Plugin: IPathTracerPlugin<Point = Self::Point>;
     type MaterialId: Copy;
     type ReflectionEstimationContext;
     type RondomEngine: IRandomEngine<f32>;
@@ -38,16 +55,19 @@ pub trait IKernel {
         + INormalized
         + IInnerProduct<f32>
         + Mul<f32, Output = Self::Point>
-        + Add<Self::Point, Output = Self::Point>;
+        + Add<Self::Point, Output = Self::Point>
+        // Point に引き算を定義しているがあまり直感的ではない気がする
+        // 例えば Vector を関連型に追加して、IKernel に 2 つの Point を渡したら、
+        // Vector を生成するようなインターフェースにしてもいいかも
+        + Sub<Self::Point, Output = Self::Point>;
     type Color: Clone
         + Into<crate::Color>
         + num::Zero
         + Add<Self::Color, Output = Self::Color>
+        + Mul<f32, Output = Self::Color>
         + Div<f32, Output = Self::Color>
         + IComponentMul;
     type HitParams: IHitParams<Self::MaterialId, Self::Point, Self::Color>;
-
-    fn new_plugin(&self) -> Self::Plugin;
 
     fn random_engine(&self) -> Self::RondomEngine;
 
@@ -65,7 +85,7 @@ pub trait IKernel {
 }
 
 #[derive(sjrt_macro::Immutable)]
-pub struct Payload<T>
+pub struct Payload<T, U>
 where
     T: IKernel,
 {
@@ -87,37 +107,55 @@ where
     kernel: T,
 
     // (emission, albedo)
-    hit_history: Vec<(T::Color, T::Color)>,
+    hit_history: Vec<SamplingData<T::Color>>,
 
-    plugin_payload: <<T as IKernel>::Plugin as IPathTracerPlugin>::Payload,
+    plugin_payload: U,
 }
 
-pub struct PathTracerEx<TKernel>
+pub struct PathTracerEx<TKernel, TPlugin>
 where
     TKernel: IKernel,
+    TPlugin: IPathTracerPlugin<Point = TKernel::Point, Color = TKernel::Color>,
 {
     depth: u32,
     sampling_count: u32,
     kernel: TKernel,
-    plugin: TKernel::Plugin,
+    plugin: TPlugin,
 }
 
-impl Default for PathTracerEx<DefaultKernel> {
+impl Default for PathTracerEx<DefaultKernel, SimplePlugin<DefaultKernel>> {
     fn default() -> Self {
         let kernel = DefaultKernel {};
-        Self::new(kernel)
+        let plugin = SimplePlugin::new();
+        Self::new(kernel, plugin)
     }
 }
 
-impl<TKernel> PathTracerEx<TKernel>
+impl<TPlugin> PathTracerEx<DefaultKernel, TPlugin>
+where
+    TPlugin: IPathTracerPlugin<
+            MaterialId = <DefaultKernel as IKernel>::MaterialId,
+            Point = <DefaultKernel as IKernel>::Point,
+            Color = <DefaultKernel as IKernel>::Color,
+            HitParams = <DefaultKernel as IKernel>::HitParams,
+        >,
+{
+    pub fn default_with(plugin: TPlugin) -> Self {
+        let kernel = DefaultKernel {};
+        Self::new(kernel, plugin)
+    }
+}
+
+impl<TKernel, TPlugin> PathTracerEx<TKernel, TPlugin>
 where
     TKernel: IKernel,
+    TPlugin: IPathTracerPlugin<Point = TKernel::Point, Color = TKernel::Color>,
 {
-    pub fn new(kernel: TKernel) -> Self {
+    pub fn new(kernel: TKernel, plugin: TPlugin) -> Self {
         Self {
             depth: 1,
             sampling_count: 1,
-            plugin: kernel.new_plugin(),
+            plugin,
             kernel,
         }
     }
@@ -133,17 +171,22 @@ where
     }
 }
 
-impl<TKernel> IRayTracingPipeline for PathTracerEx<TKernel>
+impl<TKernel, TPlugin> IRayTracingPipeline for PathTracerEx<TKernel, TPlugin>
 where
     TKernel: IKernel + Clone,
+    TPlugin: IPathTracerPlugin<
+            Point = TKernel::Point,
+            Color = TKernel::Color,
+            HitParams = TKernel::HitParams,
+        >,
 {
-    type PayloadType = Payload<TKernel>;
+    type PayloadType = Payload<TKernel, TPlugin::Payload>;
     type HitParams = TKernel::HitParams;
     type Point = TKernel::Point;
     type Color = TKernel::Color;
 
     fn entry(&self, entry_params: &EntryParams<TKernel::Point>) -> Self::PayloadType {
-        Payload::<TKernel> {
+        Payload {
             from: entry_params.from.clone(),
             to: entry_params.to.clone(),
             value: Self::Color::zero(),
@@ -161,41 +204,38 @@ where
 
     fn react_closest_hit(
         &self,
-        payload: Self::PayloadType,
+        mut payload: Self::PayloadType,
         hit_params: &Self::HitParams,
-        _func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>, // 現状は未使用だがプラグインに渡す予定
+        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>, // 現状は未使用だがプラグインに渡す予定
     ) -> Self::PayloadType {
+        let sampling_data = self.plugin.react_closest_hit(
+            payload.current_depth,
+            &payload.plugin_payload,
+            hit_params,
+            func,
+        );
+        payload.hit_history.push(sampling_data);
+
         // 反射回数である深度を増やしつつヒット情報を保持してレイの生成に進む
         let normal = hit_params.normal();
         let position = hit_params.position();
         let new_depth = payload.current_depth + 1;
 
-        let mut new_payload = payload
+        payload
             .with_latest_hit_material_id(Some(hit_params.id()))
             .with_current_depth(new_depth)
             .with_latest_hit_position(position)
-            .with_latest_hit_normal(normal);
-
-        // ヒットした点の情報を履歴として保持
-        new_payload
-            .hit_history
-            .push((hit_params.emission(), hit_params.albedo()));
-
-        new_payload
+            .with_latest_hit_normal(normal)
     }
 
-    fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
+    fn react_hit_miss(&self, mut payload: Self::PayloadType) -> Self::PayloadType {
+        // プラグイン呼び出し
+        let sampling_data = self.plugin.react_hit_miss(&payload.plugin_payload);
+        payload.hit_history.push(sampling_data);
+
         // ミスしたらトレースを完了させたいので反射回数を発散させる
         let next_depth = u32::MAX;
-
-        // どこにもヒットしなかったので背景色を返す
-        let mut new_payload = payload.with_current_depth(next_depth);
-
-        new_payload
-            .hit_history
-            .push((Self::Color::zero(), Self::Color::zero()));
-
-        new_payload
+        payload.with_current_depth(next_depth)
     }
 
     fn trace(
@@ -213,7 +253,9 @@ where
 
             // 今回のサンプリングの結果を保持
             let mut color = Self::Color::zero();
-            while let Some((emission, albedo)) = payload.hit_history.pop() {
+            while let Some(sampling_data) = payload.hit_history.pop() {
+                let emission = sampling_data.emission;
+                let albedo = sampling_data.albedo;
                 color = albedo.multiply(&color);
                 color = color + emission;
             }
@@ -251,5 +293,54 @@ where
 
     fn write(&self, payload: Self::PayloadType) -> Self::Color {
         payload.value
+    }
+}
+
+pub struct SimplePlugin<T> {
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<TKernel> SimplePlugin<TKernel> {
+    pub fn new() -> Self {
+        Self {
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<TKernel> IPathTracerPlugin for SimplePlugin<TKernel>
+where
+    TKernel: IKernel + Clone,
+{
+    type MaterialId = TKernel::MaterialId;
+    type Point = TKernel::Point;
+    type Color = TKernel::Color;
+    type HitParams = TKernel::HitParams;
+    type Payload = ();
+
+    fn entry(&self, _entry_params: &EntryParams<Self::Point>) -> Self::Payload {
+        ()
+    }
+
+    fn react_closest_hit(
+        &self,
+        _depth: u32,
+        _payload: &Self::Payload,
+        hit_params: &Self::HitParams,
+        _func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
+    ) -> SamplingData<Self::Color> {
+        // ヒットした点の情報をシンプルに返す
+        SamplingData {
+            emission: hit_params.emission(),
+            albedo: hit_params.albedo(),
+        }
+    }
+
+    fn react_hit_miss(&self, _payload: &Self::Payload) -> SamplingData<Self::Color> {
+        // どこにもヒットしなかったので背景色を返す
+        SamplingData {
+            emission: Self::Color::zero(),
+            albedo: Self::Color::zero(),
+        }
     }
 }

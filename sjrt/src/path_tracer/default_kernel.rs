@@ -1,12 +1,11 @@
 use crate::{traits::IRandomEngine, util::HitParams};
 
-use super::{IKernel, path_tracer_ex::IPathTracerPlugin};
+use super::IKernel;
 
 #[derive(Clone)]
 pub struct DefaultKernel;
 
 impl IKernel for DefaultKernel {
-    type Plugin = PassThroughPlugin<Self::Point>;
     // TODO
     type MaterialId = u32;
     type ReflectionEstimationContext = crate::util::RandomEngine;
@@ -15,12 +14,6 @@ impl IKernel for DefaultKernel {
     type Point = nalgebra::Vector3<f32>;
     type Color = nalgebra::Vector3<f32>;
     type HitParams = HitParams;
-
-    fn new_plugin(&self) -> Self::Plugin {
-        PassThroughPlugin {
-            _marker: std::marker::PhantomData,
-        }
-    }
 
     fn random_engine(&self) -> Self::RondomEngine {
         crate::util::RandomEngine::new()
@@ -52,18 +45,5 @@ impl IKernel for DefaultKernel {
 
             break new_normal;
         }
-    }
-}
-
-pub struct PassThroughPlugin<T> {
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<TPoint> IPathTracerPlugin for PassThroughPlugin<TPoint> {
-    type Point = TPoint;
-    type Payload = ();
-
-    fn entry(&self, _entry_params: &crate::EntryParams<Self::Point>) -> Self::Payload {
-        ()
     }
 }
