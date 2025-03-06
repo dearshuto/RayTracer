@@ -10,6 +10,11 @@ pub use executor::{
     TraceAction,
 };
 pub use normal_tracer::NormalTracer;
+
+// 旧実装と命名が衝突しないように Ex の接尾語をつけておく
+// 将来的に Ex を取り除いて本実装とする
+pub use path_tracer::NextEventEstimation as NextEventEstimationEx;
+
 pub use path_tracer::{IHitParams, IKernel, PathTracer, PathTracerEx};
 pub use sampling_algorithm::{DefaultSamplingEstimation, NextEventEstimation};
 pub use system::ParallelizeSystem;
