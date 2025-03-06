@@ -54,7 +54,7 @@ pub fn immutable_device(input: TokenStream) -> TokenStream {
                 .parse()
                 .unwrap();
         update_fields.push(quote! {
-            pub fn #generated_method_name<TUpdater: Fn(#ty) -> #ty>(self, updater: TUpdater) -> Self {
+            pub fn #generated_method_name<TUpdater: FnOnce(#ty) -> #ty>(self, updater: TUpdater) -> Self {
                 Self {
                     #name_info: updater(self.#name_info),
                     #(#init_fields)*

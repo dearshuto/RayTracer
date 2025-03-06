@@ -7,3 +7,8 @@ pub use default_kernel::DefaultKernel;
 pub use next_event_estimation::NextEventEstimation;
 pub use path_tracer::PathTracer;
 pub use path_tracer_ex::{IHitParams, IKernel, PathTracerEx};
+
+struct SamplingData<TColor> {
+    pub emission: TColor,
+    pub albedo: TColor,
+}
