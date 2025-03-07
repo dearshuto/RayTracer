@@ -92,6 +92,27 @@ impl RapierScene {
         let cornell_box = Scene::create_cornell_box();
         Self::new_from_scene(&cornell_box)
     }
+
+    fn cast(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<HitParams> {
+        let Some(material_info) = self.cast_ray(from, to) else {
+            return None;
+        };
+
+        Some(HitParams {
+            normal: material_info.normal,
+            position: material_info.position,
+            emission: nalgebra::Vector3::new(
+                material_info.property.emission,
+                material_info.property.emission,
+                material_info.property.emission,
+            ),
+            albedo: material_info.property.albedo,
+        })
+    }
 }
 
 impl IScene for RapierScene {
@@ -216,20 +237,18 @@ impl ISceneStructure<HitParams, nalgebra::Vector3<f32>> for RapierScene {
         from: &nalgebra::Vector3<f32>,
         to: &nalgebra::Vector3<f32>,
     ) -> Option<HitParams> {
-        let Some(material_info) = self.cast_ray(from, to) else {
-            return None;
-        };
+        self.cast(from, to)
+    }
+}
 
-        Some(HitParams {
-            normal: material_info.normal,
-            position: material_info.position,
-            emission: nalgebra::Vector3::new(
-                material_info.property.emission,
-                material_info.property.emission,
-                material_info.property.emission,
-            ),
-            albedo: material_info.property.albedo,
-        })
+impl ISceneStructure<HitParams, nalgebra::Vector3<f32>> for &RapierScene {
+    fn cast(
+        &self,
+        from: &nalgebra::Vector3<f32>,
+        to: &nalgebra::Vector3<f32>,
+    ) -> Option<HitParams> {
+        let deref: &RapierScene = *self;
+        deref.cast(from, to)
     }
 }
 

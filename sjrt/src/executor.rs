@@ -37,6 +37,7 @@ pub trait ISceneStructure<THitData, TPoint> {
 pub trait IRayTracingPipeline {
     type PayloadType;
     type HitParams;
+
     type Point: Clone
         + IConstract<f32>
         + Add<Self::Point, Output = Self::Point>
@@ -45,12 +46,14 @@ pub trait IRayTracingPipeline {
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::PayloadType;
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         payload: Self::PayloadType,
-        hit_params: &Self::HitParams,
-        tracer: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> Self::PayloadType;
+        hit_params: Self::HitParams,
+        scene_structure: TSceneStructure,
+    ) -> Self::PayloadType
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>;
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType;
 
@@ -72,22 +75,24 @@ pub trait IColorBuffer {
 pub struct Executor;
 
 impl Executor {
-    pub fn execute<TColorBuffer, TRayTracingPipeline, TScene>(
+    pub fn execute<TColorBuffer, TRayTracingPipeline, TSceneStructure>(
         &self,
         mut color_buffer: TColorBuffer,
         rays: impl Iterator<Item = RayInfo<TRayTracingPipeline::Point>>,
-        scene: TScene,
+        scene: TSceneStructure,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) where
         TColorBuffer: IColorBuffer<Color = Color>,
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point>,
+        TSceneStructure:
+            ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point>,
     {
         for ray in rays {
-            let scene_adapter: SceneAdapter<'_, TScene, TRayTracingPipeline, _> = SceneAdapter {
-                scene: &scene,
-                _marker: std::marker::PhantomData::default(),
-            };
+            let scene_adapter: SceneAdapter<'_, TSceneStructure, TRayTracingPipeline, _> =
+                SceneAdapter {
+                    scene: &scene,
+                    _marker: std::marker::PhantomData::default(),
+                };
             let pipeline_adapter = PipelineAdapter {
                 pipeline: &ray_tracing_pipeline,
             };
@@ -176,14 +181,15 @@ impl Executor {
         }
     }
 
-    fn execute_impl<TRayTracingPipeline, TScene>(
+    fn execute_impl<TRayTracingPipeline, TSceneStructure>(
         ray: RayInfo<TRayTracingPipeline::Point>,
-        scene: TScene,
+        scene: TSceneStructure,
         ray_tracing_pipeline: TRayTracingPipeline,
     ) -> TRayTracingPipeline::PayloadType
     where
         TRayTracingPipeline: IRayTracingPipeline,
-        TScene: ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point>,
+        TSceneStructure:
+            ISceneStructure<TRayTracingPipeline::HitParams, TRayTracingPipeline::Point> + Clone,
     {
         let x = ray.x;
         let y = ray.y;
@@ -213,8 +219,8 @@ impl Executor {
                 // 衝突した
                 Some(cast_result) => ray_tracing_pipeline.react_closest_hit(
                     ray_params.payload,
-                    &cast_result,
-                    |from, to| scene.cast(from, to),
+                    cast_result,
+                    scene.clone(),
                 ),
 
                 // 衝突しなかった
@@ -242,6 +248,19 @@ where
 {
     scene: &'a TScene,
     _marker: std::marker::PhantomData<(TPipeline, TVector)>,
+}
+
+impl<'a, TScene, TPipeline, TVectotr> Clone for SceneAdapter<'a, TScene, TPipeline, TVectotr>
+where
+    TScene: ISceneStructure<TPipeline::HitParams, TVectotr>,
+    TPipeline: IRayTracingPipeline,
+{
+    fn clone(&self) -> Self {
+        Self {
+            scene: self.scene,
+            _marker: std::marker::PhantomData,
+        }
+    }
 }
 
 impl<'a, TScene, TPipeline, TVectotr> ISceneStructure<TPipeline::HitParams, TVectotr>
@@ -275,13 +294,17 @@ where
         self.pipeline.entry(entry_params)
     }
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         payload: Self::PayloadType,
-        hit_params: &Self::HitParams,
-        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> Self::PayloadType {
-        self.pipeline.react_closest_hit(payload, hit_params, func)
+        hit_params: Self::HitParams,
+        scene_structure: TSceneStructure,
+    ) -> Self::PayloadType
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
+    {
+        self.pipeline
+            .react_closest_hit(payload, hit_params, scene_structure)
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
@@ -324,13 +347,17 @@ where
         self.as_ref().entry(entry_params)
     }
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         payload: Self::PayloadType,
-        hit_params: &Self::HitParams,
-        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> Self::PayloadType {
-        self.as_ref().react_closest_hit(payload, hit_params, func)
+        hit_params: Self::HitParams,
+        scene_structure: TSceneStructure,
+    ) -> Self::PayloadType
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
+    {
+        self.as_ref()
+            .react_closest_hit(payload, hit_params, scene_structure)
     }
 
     fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
