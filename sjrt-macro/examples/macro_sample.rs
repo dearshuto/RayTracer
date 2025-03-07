@@ -11,5 +11,8 @@ fn main() {
     let data = data.with_value(10);
     println!("{:?}", data);
 
+    let data = data.update_value(|name| name + 5);
+    println!("{:?}", data);
+
     println!("{:?}", data.with_name("Hello World!".to_string()));
 }
