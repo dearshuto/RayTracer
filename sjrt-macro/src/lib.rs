@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, parse_macro_input, DeriveInput};
+use syn::{DeriveInput, ext::IdentExt, parse_macro_input};
 
 #[proc_macro_derive(Immutable)]
 pub fn immutable_device(input: TokenStream) -> TokenStream {
@@ -12,6 +12,7 @@ pub fn immutable_device(input: TokenStream) -> TokenStream {
     };
 
     let mut with_fields = Vec::default();
+    let mut update_fields = Vec::default();
     for (target_index, target_field) in struct_data.fields.iter().enumerate() {
         let mut init_fields = Vec::default();
 
@@ -47,6 +48,19 @@ pub fn immutable_device(input: TokenStream) -> TokenStream {
                 }
             }
         });
+
+        let generated_method_name: proc_macro2::TokenStream =
+            format!("update_{}", name_info.unraw().to_string())
+                .parse()
+                .unwrap();
+        update_fields.push(quote! {
+            pub fn #generated_method_name<TUpdater: Fn(#ty) -> #ty>(self, updater: TUpdater) -> Self {
+                Self {
+                    #name_info: updater(self.#name_info),
+                    #(#init_fields)*
+                }
+                }
+        });
     }
 
     // 構造体名
@@ -58,6 +72,7 @@ pub fn immutable_device(input: TokenStream) -> TokenStream {
     let expanded = quote! {
     impl #impl_generics #struct_name #impl_generics #where_clause  {
         #(#with_fields)*
+    #(#update_fields)*
     }
      };
 
