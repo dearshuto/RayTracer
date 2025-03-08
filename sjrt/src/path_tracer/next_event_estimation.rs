@@ -1,4 +1,4 @@
-use crate::{IInnerProduct, traits::INormalized};
+use crate::{IInnerProduct, ISceneStructure, traits::INormalized};
 
 use super::{
     DefaultKernel, IHitParams, IKernel,
@@ -45,13 +45,16 @@ where
         }
     }
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         depth: u32,
         payload: &Self::Payload,
         hit_params: &Self::HitParams,
-        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> super::path_tracer_ex::SamplingData<Self::Color> {
+        scene_structure: TSceneStructure,
+    ) -> super::path_tracer_ex::SamplingData<Self::Color>
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
+    {
         // レイが光源に当たった場合は特殊処理
         if !hit_params.emission().is_zero() {
             // いきなり光源に当たった場合は光源の情報を返し、反射の過程で光源に当たった場合はなにも寄与がないものとする
@@ -89,7 +92,9 @@ where
         // ヒットした点から光源までレイを生成
 
         let offset = light_direction.normalized() * 0.001;
-        let Some(shadow_ray_hit_params) = func(&(position + offset), light_position) else {
+        let Some(shadow_ray_hit_params) =
+            scene_structure.cast(&(position + offset), light_position)
+        else {
             return SamplingData {
                 emission: Self::Color::zero(),
                 albedo: Self::Color::zero(),

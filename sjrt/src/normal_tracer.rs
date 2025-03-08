@@ -1,4 +1,4 @@
-use crate::{IHitParams, IRayTracingPipeline, TraceAction, util::HitParams};
+use crate::{IHitParams, IRayTracingPipeline, ISceneStructure, TraceAction, util::HitParams};
 
 #[derive(sjrt_macro::Immutable)]
 pub struct Payload {
@@ -21,12 +21,15 @@ impl IRayTracingPipeline for NormalTracer {
         }
     }
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         payload: Self::PayloadType,
-        hit_params: &Self::HitParams,
-        _func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> Self::PayloadType {
+        hit_params: Self::HitParams,
+        _scene_structure: TSceneStructure,
+    ) -> Self::PayloadType
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
+    {
         payload.with_normal(hit_params.normal())
     }
 

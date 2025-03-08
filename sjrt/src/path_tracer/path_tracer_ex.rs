@@ -1,7 +1,7 @@
 use std::ops::{Add, Div, Mul, Sub};
 
 use crate::{
-    EntryParams, IConstract, IInnerProduct, IRayTracingPipeline, RayParams,
+    EntryParams, IConstract, IInnerProduct, IRayTracingPipeline, ISceneStructure, RayParams,
     traits::{IComponentMul, INormalized, IRandomEngine},
 };
 
@@ -23,13 +23,15 @@ pub trait IPathTracerPlugin {
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::Payload;
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         depth: u32,
         payload: &Self::Payload,
         hit_params: &Self::HitParams,
-        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> SamplingData<Self::Color>;
+        scene_structure: TSceneStructure,
+    ) -> SamplingData<Self::Color>
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>;
 
     fn react_hit_miss(&self, payload: &Self::Payload) -> SamplingData<Self::Color>;
 }
@@ -202,17 +204,20 @@ where
         }
     }
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         mut payload: Self::PayloadType,
-        hit_params: &Self::HitParams,
-        func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>, // 現状は未使用だがプラグインに渡す予定
-    ) -> Self::PayloadType {
+        hit_params: Self::HitParams,
+        scene_structure: TSceneStructure,
+    ) -> Self::PayloadType
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
+    {
         let sampling_data = self.plugin.react_closest_hit(
             payload.current_depth,
             &payload.plugin_payload,
-            hit_params,
-            func,
+            &hit_params,
+            scene_structure,
         );
         payload.hit_history.push(sampling_data);
 
@@ -322,13 +327,16 @@ where
         ()
     }
 
-    fn react_closest_hit(
+    fn react_closest_hit<TSceneStructure>(
         &self,
         _depth: u32,
         _payload: &Self::Payload,
         hit_params: &Self::HitParams,
-        _func: impl Fn(&Self::Point, &Self::Point) -> Option<Self::HitParams>,
-    ) -> SamplingData<Self::Color> {
+        _scene_structure: TSceneStructure,
+    ) -> SamplingData<Self::Color>
+    where
+        TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
+    {
         // ヒットした点の情報をシンプルに返す
         SamplingData {
             emission: hit_params.emission(),
