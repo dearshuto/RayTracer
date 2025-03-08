@@ -7,11 +7,17 @@ use crate::{
 
 use num::Zero;
 
-use super::DefaultKernel;
+use super::{DefaultKernel, SamplingData};
 
-pub struct SamplingData<TColor> {
-    pub emission: TColor,
-    pub albedo: TColor,
+pub struct ClosestHitParams<TPayload, THitParams, TSceneStructure, TVector>
+where
+    TSceneStructure: ISceneStructure<THitParams, TVector>,
+{
+    pub depth: u32,
+    pub in_direction: TVector,
+    pub payload: TPayload,
+    pub hit_params: THitParams,
+    pub scene_structure: TSceneStructure,
 }
 
 pub trait IPathTracerPlugin {
@@ -23,17 +29,23 @@ pub trait IPathTracerPlugin {
 
     fn entry(&self, entry_params: &EntryParams<Self::Point>) -> Self::Payload;
 
+    fn reset_payload(&self, payload: Self::Payload) -> Self::Payload;
+
     fn react_closest_hit<TSceneStructure>(
         &self,
-        depth: u32,
-        payload: &Self::Payload,
-        hit_params: &Self::HitParams,
-        scene_structure: TSceneStructure,
-    ) -> SamplingData<Self::Color>
+        closest_hit_params: ClosestHitParams<
+            Self::Payload,
+            Self::HitParams,
+            TSceneStructure,
+            Self::Point,
+        >,
+    ) -> Self::Payload
     where
         TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>;
 
-    fn react_hit_miss(&self, payload: &Self::Payload) -> SamplingData<Self::Color>;
+    fn react_hit_miss(&self, payload: Self::Payload) -> Self::Payload;
+
+    fn write(&self, payload: &mut Self::Payload) -> Self::Color;
 }
 
 pub trait IHitParams<TId, TPoint, TColor> {
@@ -105,11 +117,6 @@ where
     latest_hit_normal: T::Point,
 
     next_reflection_context: T::ReflectionEstimationContext,
-
-    kernel: T,
-
-    // (emission, albedo)
-    hit_history: Vec<SamplingData<T::Color>>,
 
     plugin_payload: U,
 }
@@ -197,50 +204,50 @@ where
             latest_hit_material_id: None,
             latest_hit_normal: self.kernel.new_point(0.0, 0.0, 0.0),
             latest_hit_position: self.kernel.new_point(0.0, 0.0, 0.0),
-            kernel: self.kernel.clone(),
             next_reflection_context: self.kernel.new_reflection_estimation_context(),
-            hit_history: Vec::default(),
             plugin_payload: self.plugin.entry(entry_params),
         }
     }
 
     fn react_closest_hit<TSceneStructure>(
         &self,
-        mut payload: Self::PayloadType,
+        payload: Self::PayloadType,
         hit_params: Self::HitParams,
         scene_structure: TSceneStructure,
     ) -> Self::PayloadType
     where
         TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
     {
-        let sampling_data = self.plugin.react_closest_hit(
-            payload.current_depth,
-            &payload.plugin_payload,
-            &hit_params,
-            scene_structure,
-        );
-        payload.hit_history.push(sampling_data);
+        let depth = payload.current_depth;
 
         // 反射回数である深度を増やしつつヒット情報を保持してレイの生成に進む
-        let normal = hit_params.normal();
-        let position = hit_params.position();
-        let new_depth = payload.current_depth + 1;
-
         payload
+            .with_current_depth(depth + 1)
             .with_latest_hit_material_id(Some(hit_params.id()))
-            .with_current_depth(new_depth)
-            .with_latest_hit_position(position)
-            .with_latest_hit_normal(normal)
+            .with_latest_hit_position(hit_params.position())
+            .with_latest_hit_normal(hit_params.normal())
+            .update_plugin_payload(move |plugin_payload| {
+                let in_direction = self.kernel.new_point(0.0, 0.0, 0.0);
+                let closest_hit_params = ClosestHitParams {
+                    depth,
+                    in_direction,
+                    payload: plugin_payload,
+                    hit_params,
+                    scene_structure,
+                };
+
+                self.plugin.react_closest_hit(closest_hit_params)
+            })
     }
 
-    fn react_hit_miss(&self, mut payload: Self::PayloadType) -> Self::PayloadType {
+    fn react_hit_miss(&self, payload: Self::PayloadType) -> Self::PayloadType {
         // プラグイン呼び出し
-        let sampling_data = self.plugin.react_hit_miss(&payload.plugin_payload);
-        payload.hit_history.push(sampling_data);
+        // スペキュラは適当な値
+        let new_payload = payload.update_plugin_payload(|p| self.plugin.react_hit_miss(p));
 
         // ミスしたらトレースを完了させたいので反射回数を発散させる
         let next_depth = u32::MAX;
-        payload.with_current_depth(next_depth)
+        new_payload.with_current_depth(next_depth)
     }
 
     fn trace(
@@ -257,17 +264,13 @@ where
             }
 
             // 今回のサンプリングの結果を保持
-            let mut color = Self::Color::zero();
-            while let Some(sampling_data) = payload.hit_history.pop() {
-                let emission = sampling_data.emission;
-                let albedo = sampling_data.albedo;
-                color = albedo.multiply(&color);
-                color = color + emission;
-            }
+            let color = self.plugin.write(&mut payload.plugin_payload);
 
             // 前回のサンプリング結果との平均をとっていく
             let current_color = color / self.sampling_count as f32;
             let new_color = current_color + payload.value.clone();
+
+            let payload = payload.update_plugin_payload(|p| self.plugin.reset_payload(p));
 
             // 今回のサンプリングで保持していた情報を削除して、
             // 開始点に巻き戻してレイのトレースを続ける
@@ -296,8 +299,21 @@ where
         crate::TraceAction::Next(ray_params)
     }
 
-    fn write(&self, payload: Self::PayloadType) -> Self::Color {
-        payload.value
+    fn write(&self, mut payload: Self::PayloadType) -> Self::Color {
+        self.plugin.write(&mut payload.plugin_payload)
+    }
+}
+
+#[derive(sjrt_macro::Immutable)]
+pub struct SimplePluginPayload<TColor> {
+    hit_history: Vec<SamplingData<TColor>>,
+}
+
+impl<T> Default for SimplePluginPayload<T> {
+    fn default() -> Self {
+        Self {
+            hit_history: Vec::default(),
+        }
     }
 }
 
@@ -321,34 +337,52 @@ where
     type Point = TKernel::Point;
     type Color = TKernel::Color;
     type HitParams = TKernel::HitParams;
-    type Payload = ();
+    type Payload = SimplePluginPayload<TKernel::Color>;
 
     fn entry(&self, _entry_params: &EntryParams<Self::Point>) -> Self::Payload {
-        ()
+        SimplePluginPayload::default()
+    }
+
+    fn reset_payload(&self, mut payload: Self::Payload) -> Self::Payload {
+        payload.hit_history.clear();
+        payload
     }
 
     fn react_closest_hit<TSceneStructure>(
         &self,
-        _depth: u32,
-        _payload: &Self::Payload,
-        hit_params: &Self::HitParams,
-        _scene_structure: TSceneStructure,
-    ) -> SamplingData<Self::Color>
+        closest_hit_params: ClosestHitParams<
+            Self::Payload,
+            Self::HitParams,
+            TSceneStructure,
+            Self::Point,
+        >,
+    ) -> Self::Payload
     where
         TSceneStructure: ISceneStructure<Self::HitParams, Self::Point>,
     {
-        // ヒットした点の情報をシンプルに返す
-        SamplingData {
+        // ヒットした点の情報を保持
+        let mut payload = closest_hit_params.payload;
+        let hit_params = closest_hit_params.hit_params;
+        payload.hit_history.push(SamplingData {
             emission: hit_params.emission(),
             albedo: hit_params.albedo(),
-        }
+        });
+        payload
     }
 
-    fn react_hit_miss(&self, _payload: &Self::Payload) -> SamplingData<Self::Color> {
-        // どこにもヒットしなかったので背景色を返す
-        SamplingData {
-            emission: Self::Color::zero(),
-            albedo: Self::Color::zero(),
+    fn react_hit_miss(&self, payload: Self::Payload) -> Self::Payload {
+        // TODO: どこにもヒットしなかったので背景色を保持
+        payload
+    }
+
+    fn write(&self, payload: &mut Self::Payload) -> Self::Color {
+        let mut color = Self::Color::zero();
+        while let Some(sampling_data) = payload.hit_history.pop() {
+            let emission = sampling_data.emission;
+            let albedo = sampling_data.albedo;
+            color = albedo.multiply(&color);
+            color = color + emission;
         }
+        color
     }
 }
