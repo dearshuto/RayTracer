@@ -34,7 +34,8 @@ impl IKernel for DefaultKernel {
         // 反射する点のワールド空間と半球の方向を一致させるための回転を算出
         // Z 軸が反射点の法線と一致するようにして計算している
         let angle = normal.dot(&nalgebra::Vector3::z()).acos();
-        let axisangle = nalgebra::Vector3::z() * angle;
+        let axis = nalgebra::Vector3::z().cross(&normal);
+        let axisangle = axis * angle;
         let rotation = nalgebra::UnitQuaternion::new(axisangle);
 
         // ローカル座標で半球面上の点をサンプリング
@@ -42,7 +43,6 @@ impl IKernel for DefaultKernel {
 
         // サンプリングした頂点をワールド空間に変換
         let world_direction = rotation * direction;
-        println!("{:?}", world_direction);
 
         world_direction
     }

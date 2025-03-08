@@ -287,7 +287,7 @@ where
             material_id,
             &mut payload.next_reflection_context,
             &payload.from,
-            &payload.to,
+            &payload.latest_hit_normal,
         );
 
         let from = payload.latest_hit_position.clone() + new_direction.clone() * 0.001;
