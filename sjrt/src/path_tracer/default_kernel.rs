@@ -42,6 +42,7 @@ impl IKernel for DefaultKernel {
 
         // サンプリングした頂点をワールド空間に変換
         let world_direction = rotation * direction;
+        println!("{:?}", world_direction);
 
         world_direction
     }

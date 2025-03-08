@@ -7,9 +7,9 @@ async fn main() {
 
     let nee = sjrt::NextEventEstimationEx::default();
     let pipeline = Arc::new(
-        sjrt::PathTracerEx::default_with(nee)
+        sjrt::PathTracerEx::default() //default_with(nee)
             .with_depth(4)
-            .with_sampling_count(64),
+            .with_sampling_count(1),
     );
 
     let mut buffer = sjrt::util::ImageBuffer::new(640, 480);
