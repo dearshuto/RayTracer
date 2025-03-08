@@ -12,14 +12,9 @@ impl IKernel for DefaultKernel {
     type MaterialId = u32;
     type ReflectionEstimationContext = crate::util::UnitHemisphereUniformDistribution;
 
-    type RondomEngine = crate::util::RandomEngine;
     type Point = nalgebra::Vector3<f32>;
     type Color = nalgebra::Vector3<f32>;
     type HitParams = HitParams;
-
-    fn random_engine(&self) -> Self::RondomEngine {
-        crate::util::RandomEngine::new()
-    }
 
     fn new_point(&self, x: f32, y: f32, z: f32) -> Self::Point {
         nalgebra::Vector3::new(x, y, z)

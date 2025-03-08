@@ -2,7 +2,7 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use crate::{
     EntryParams, IConstract, IInnerProduct, IRayTracingPipeline, ISceneStructure, RayParams,
-    traits::{IComponentMul, INormalized, IRandomEngine},
+    traits::{IComponentMul, INormalized},
 };
 
 use num::Zero;
@@ -63,7 +63,6 @@ pub trait IHitParams<TId, TPoint, TColor> {
 pub trait IKernel {
     type MaterialId: Copy;
     type ReflectionEstimationContext;
-    type RondomEngine: IRandomEngine<f32>;
     type Point: Clone
         + IConstract<f32>
         + INormalized
@@ -82,8 +81,6 @@ pub trait IKernel {
         + Div<f32, Output = Self::Color>
         + IComponentMul;
     type HitParams: IHitParams<Self::MaterialId, Self::Point, Self::Color>;
-
-    fn random_engine(&self) -> Self::RondomEngine;
 
     fn new_point(&self, x: f32, y: f32, z: f32) -> Self::Point;
 
