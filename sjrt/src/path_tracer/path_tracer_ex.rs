@@ -287,7 +287,7 @@ where
             material_id,
             &mut payload.next_reflection_context,
             &payload.from,
-            &payload.to,
+            &payload.latest_hit_normal,
         );
 
         let from = payload.latest_hit_position.clone() + new_direction.clone() * 0.001;
@@ -381,5 +381,89 @@ where
             color = color + emission;
         }
         color
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use crate::{IRayTracingPipeline, RayParams, util::HitParams};
+
+    use super::{IKernel, PathTracerEx, Payload, SimplePlugin, SimplePluginPayload};
+
+    struct Context {
+        normal: nalgebra::Vector3<f32>,
+    }
+
+    #[derive(Clone)]
+    struct MockKernel {
+        context: Arc<Mutex<Context>>,
+    }
+
+    impl IKernel for MockKernel {
+        type MaterialId = u32;
+        type ReflectionEstimationContext = Arc<Mutex<Context>>;
+        type Point = nalgebra::Vector3<f32>;
+        type Color = nalgebra::Vector3<f32>;
+        type HitParams = HitParams;
+
+        fn new_point(&self, x: f32, y: f32, z: f32) -> Self::Point {
+            nalgebra::Vector3::new(x, y, z)
+        }
+
+        fn new_reflection_estimation_context(&self) -> Self::ReflectionEstimationContext {
+            self.context.clone()
+        }
+
+        fn estimate_next_reflection(
+            &self,
+            _id: Self::MaterialId,
+            context: &mut Self::ReflectionEstimationContext,
+            _in_direction: &Self::Point,
+            normal: &Self::Point,
+        ) -> Self::Point {
+            // どんな法線が渡されたかを保持
+            context.lock().unwrap().normal = *normal;
+
+            // 適当な値を返す
+            nalgebra::Vector3::x()
+        }
+    }
+
+    /// レイがヒットした点の法線情報が次の反射ベクトルの計算に正しく反映されてるか検証するテスト
+    #[test]
+    fn test_pipe_normal() {
+        let context = Arc::new(Mutex::new(Context {
+            normal: Default::default(),
+        }));
+        let mock_kernel = MockKernel {
+            context: context.clone(),
+        };
+
+        let pipeline = PathTracerEx::new(mock_kernel, SimplePlugin::<MockKernel>::new());
+
+        let expected_normal = nalgebra::Vector3::y();
+        let ray_params = RayParams {
+            from: nalgebra::Vector3::zeros(),
+            to: nalgebra::Vector3::x(),
+            payload: Payload {
+                from: nalgebra::Vector3::zeros(),
+                to: nalgebra::Vector3::x(),
+                value: Default::default(),
+                current_depth: 0,
+                current_sampling: 0,
+                latest_hit_material_id: Some(0),
+                latest_hit_position: nalgebra::Vector3::zeros(),
+                latest_hit_normal: expected_normal, // これが反射ベクトルの計算に使用される
+                next_reflection_context: context.clone(),
+                plugin_payload: SimplePluginPayload::default(),
+            },
+        };
+        let _ = pipeline.trace(ray_params);
+
+        // 反射ベクトル計算に渡された法線を取得して、期待した法線が渡っているか確認
+        let normal = context.lock().unwrap().normal;
+        assert_eq!(normal, expected_normal);
     }
 }
