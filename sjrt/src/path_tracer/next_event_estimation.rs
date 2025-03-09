@@ -110,6 +110,17 @@ where
         let position = hit_params.position();
         let light_direction = (light_position.clone() - position.clone()).normalized();
 
+        // 光源の方向が面と逆方向なら寄与はない
+        if light_direction.dot(&hit_params.normal()) <= 0.0 {
+            return payload.update_samplings(|mut vec| {
+                vec.push(SamplingData {
+                    emission: Self::Color::zero(),
+                    albedo: hit_params.albedo(),
+                });
+                vec
+            });
+        }
+
         // ヒットした点から光源までレイを生成
 
         let offset = light_direction.normalized() * 0.001;
