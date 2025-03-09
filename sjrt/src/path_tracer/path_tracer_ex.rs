@@ -76,6 +76,7 @@ pub trait IKernel {
     type Color: Clone
         + Into<crate::Color>
         + num::Zero
+        + From<Self::Point>
         + Add<Self::Color, Output = Self::Color>
         + Mul<f32, Output = Self::Color>
         + Div<f32, Output = Self::Color>

@@ -132,7 +132,14 @@ where
 
     fn react_hit_miss(&self, payload: Self::Payload) -> Self::Payload {
         // どこにもヒットしなかったので背景色をサンプリング
-        payload
+
+        payload.update_samplings(|mut vec| {
+            vec.push(SamplingData {
+                emission: Self::Color::from(self.kernel.new_point(0.1, 0.2, 0.3)),
+                albedo: Self::Color::zero(),
+            });
+            vec
+        })
     }
 
     fn write(&self, payload: &mut Self::Payload) -> Self::Color {

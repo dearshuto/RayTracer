@@ -17,36 +17,12 @@ impl Scene {
         };
         let primitives = vec![
             // 照明
-            Primitive::Sphere(SphereData { radius: 2.0 }),
-            // ボックス
-            Primitive::Box(BoxData {
-                width: 1.25,
-                height: 1.25,
-                depth: 1.25,
-            }),
-            // 床
-            Primitive::Box(BoxData {
-                width: 15.0,
-                height: 0.5,
-                depth: 15.0,
-            }),
+            Primitive::Sphere(SphereData { radius: 0.5 }),
         ];
         let transforms = vec![
             // 照明
             Transform {
-                translation: nalgebra::Vector3::new(0.0, 9.0, 0.0),
-                rotation: nalgebra::Vector3::zeros(),
-                scale: nalgebra::Vector3::new(3.0, 1.0, 3.0),
-            },
-            // ボックス
-            Transform {
-                translation: nalgebra::Vector3::new(0.0, 3.0, 0.0),
-                rotation: nalgebra::Vector3::zeros(),
-                scale: nalgebra::Vector3::new(1.0, 1.0, 1.0),
-            },
-            // 床
-            Transform {
-                translation: nalgebra::Vector3::zeros(),
+                translation: nalgebra::Vector3::new(0.0, 0.0, 0.0),
                 rotation: nalgebra::Vector3::zeros(),
                 scale: nalgebra::Vector3::new(1.0, 1.0, 1.0),
             },
@@ -56,16 +32,6 @@ impl Scene {
             Material {
                 albedo: Colors::white(),
                 emission: Colors::white(),
-            },
-            // ボックス
-            Material {
-                albedo: Colors::white(),
-                emission: Colors::black(),
-            },
-            // 床
-            Material {
-                albedo: Colors::white(),
-                emission: Colors::black(),
             },
         ];
 

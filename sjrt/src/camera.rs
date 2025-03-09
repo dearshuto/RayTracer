@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Range, Sub};
 
-use crate::{traits::INormalized, IConstract, INorm, IOuterProduct};
+use crate::{IConstract, INorm, IOuterProduct, traits::INormalized};
 
 pub struct Builder<TPoint> {
     field_of_view: f32,
@@ -210,8 +210,8 @@ mod tests {
             nalgebra::Vector3::new(-2.0, 1.0, -1.0).normalize()
         );
         assert_eq!(
-            rays[199].directions[0],
-            nalgebra::Vector3::new(2.0, -1.0, -1.0).normalize()
+            rays[19].directions[0],
+            nalgebra::Vector3::new(2.0, 1.0, -1.0).normalize()
         );
     }
 }
