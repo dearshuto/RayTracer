@@ -1,5 +1,5 @@
 use clap::Parser;
-use sjrt::scene::{primitive::SphereData, Material};
+use sjrt::scene::{Material, primitive::SphereData};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -44,7 +44,7 @@ pub fn main() {
         .with_look_at(&nalgebra::Vector3::new(0.0, 0.0, 0.0))
         .with_field_of_view(std::f32::consts::PI / 6.0)
         .build()
-        .calculate_ray_direction();
+        .calculate_ray_direction(640, 480);
 
     sjrt::Executor::default().execute(&mut buffer, rays.into_iter(), scene, renderer);
 
