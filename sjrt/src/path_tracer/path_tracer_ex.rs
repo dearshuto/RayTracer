@@ -254,12 +254,8 @@ where
         let mut payload = ray_params.payload;
 
         // 反射回数が規定回数を超えていたら...
-        if self.depth < payload.current_depth {
-            // 指定の回数のサンプリングが完了していたら終了
-            if self.sampling_count <= payload.current_sampling {
-                return crate::TraceAction::Finish(payload);
-            }
-
+        // or レイがどこにもヒットしなかったら...
+        if self.depth < payload.current_depth || payload.latest_hit_material_id.is_none() {
             // 今回のサンプリングの結果を保持
             let color = self.plugin.write(&mut payload.plugin_payload);
 
@@ -267,16 +263,23 @@ where
             let current_color = color / self.sampling_count as f32;
             let new_color = current_color + payload.value.clone();
 
-            let payload = payload.update_plugin_payload(|p| self.plugin.reset_payload(p));
+            let payload = payload
+                .with_value(new_color)
+                .update_plugin_payload(|p| self.plugin.reset_payload(p));
 
             // 今回のサンプリングで保持していた情報を削除して、
             // 開始点に巻き戻してレイのトレースを続ける
             let new_sampling_count = payload.current_sampling + 1;
+
+            // 指定の回数のサンプリングが完了していたら終了
+            if self.sampling_count <= new_sampling_count {
+                return crate::TraceAction::Finish(payload);
+            }
+
             return crate::TraceAction::Next(RayParams {
                 from: payload.from.clone(),
                 to: payload.to.clone(),
                 payload: payload
-                    .with_value(new_color)
                     .with_current_depth(0)
                     .with_current_sampling(new_sampling_count),
             });
@@ -388,9 +391,11 @@ where
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use crate::{IRayTracingPipeline, RayParams, util::HitParams};
+    use crate::{EntryParams, IRayTracingPipeline, RayParams, util::HitParams};
 
-    use super::{IKernel, PathTracerEx, Payload, SimplePlugin, SimplePluginPayload};
+    use super::{
+        IKernel, IPathTracerPlugin, PathTracerEx, Payload, SimplePlugin, SimplePluginPayload,
+    };
 
     struct Context {
         normal: nalgebra::Vector3<f32>,
@@ -465,5 +470,93 @@ mod tests {
         // 反射ベクトル計算に渡された法線を取得して、期待した法線が渡っているか確認
         let normal = context.lock().unwrap().normal;
         assert_eq!(normal, expected_normal);
+    }
+
+    #[derive(Default)]
+    struct MockPluginPayload {
+        current_sampling: u32,
+        color: [nalgebra::Vector3<f32>; 2],
+    }
+
+    struct MockPlugin;
+    impl IPathTracerPlugin for MockPlugin {
+        type MaterialId = u32;
+        type Point = nalgebra::Vector3<f32>;
+        type Color = nalgebra::Vector3<f32>;
+        type HitParams = HitParams;
+        type Payload = MockPluginPayload;
+
+        fn entry(&self, _entry_params: &EntryParams<Self::Point>) -> Self::Payload {
+            MockPluginPayload {
+                current_sampling: 0,
+                color: [
+                    nalgebra::Vector3::new(0.1, 0.2, 0.3),
+                    nalgebra::Vector3::new(0.3, 0.4, 0.5),
+                ],
+            }
+        }
+
+        fn reset_payload(&self, payload: Self::Payload) -> Self::Payload {
+            payload
+        }
+
+        fn react_closest_hit<TSceneStructure>(
+            &self,
+            closest_hit_params: super::ClosestHitParams<
+                Self::Payload,
+                Self::HitParams,
+                TSceneStructure,
+                Self::Point,
+            >,
+        ) -> Self::Payload
+        where
+            TSceneStructure: crate::ISceneStructure<Self::HitParams, Self::Point>,
+        {
+            closest_hit_params.payload
+        }
+
+        fn react_hit_miss(&self, payload: Self::Payload) -> Self::Payload {
+            payload
+        }
+
+        fn write(&self, payload: &mut Self::Payload) -> Self::Color {
+            // 1 回目のサンプリングでは 0 番目を、
+            // それ以降のサンプリングでは 1 番目を返す
+            let index = payload.current_sampling;
+            payload.current_sampling = (payload.current_sampling + 1).min(1);
+            payload.color[index as usize]
+        }
+    }
+
+    #[test]
+    fn test_recursive() {
+        let pipeline = PathTracerEx::default_with(MockPlugin {})
+            .with_sampling_count(2)
+            .with_depth(1);
+
+        let payload = pipeline.entry(&EntryParams {
+            x: 0,
+            y: 0,
+            from: nalgebra::Vector3::zeros(),
+            to: nalgebra::Vector3::x(),
+        });
+        let payload = pipeline.react_hit_miss(payload);
+
+        let mut ray_params = RayParams {
+            from: nalgebra::Vector3::zeros(),
+            to: nalgebra::Vector3::x(),
+            payload,
+        };
+        let payload = loop {
+            let action = pipeline.trace(ray_params);
+
+            match action {
+                crate::TraceAction::Next(next_ray_params) => ray_params = next_ray_params,
+                crate::TraceAction::Finish(payload) => break payload,
+            };
+        };
+
+        let color = payload.value;
+        assert_eq!(color, nalgebra::Vector3::new(0.2, 0.3, 0.4));
     }
 }
