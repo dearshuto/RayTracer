@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Range, Sub};
 
-use crate::{traits::INormalized, IConstract, INorm, IOuterProduct};
+use crate::{IConstract, INorm, IOuterProduct, traits::INormalized};
 
 pub struct Builder<TPoint> {
     field_of_view: f32,
