@@ -272,7 +272,7 @@ where
             let new_sampling_count = payload.current_sampling + 1;
 
             // 指定の回数のサンプリングが完了していたら終了
-            if self.sampling_count <= new_sampling_count {
+            if self.sampling_count < new_sampling_count {
                 return crate::TraceAction::Finish(payload);
             }
 
