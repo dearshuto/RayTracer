@@ -101,7 +101,9 @@ impl Instance {
             let renderer = Arc::new(sjrt::PathTracerEx::default());
             let buffer = &mut task_context.buffer;
             let executor = sjrt::Executor::default();
-            let rays = sjrt::Camera::builder().build().calculate_ray_direction();
+            let rays = sjrt::Camera::builder()
+                .build()
+                .calculate_ray_direction(640, 480);
             executor
                 .execute_async(buffer, rays.into_iter(), scene, renderer)
                 .await;

@@ -12,13 +12,15 @@ async fn main() {
             .with_sampling_count(64),
     );
 
-    let mut buffer = sjrt::util::ImageBuffer::new(640, 480);
+    let width = 320;
+    let height = 240;
+    let mut buffer = sjrt::util::ImageBuffer::new(width, height);
     let rays = sjrt::Camera::builder()
         .with_position(&nalgebra::Vector3::new(0.0, 7.0, 20.0))
         .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
         .with_field_of_view(std::f32::consts::PI / 4.0)
         .build()
-        .calculate_ray_direction();
+        .calculate_ray_direction(width as u32, height as u32);
     sjrt::Executor::default()
         .execute_async(&mut buffer, rays.into_iter(), scene, pipeline)
         .await;

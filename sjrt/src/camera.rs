@@ -97,8 +97,8 @@ where
         &self.position
     }
 
-    pub fn calculate_ray_direction(&self) -> Vec<RayInfo<TVector>> {
-        self.calculate_ray_direction_range(640, 480, 0..640, 0..480)
+    pub fn calculate_ray_direction(&self, width: u32, height: u32) -> Vec<RayInfo<TVector>> {
+        self.calculate_ray_direction_range(width, height, 0..width, 0..height)
     }
 
     pub fn calculate_ray_direction_range(

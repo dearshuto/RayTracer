@@ -70,7 +70,7 @@ async fn main() {
         .with_look_at(&nalgebra::Vector3::new(0.0, 5.0, 0.0))
         .with_field_of_view(std::f32::consts::PI / 4.0)
         .build()
-        .calculate_ray_direction();
+        .calculate_ray_direction(640, 480);
     sjrt::Executor::default()
         .execute_async(&mut buffer, rays.into_iter(), scene, ray_tracing_pipeline)
         .await;
