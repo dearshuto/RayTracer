@@ -197,4 +197,21 @@ mod tests {
             nalgebra::Vector3::new(-1.0, 1.0, 1.0).normalize()
         );
     }
+
+    #[test]
+    fn aspect() {
+        // デフォルトで原点から画角 45 度で  (0.0, 0.0, -1.0) を見ている
+        let camera = Camera::builder().build();
+        let rays = camera.calculate_ray_direction_range(20, 10, 0..20, 0..10);
+        assert_eq!(rays.len(), 200);
+
+        assert_eq!(
+            rays[0].directions[0],
+            nalgebra::Vector3::new(-2.0, 1.0, -1.0).normalize()
+        );
+        assert_eq!(
+            rays[199].directions[0],
+            nalgebra::Vector3::new(2.0, -1.0, -1.0).normalize()
+        );
+    }
 }
