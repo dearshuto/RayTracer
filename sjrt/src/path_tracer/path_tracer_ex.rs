@@ -296,8 +296,8 @@ where
         crate::TraceAction::Next(ray_params)
     }
 
-    fn write(&self, mut payload: Self::PayloadType) -> Self::Color {
-        self.plugin.write(&mut payload.plugin_payload)
+    fn write(&self, payload: Self::PayloadType) -> Self::Color {
+        payload.value
     }
 }
 
