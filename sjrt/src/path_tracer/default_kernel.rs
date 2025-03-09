@@ -34,7 +34,8 @@ impl IKernel for DefaultKernel {
         // 反射する点のワールド空間と半球の方向を一致させるための回転を算出
         // Z 軸が反射点の法線と一致するようにして計算している
         let angle = normal.dot(&nalgebra::Vector3::z()).acos();
-        let axisangle = nalgebra::Vector3::z() * angle;
+        let axis = nalgebra::Vector3::z().cross(&normal);
+        let axisangle = axis * angle;
         let rotation = nalgebra::UnitQuaternion::new(axisangle);
 
         // ローカル座標で半球面上の点をサンプリング
@@ -44,5 +45,55 @@ impl IKernel for DefaultKernel {
         let world_direction = rotation * direction;
 
         world_direction
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::IKernel;
+
+    use super::DefaultKernel;
+
+    /// X 軸方向の法線に対して半球サンプリングしたベクトルが意図した範囲に収まっているかをテスト
+    #[test]
+    fn test_direction_x() {
+        let kernel = DefaultKernel {};
+        let mut context = kernel.new_reflection_estimation_context();
+
+        for _ in 0..3000 {
+            let normal = nalgebra::Vector3::x();
+            let direction =
+                kernel.estimate_next_reflection(0, &mut context, &nalgebra::Vector3::x(), &normal);
+            assert!(direction.x >= 0.0);
+        }
+    }
+
+    /// Y 軸方向の法線に対して半球サンプリングしたベクトルが意図した範囲に収まっているかをテスト
+    #[test]
+    fn test_direction_y() {
+        let kernel = DefaultKernel {};
+        let mut context = kernel.new_reflection_estimation_context();
+
+        for _ in 0..3000 {
+            let normal = nalgebra::Vector3::y();
+            let direction =
+                kernel.estimate_next_reflection(0, &mut context, &nalgebra::Vector3::x(), &normal);
+            assert!(direction.y >= 0.0);
+        }
+    }
+
+    /// Z 軸方向の法線に対して半球サンプリングしたベクトルが意図した範囲に収まっているかをテスト
+    #[test]
+    fn test_direction_z() {
+        let kernel = DefaultKernel {};
+        let mut context = kernel.new_reflection_estimation_context();
+
+        for _ in 0..3000 {
+            let normal = nalgebra::Vector3::z();
+            let direction =
+                kernel.estimate_next_reflection(0, &mut context, &nalgebra::Vector3::x(), &normal);
+            assert!(direction.z >= 0.0);
+        }
     }
 }
